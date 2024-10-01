@@ -8,6 +8,8 @@ import ChangePassPage from './ChangePassPage';
 import ForgotPassPage from './ForgotPassPage';
 import RegistrationPage from './RegistrationPage';
 import LandingPage from './LandingPage';
+import ManagerPage from './ManagerPage';
+
 
 const Stack = createStackNavigator();
 
@@ -42,6 +44,7 @@ const NavigationManager = () => {
             <Stack.Screen name="ForgotPass" component={ForgotPassPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Manager" component={ManagerPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
         </NavigationContainer>
     );

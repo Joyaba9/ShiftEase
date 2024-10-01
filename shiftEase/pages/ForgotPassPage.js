@@ -1,19 +1,20 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions} from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput } from 'react-native';
 import CommonLayout from "./CommonLayout";
 import { useNavigation } from '@react-navigation/native';
 
 
 const { width } = Dimensions.get('window');
 
-const forgotPassInputFields = [
-    { label: 'Employee ID', placeholder: 'Enter your employee id' },
-    { label: 'Email Address', placeholder: 'Email@gmail.com' },
-];
 
 const ForgotPassPage = () => {
     const isMobile = width < 768;
     const navigation = useNavigation();
+
+     // State variables to store the form data
+     const [employeeId, setEmployeeId] = useState('');
+     const [email, setEmail] = useState('');
 
     return (
         <>
@@ -40,56 +41,86 @@ const ForgotPassPage = () => {
                     </>
                 }
               >
-                <TouchableOpacity
-                  style={styles.resetButton}
-                  onPress={""}
+                {/* TextInput Components */}
+                <TextInput
+                            placeholder="Enter your employee ID"
+                            value={employeeId}
+                            onChangeText={setEmployeeId}
+                            style={styles.input}
+                        />
+                        <TextInput
+                            placeholder="Email@gmail.com"
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            style={styles.input}
+                        />
+
+                        {/* Reset Password Button */}
+                        <TouchableOpacity
+                            style={styles.resetButton}
+                            onPress={() => console.log('Reset password')}
+                        >
+                            <Text style={styles.buttonText}>Reset Password</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                            <Text>Back to Login</Text>
+                        </TouchableOpacity>
+
+                    </CommonLayout>
+                </KeyboardAvoidingView>
+            ) : (
+                <CommonLayout
+                    isMobile={isMobile}
+                    logo={require("../assets/images/logo1.png")}
+                    mainImage={require("../assets/images/forgot_password.png")}
+                    customStyles={{
+                        contentWrapper: { flexDirection: 'row-reverse' }, // Reverse the layout
+                        inputContainer: {paddingRight: 0},
+                        formContainer: {paddingLeft: 40 ,paddingRight: 40},
+                        logoContainer: {margin: 20, paddingTop: 20},
+                        desktopLogo: {height: 100}
+                    }}
+                    aboveInputsContent={
+                        <>
+                            <Text style={styles.changeText}>Forgot Password?</Text>
+                            <Text style={styles.paragraphText}>Enter your employee ID and email address associated 
+                                with your account and we’ll send you instructions to reset your password 
+                            </Text>
+                        </>
+                    }
                 >
-                  <Text style={styles.buttonText}>Reset Password</Text>
-                </TouchableOpacity>
-    
-                <TouchableOpacity 
-                  onPress={() => navigation.navigate('Login')}
-                >
-                  <Text>Back to Login</Text>
-                </TouchableOpacity>
-    
-              </CommonLayout>
-            </KeyboardAvoidingView>
-          ) : (
-            <CommonLayout
-                inputFields={forgotPassInputFields}
-                isMobile={isMobile}
-                logo={require("../assets/images/logo1.png")}
-                mainImage={require("../assets/images/forgot_password.png")}
-                customStyles={{
-                    contentWrapper: { flexDirection: 'row-reverse' }, // Reverse the layout
-                    inputContainer: {paddingRight: 0},
-                    formContainer: {paddingLeft: 40 ,paddingRight: 40},
-                    logoContainer: {margin: 20, paddingTop: 20},
-                    desktopLogo: {height: 100}
-                }}
-                aboveInputsContent={
-                    <>
-                        <Text style={styles.changeText}>Forgot Password?</Text>
-                        <Text style={styles.paragraphText}>Enter your employee ID and email address associated 
-                            with your account and we’ll send you instructions to reset your password 
-                        </Text>
-                    </>
-                }
-            >
+                    {/* TextInput Components */}
+                    <TextInput
+                        placeholder="Enter your employee ID"
+                        value={employeeId}
+                        onChangeText={setEmployeeId}
+                        style={styles.input}
+                    />
+                    <TextInput
+                        placeholder="Email@gmail.com"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        style={styles.input}
+                    />
+
+                   {/* Reset Password Button */}
                 <TouchableOpacity 
                     style={styles.button} 
-                    onPress={""}
+                    onPress={() => console.log('Reset password logic here')}
                 >
                     <Text style={styles.buttonText}>Reset Password</Text>
                 </TouchableOpacity>
-
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                  <Text style={{ color: 'black', textAlign: 'center', marginTop: 20 }}>Back to Login</Text>
+                </TouchableOpacity>
             </CommonLayout>
         )}
     </>
   );
 };
-
 const styles = StyleSheet.create({
     changeText: {
         fontSize: 24,
@@ -130,7 +161,15 @@ const styles = StyleSheet.create({
         fontSize: 24,
         color: "rgba(255, 255, 255, 1)",
         fontWeight: "500",
-    }
+    },
+    input: {
+      height: 56,
+      borderColor: 'gray',
+      borderWidth: 1,
+      marginBottom: 12,
+      paddingHorizontal: 10,
+      borderRadius: 8,
+  }
 });
 
 export default ForgotPassPage;

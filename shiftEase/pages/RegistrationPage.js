@@ -45,6 +45,7 @@ const RegistrationPage = () => {
       // Check the response status
       if (response.status === 201) {
         alert('Business registered successfully');
+         navigation.navigate('Manager');
       } else {
         alert('Error registering business');
       }
