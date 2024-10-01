@@ -1,7 +1,7 @@
 import getClient from './dbClient.js';
 
 // Login function
-async function LoginEmployee(employeeString, password) {
+export async function LoginEmployee(employeeString, password) {
 
     // Split the employee string into business ID and user ID
     const [businessId, userId] = employeeString.split('U');
@@ -42,4 +42,4 @@ async function LoginEmployee(employeeString, password) {
 }
 
 // Example usage. This will log the employee object if the employee is found, or log an error if the employee is not found.
-LoginEmployee("598984U1", 'password').then(employee => console.log('Employee:', employee)).catch(err => console.error('Error:', err));
+//LoginEmployee("598984U1", 'password').then(employee => console.log('Employee:', employee)).catch(err => console.error('Error:', err));
