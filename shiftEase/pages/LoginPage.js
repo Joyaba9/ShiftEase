@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput } from 'react-native';
-import CommonLayout from "./CommonLayout";
 import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import CommonLayout from "./CommonLayout";
 
 const { width } = Dimensions.get('window');
 
@@ -10,9 +10,12 @@ const LoginPage = () => {
   const isMobile = width < 768;
   const navigation = useNavigation();
 
+  console.log('LoginPage rendered');
+
   // State variables to store form data
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
+  
 
   const handleLogin = async () => {
     // Validate that all fields are filled
@@ -21,8 +24,9 @@ const LoginPage = () => {
       return;
     }
 
+    console.log('trying to login');
+
     // Call the backend API to handle login
-    // not implemented yet but assuming it will be the same server as the registration
     try {
       const response = await fetch('http://localhost:5050/api/login', {
         method: 'POST',
@@ -30,12 +34,11 @@ const LoginPage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          employeeId,
+          employeeString: employeeId,
           password
         })
       });
 
-      // Check the response status
       if (response.status === 200) {
         alert('Login successful');
         navigation.navigate('Manager'); // Navigate to the Manager page upon successful login
