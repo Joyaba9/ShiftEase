@@ -21,3 +21,7 @@ SQL-gcloud.json
 # Ignore downloaded archives
 backend/google-cloud-cli-*.tar.gz
 
+# Ignore Google Cloud SDK and related files
+backend/google-cloud-sdk/
+
+
