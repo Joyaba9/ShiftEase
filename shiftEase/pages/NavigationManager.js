@@ -14,6 +14,8 @@ const NavigationManager = () => {
     const [initialRoute, setInitialRoute] = useState(null);
 
     useEffect(() => {
+
+
         const { width } = Dimensions.get('window');
         if (width < 768) {
           // If it's mobile, set initial route to WelcomePageMobile
@@ -22,6 +24,8 @@ const NavigationManager = () => {
           // If it's desktop, set initial route to LoginPage
           setInitialRoute('Login');
         }
+
+
     }, []);
 
     if (!initialRoute) {

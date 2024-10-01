@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TextInput, TouchableOpacity, Image } from 'react-native';
 
-const InputField = ({ label, placeholder, isPassword = false, errorMessage }) => {
+const InputField = ({ label, placeholder, isPassword = false, errorMessage, value, onChangeText, keyboardType }) => {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
         <View style={styles.container}>
-          <Text style={styles.label}>{label}</Text>
+          {label && <Text style={styles.label}>{label}</Text>}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -14,6 +14,9 @@ const InputField = ({ label, placeholder, isPassword = false, errorMessage }) =>
               placeholderTextColor="rgba(102, 102, 102, 1)"
               secureTextEntry={isPassword && !showPassword}
               accessibilityLabel={label}
+              value={value}                 
+              onChangeText={onChangeText}   
+              keyboardType={keyboardType || 'default'} 
             />
             {isPassword && (
               <TouchableOpacity
@@ -34,6 +37,8 @@ const InputField = ({ label, placeholder, isPassword = false, errorMessage }) =>
       );
     };
 
+
+  
 const styles = StyleSheet.create({
     container: {
         width: "100%",

@@ -1,17 +1,18 @@
+// CommonLayout.js
+
 import React from 'react';
-import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Image, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import InputField from './InputField';
+// Remove InputField import since it's no longer used
+// import InputField from './InputField';
 
 const CommonLayout = ({ 
-  inputFields, 
   isMobile, 
   logo, 
   mainImage, 
   customStyles,
-  aboveInputsContent, 
   children,
- }) => {
+}) => {
   return (
     <>
       {isMobile ? (
@@ -19,9 +20,9 @@ const CommonLayout = ({
         <View style={styles.mobileContainer}>
           <View style={styles.mobileTopContainer}>
             <Image
-                resizeMode="cover"
-                source={mainImage}
-                style={styles.topImage}
+              resizeMode="cover"
+              source={mainImage}
+              style={styles.topImage}
             />
           </View>
           <View style={[styles.mobileBottomContainer, customStyles?.mobileBottomContainer]}>
@@ -40,17 +41,9 @@ const CommonLayout = ({
                 bounces={false}
                 showsVerticalScrollIndicator={false}
               >
-                {aboveInputsContent}
-
-                {inputFields.map((field, index) => (
-                  <InputField
-                    key={index}
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    isPassword={field.isPassword}
-                  />
-                ))}
-
+                {/* Remove aboveInputsContent */}
+                {/* Remove inputFields mapping */}
+                
                 {children}
 
               </ScrollView>
@@ -58,7 +51,7 @@ const CommonLayout = ({
           </View>
         </View>
       ) : (
-        //Desktop Layout
+        // Desktop Layout
         <LinearGradient 
           colors={['#E7E7E7', '#9DCDCD']} 
           style={styles.desktopContainer}
@@ -80,17 +73,9 @@ const CommonLayout = ({
                     style={[styles.desktopLogo, customStyles?.desktopLogo]}
                   />
                 </View>
-                {aboveInputsContent}
-
-                {inputFields.map((field, index) => (
-                    <InputField
-                      key={index}
-                      label={field.label}
-                      placeholder={field.placeholder}
-                      isPassword={field.isPassword}
-                    />
-                ))}
-
+                {/* Remove aboveInputsContent */}
+                {/* Remove inputFields mapping */}
+                
                 {children}
 
               </View>
