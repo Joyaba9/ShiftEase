@@ -1,0 +1,18 @@
+# Ignore sensitive configuration files
+Gcloud.js
+Firebase-shiftEase.json
+SQL-gcloud.json
+
+# Ignore downloaded archives
+backend/google-cloud-cli-*.tar.gz
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore environment variable files
+.env
+
+
+# Ignore large files
+backend/google-cloud-sdk/
+backend/google-cloud-cli-*.tar.gz
