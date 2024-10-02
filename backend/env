@@ -1,0 +1,5 @@
+DB_USER=germnl
+DB_PASSWORD=HelloWorld574!
+DB_NAME=postgres
+INSTANCE_CONNECTION_NAME=windy-site-436113-j3:us-central1:shiftease937
+GOOGLE_APPLICATION_CREDENTIALS=SQL-gcloud.json
