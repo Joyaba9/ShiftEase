@@ -135,9 +135,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: '100%',
-    flexDirection: 'row', // Allows absolute positioning inside the container
-    //justifyContent: 'center',
-    //alignContent: 'center'
+    flexDirection: 'row', 
   },
   input: {
     width: '100%',
@@ -150,11 +148,9 @@ const styles = StyleSheet.create({
   },
   showHideButton: {
     position: 'absolute',
-    right: 10, // Position the button inside the TextInput to the right
-    //top: 10,
+    right: 10, 
     flexDirection: 'row',
     alignItems: 'center',
-    //paddingRight: 12,
   },
   eyeIcon: {
     width: 24,
