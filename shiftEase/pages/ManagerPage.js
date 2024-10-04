@@ -146,13 +146,11 @@ const ManagerPage = () => {
               style={styles.desktopLogo}
             />
         </LinearGradient>
-        
       </View>
     </ScrollView>
   );
 };
 
-// Define styles using StyleSheet.create()
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1, 
@@ -200,6 +198,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   leftPane: {
     flex: 2,
     justifyContent: 'space-between',
@@ -207,6 +206,7 @@ const styles = StyleSheet.create({
     maxWidth: 300,
     minWidth: 250,
   },
+
   rightPane: {
     flex: 2,
     height: '100%',
@@ -265,6 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
   },
+
   button: {
     backgroundColor: '#ffffff',
     padding: 20,
@@ -277,10 +278,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
+
   buttonText: {
     fontSize: 18,
     color: '#333',
   },
+
   textBox: {
     flex: 1,
     //backgroundColor: '#fff',
@@ -303,5 +306,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
 });
+
 
 export default ManagerPage;
