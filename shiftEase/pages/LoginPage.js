@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Image, Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from "./CommonLayout";
 
 const { width } = Dimensions.get('window');
@@ -15,6 +15,7 @@ const LoginPage = () => {
   // State variables to store form data
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
 
   const handleLogin = async () => {
@@ -68,35 +69,56 @@ const LoginPage = () => {
           formContainer: !isMobile ? { paddingLeft: 40, paddingRight: 40 } : {},
         }}
       >
+        {/* Label for the TextInput */}
+        <Text style={styles.label}>Employee ID</Text>
+
         {/* Directly render TextInput components */}
         <TextInput
           placeholder="Enter your employee ID"
+          placeholderTextColor={isMobile ? 'gray' : 'lightgray'}
+          label = "Employee ID"
           value={employeeId}
           onChangeText={setEmployeeId}
           style={styles.input}
         />
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Password</Text>
+        
+          <TouchableOpacity
+            style={styles.showHideButton}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Image
+                resizeMode="contain"
+                source={{ uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/f3b55df132da99dbc33a809c79877e7b0101eee6c8864bc69b8efc2d312f6d9c?placeholderIfAbsent=true&apiKey=b4d9577c60d14a339753390c221813ce" }}
+                style={styles.eyeIcon}
+            />
+            <Text style={styles.showHideText}>{showPassword ? 'Hide' : 'Show'}</Text>
+          </TouchableOpacity>
+        </View>
+        
         <TextInput
           placeholder="Enter your password"
+          placeholderTextColor={isMobile ? 'gray' : 'lightgray'}
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry = {!showPassword}
           style={styles.input}
         />
 
+        {/* Forgot Password */}
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPass')} style={{ alignSelf: 'flex-end' }}>
+          <Text>Forgot Password?</Text>
+        </TouchableOpacity>
         
         {/* Login Button */}
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
-        {/* Forgot Password */}
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPass')} style={{ alignSelf: 'flex-end' }}>
-          <Text>Forgot Password?</Text>
-        </TouchableOpacity>
-
         {/* Register Here */}
         <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
-          <Text>Register Here!</Text>
+          <Text style = {styles.registerText}>Register Here!</Text>
         </TouchableOpacity>
 
       </CommonLayout>
@@ -105,13 +127,39 @@ const LoginPage = () => {
 };
 
 const styles = StyleSheet.create({
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#333',  
+    alignSelf: 'flex-start',
+  },
+  inputContainer: {
+    width: '100%',
+    flexDirection: 'row', 
+  },
   input: {
+    width: '100%',
     height: 56,
     borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 12,
     paddingHorizontal: 10,
     borderRadius: 8,
+  },
+  showHideButton: {
+    position: 'absolute',
+    right: 10, 
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 3,
+  },
+  showHideText: {
+    fontSize: 16,
+    color: "rgba(102, 102, 102, 1)",
   },
   loginButton: {
     borderRadius: 16,
@@ -130,6 +178,11 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 1)',
     fontWeight: '500',
   },
+  registerText: {
+    marginBottom: 30, 
+    fontSize: 15,
+    color: 'black',
+  }
 });
 
 export default LoginPage;

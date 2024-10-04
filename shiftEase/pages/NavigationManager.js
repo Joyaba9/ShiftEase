@@ -9,6 +9,7 @@ import ForgotPassPage from './ForgotPassPage';
 import RegistrationPage from './RegistrationPage';
 import LandingPage from './LandingPage';
 import ManagerPage from './ManagerPage';
+import EmployeePage from './EmployeePage';
 
 
 const Stack = createStackNavigator();
@@ -24,7 +25,7 @@ const NavigationManager = () => {
           // If it's mobile, set initial route to WelcomePageMobile
           setInitialRoute('Welcome');
         } else {
-          // If it's desktop, set initial route to LoginPage
+          // If it's desktop, set initial route to LandingPage
           setInitialRoute('Landing');
         }
 
@@ -45,6 +46,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Manager" component={ManagerPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             </Stack.Navigator>
         </NavigationContainer>
     );
