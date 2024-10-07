@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput } from 'react-native';
-import CommonLayout from "./CommonLayout";
+import CommonLayout from "../common/CommonLayout";
 import { useNavigation } from '@react-navigation/native';
 
 
@@ -26,8 +26,8 @@ const ForgotPassPage = () => {
                     <CommonLayout
                         //inputFields={forgotPassInputFields}
                         isMobile={isMobile}
-                        logo={require("../assets/images/logo1.png")}
-                        mainImage={require("../assets/images/forgot_password.png")}
+                        logo={require("../../assets/images/logo1.png")}
+                        mainImage={require("../../assets/images/forgot_password.png")}
                         customStyles={{
                         mobileBottomContainer: {top: '25%'},
                         mobileLogo: {marginTop: 30}
@@ -87,8 +87,8 @@ const ForgotPassPage = () => {
             ) : (
                 <CommonLayout
                     isMobile={isMobile}
-                    logo={require("../assets/images/logo1.png")}
-                    mainImage={require("../assets/images/forgot_password.png")}
+                    logo={require("../../assets/images/logo1.png")}
+                    mainImage={require("../../assets/images/forgot_password.png")}
                     customStyles={{
                         contentWrapper: { flexDirection: 'row-reverse' }, // Reverse the layout
                         inputContainer: {paddingRight: 0},

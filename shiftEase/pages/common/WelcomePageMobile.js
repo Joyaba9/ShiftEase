@@ -17,7 +17,7 @@ const WelcomePageMobile = () => {
       <View style={styles.container}>
         <ImageBackground
           resizeMode="cover"
-          source={require("../assets/images/happy_coworkers.png")}
+          source={require("../../assets/images/happy_coworkers.png")}
           style={styles.backgroundImage}
         >
             <View style={styles.contentWrapper}>
@@ -25,7 +25,7 @@ const WelcomePageMobile = () => {
                     <Text style={styles.welcomeText}>Welcome to</Text>
                     <Image
                         resizeMode="contain"
-                        source={require("../assets/images/logo1.png")}
+                        source={require("../../assets/images/logo1.png")}
                         style={styles.logo}
                     />
                 </View>
