@@ -1,9 +1,11 @@
 import React from 'react';
 import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 
-const NavBar = () => {
+const NavBar = ({ homeRoute }) => {
 
+    const navigation = useNavigation();
     const screenWidth = Dimensions.get('window').width;
 
     return (
@@ -20,7 +22,7 @@ const NavBar = () => {
                 <View style={styles.spacer} />
 
                 <View style = {styles.navBarContainer}>
-                    <TouchableOpacity onPress={() => {/* Not sure where 'home' should go */}}>
+                    <TouchableOpacity onPress={() => navigation.navigate(homeRoute)}>
                         <Text style={styles.navText}>Home</Text>
                     </TouchableOpacity>
 

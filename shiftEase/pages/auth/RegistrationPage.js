@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput, View } from 'react-native';
-import CommonLayout from "./CommonLayout";
+import CommonLayout from "../common/CommonLayout";
 import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
@@ -65,8 +65,8 @@ const RegistrationPage = () => {
     >
       <CommonLayout
         isMobile={isMobile}
-        logo={require('../assets/images/logo1.png')}
-        mainImage={require('../assets/images/woman.png')}
+        logo={require('../../assets/images/logo1.png')}
+        mainImage={require('../../assets/images/woman.png')}
         customStyles={{
           mobileBottomContainer: isMobile ? { top: '25%' } : {},
           contentWrapper: !isMobile ? { flexDirection: 'row-reverse' } : {}, // Reverse layout on web

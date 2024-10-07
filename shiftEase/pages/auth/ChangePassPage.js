@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
-import CommonLayout from "./CommonLayout";
+import CommonLayout from "../common/CommonLayout";
 
 const { width } = Dimensions.get('window');
 
@@ -23,8 +23,8 @@ const ChangePassPage = () => {
               <CommonLayout
                 inputFields={passwordInputFields}
                 isMobile={isMobile}
-                logo={require("../assets/images/logo1.png")}
-                mainImage={require("../assets/images/retail_worker_happy.jpg")}
+                logo={require("../../assets/images/logo1.png")}
+                mainImage={require("../../assets/images/retail_worker_happy.jpg")}
                 aboveInputsContent={<Text style={styles.passwordText}>Change Password</Text>}
               >
 
@@ -41,8 +41,8 @@ const ChangePassPage = () => {
             <CommonLayout
                 inputFields={passwordInputFields}
                 isMobile={isMobile}
-                logo={require("../assets/images/logo1.png")}
-                mainImage={require("../assets/images/retail_worker_happy.jpg")}
+                logo={require("../../assets/images/logo1.png")}
+                mainImage={require("../../assets/images/retail_worker_happy.jpg")}
                 aboveInputsContent={<Text style={styles.passwordText}>Change Password</Text>}
                 customStyles={{
                     logoContainer: {margin: 20}

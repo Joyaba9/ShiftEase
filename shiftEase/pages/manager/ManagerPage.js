@@ -1,14 +1,16 @@
 import React from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { ScrollView, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import NavBar from '../components/NavBar';
-import SidebarButton from '../components/SidebarButton';
+import NavBar from '../../components/NavBar';
+import SidebarButton from '../../components/SidebarButton';
 import ManagerPageMobile from './ManagerPageMobile';
 
 const { width } = Dimensions.get('window');
 
 const ManagerPage = () => {
+  const navigation = useNavigation();
   const isMobile = width < 768; 
 
   // Render the mobile layout if it's a mobile screen
@@ -28,32 +30,32 @@ const ManagerPage = () => {
           <View style={styles.leftPane}>
 
             <SidebarButton
-                icon = {require('../assets/images/manage_business.png')}
+                icon = {require('../../assets/images/manage_business.png')}
                 label = "Manage Business"
-                onPress={ () => {}}
+                onPress={ () => navigation.navigate('ManageBusiness')}
                 customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/add_employee_icon.png')}
+                icon = {require('../../assets/images/add_employee_icon.png')}
                 label = "Add Employee"
                 onPress={ () => {}}
                 customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/employees_talking.png')}
+                icon = {require('../../assets/images/employees_talking.png')}
                 label = "Manage Employee"
                 onPress={ () => {}}
                 customContainerStyle={{ right: 10 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/email_icon.png')}
+                icon = {require('../../assets/images/email_icon.png')}
                 label = "Messages"
                 onPress={ () => {}}
                 customContainerStyle={{ right: 20 }}
                 customIconStyle={{ width: 100, height: 100 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/edit_roles_icon_trans.png')}
+                icon = {require('../../assets/images/edit_roles_icon_trans.png')}
                 label = "Edit Roles"
                 onPress={ () => {}}
                 customContainerStyle={{ right: 10 }}
@@ -142,7 +144,7 @@ const ManagerPage = () => {
         >
             <Image
               resizeMode="contain"
-              source={require('../assets/images/logo1.png')}
+              source={require('../../assets/images/logo1.png')}
               style={styles.desktopLogo}
             />
         </LinearGradient>
