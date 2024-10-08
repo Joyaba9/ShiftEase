@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../components/NavBar';
 import SidebarButton from '../components/SidebarButton';
 import ManagerPageMobile from './ManagerPageMobile';
+import ManageEmployeePopup from './ManageEmployeePopup.js';
 
 const { width } = Dimensions.get('window');
 
 const ManagerPage = () => {
+  const [isPopupVisible, setPopupVisible] = useState(false); // State to manage popup visibility
   const isMobile = width < 768; 
+
+  // Function to toggle the popup visibility
+  const togglePopup = () => {
+    setPopupVisible(!isPopupVisible);
+  };
 
   // Render the mobile layout if it's a mobile screen
   if (isMobile) {
@@ -26,36 +33,35 @@ const ManagerPage = () => {
         <View style={styles.dashboardContainer}>
           {/* Left Column */}
           <View style={styles.leftPane}>
-
             <SidebarButton
-                icon = {require('../assets/images/manage_business.png')}
-                label = "Manage Business"
-                onPress={ () => {}}
+                icon={require('../assets/images/manage_business.png')}
+                label="Manage Business"
+                onPress={() => {}}
                 customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/add_employee_icon.png')}
-                label = "Add Employee"
-                onPress={ () => {}}
+                icon={require('../assets/images/add_employee_icon.png')}
+                label="Add Employee"
+                onPress={() => {}}
                 customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/employees_talking.png')}
-                label = "Manage Employee"
-                onPress={ () => {}}
+                icon={require('../assets/images/employees_talking.png')}
+                label="Manage Employee"
+                onPress={togglePopup} // Open the Manage Employee Popup
                 customContainerStyle={{ right: 10 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/email_icon.png')}
-                label = "Messages"
-                onPress={ () => {}}
+                icon={require('../assets/images/email_icon.png')}
+                label="Messages"
+                onPress={() => {}}
                 customContainerStyle={{ right: 20 }}
                 customIconStyle={{ width: 100, height: 100 }}
             />
             <SidebarButton
-                icon = {require('../assets/images/edit_roles_icon_trans.png')}
-                label = "Edit Roles"
-                onPress={ () => {}}
+                icon={require('../assets/images/edit_roles_icon_trans.png')}
+                label="Edit Roles"
+                onPress={() => {}}
                 customContainerStyle={{ right: 10 }}
             />
           </View>
@@ -64,7 +70,6 @@ const ManagerPage = () => {
           
           {/* Right Column */}
           <View style={styles.rightPane}>
-
             {/* Announcements Section */}
             <LinearGradient 
               colors={['#E7E7E7', '#A7CAD8']} 
@@ -73,15 +78,12 @@ const ManagerPage = () => {
               <View style={styles.announcements}>
                 <View style={styles.topBar}>
                   <Text style={styles.sectionTitle}>Announcements</Text>
-                            
                   <View style={styles.spacer} />
-                            
                   <Ionicons name="megaphone-outline" size={30} color="black" />
                 </View>
                 <View style={styles.textBox}>
                     {/* Add Announcements Logic? */}
                 </View>
-                            
                 <TouchableOpacity style={styles.addIconContainer}>
                   <Ionicons name="add-circle" size={50} color="black" />
                 </TouchableOpacity>
@@ -96,14 +98,12 @@ const ManagerPage = () => {
                 <View style={styles.reportsContainer}>
                   <View style={styles.topBar}>
                     <Text style={styles.sectionTitle}>Daily Reports</Text>
-                    
                     <View style={styles.spacer} />
-                    
                     <Ionicons name="document-text-outline" size={30} color="black" />
                   </View>
-                    <View style={styles.textBox}>
-                        {/* Add Reports Logic? */}
-                    </View>
+                  <View style={styles.textBox}>
+                      {/* Add Reports Logic? */}
+                  </View>
                 </View>
             </LinearGradient>
 
@@ -115,21 +115,15 @@ const ManagerPage = () => {
               <View style={styles.performanceContainer}>
                 <View style={styles.topBar}>
                   <Text style={styles.sectionTitle}>Key Performance Overview</Text>
-                  
                   <View style={styles.spacer} />
-
                   <Ionicons name="bar-chart-outline" size={30} color="black" />
-                  
                 </View>
-
                 <View style={styles.textBox}>
                     {/* Add Performance Logic? */}
                 </View>
-
                 <TouchableOpacity style={styles.addIconContainer2}>
                   <Ionicons name="add-circle" size={50} color="black" />
                 </TouchableOpacity>
-                
               </View>  
             </LinearGradient>
           </View>
@@ -146,6 +140,11 @@ const ManagerPage = () => {
               style={styles.desktopLogo}
             />
         </LinearGradient>
+
+        {/* Manage Employee Popup */}
+        {isPopupVisible && (
+          <ManageEmployeePopup onClose={togglePopup} /> // Pass close function to the popup
+        )}
       </View>
     </ScrollView>
   );
@@ -171,7 +170,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     marginBottom: 50,
-    //paddingTop: 30,
     paddingLeft: 40,
     paddingRight: 40,
   },
@@ -180,7 +178,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 40,
     paddingLeft: 60
-    
   },
   spacer: {
     flexGrow: 2, // Grow dynamically to fill space
@@ -198,7 +195,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   leftPane: {
     flex: 2,
     justifyContent: 'space-between',
@@ -206,7 +202,6 @@ const styles = StyleSheet.create({
     maxWidth: 300,
     minWidth: 250,
   },
-
   rightPane: {
     flex: 2,
     height: '100%',
@@ -265,7 +260,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
   },
-
   button: {
     backgroundColor: '#ffffff',
     padding: 20,
@@ -278,15 +272,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
-
   buttonText: {
     fontSize: 18,
     color: '#333',
   },
-
   textBox: {
     flex: 1,
-    //backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
     marginTop: 15,
@@ -299,13 +290,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   desktopLogo: {
-    position: 'relative',
-    left: 40,
-    width: 230,
-    height: 100,
-    alignSelf: 'flex-end',
+    width: 300,
+    height: 50,
+    marginTop: 10,
+    marginBottom: 10,
   },
 });
-
 
 export default ManagerPage;
