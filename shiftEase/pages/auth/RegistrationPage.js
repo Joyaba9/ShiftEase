@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput, View } from 'react-native';
 import CommonLayout from "../common/CommonLayout";
 import { useNavigation } from '@react-navigation/native';
+import { getBusinessById } from '../manager/manageBusiness/businessMockDatabase';
+
 
 const { width } = Dimensions.get('window');
 
@@ -10,11 +12,15 @@ const RegistrationPage = () => {
   const navigation = useNavigation();
 
   // State variables to store the form data
+  const [businessId, setBusinessId] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessEmail, setBusinessEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // State to track whether the success message should be shown after saving
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   const registerBusiness = async () => {
     // Check if passwords match
@@ -43,10 +49,47 @@ const RegistrationPage = () => {
         })
       });
   
-      // Check the response status
+      // Check the response status after registering the business
       if (response.status === 201) {
-        alert('Business registered successfully');
-         navigation.navigate('Manager');
+
+        // If registration is successful, make a second request to fetch the business ID
+        try{
+          const response = await fetch('http://localhost:5050/api/getBusinessId', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              business_email: businessEmail,
+            })
+          });
+        
+          // Parse the response to extract the business_id
+          const data = await response.json();
+
+          // If the business_id is returned successfully, store it in state
+          if (data && data.business_id) {
+            const businessId = data.business_id; // Extract business ID from the response
+            setBusinessId(businessId); // Store the received business_id in state
+          } else {
+            alert('Business ID not found in response');
+          }
+        } catch (err) {
+          console.error('Error receiving business_id:', err);
+          alert('Error receiving business_id');
+        }
+
+        // Show the success message indicating the registration was successful with the Business ID displayed
+        setShowSuccessMessage(true);
+
+        // Hide the message after 7 seconds
+        setTimeout(() => {
+            setShowSuccessMessage(false);
+            navigation.navigate('Login'); // Navigate to Login after success
+        }, 7000); // 7000 ms = 7 seconds
+        
+        
+
       } else {
         alert('Error registering business');
       }
@@ -157,6 +200,11 @@ const RegistrationPage = () => {
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style = {styles.loginText}>Back to Login!</Text>
         </TouchableOpacity>
+
+        {/* Render success message if showSuccessMessage is true */}
+        {showSuccessMessage && (
+          <Text style={styles.successMessage}>Business registered successfully! Business ID: {businessId}</Text>
+        )}
       </CommonLayout>
     </KeyboardAvoidingView>
   );
@@ -218,7 +266,16 @@ const styles = StyleSheet.create({
     marginBottom: 30, // Correct way to apply marginBottom
     fontSize: 15,
     color: 'black',
-  }
+  },
+  successMessage: {
+    backgroundColor: '#d4edda',
+    color: '#155724',
+    padding: 10,
+    marginBottom: 40,
+    textAlign: 'center',
+    borderRadius: 5,
+    fontSize: 16,
+  },
 });
 
 export default RegistrationPage;
