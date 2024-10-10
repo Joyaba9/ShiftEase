@@ -12,20 +12,40 @@ const LoginPage = () => {
 
   console.log('LoginPage rendered');
 
+  const [isBusinessLogin, setIsBusinessLogin] = useState(false);
+
+  const switchLogin = (loginType) => {
+    setIsBusinessLogin(loginType === 'Business'); // Toggle between Business and Employee Login
+  };
+
   // State variables to store form data
   const [employeeId, setEmployeeId] = useState('');
+  const [businessId, setBusinessId] = useState('');
   const [password, setPassword] = useState('');
+  //const [busPassword, setBusPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
 
   const handleLogin = async () => {
-    // Validate that all fields are filled
-    if (!employeeId || !password) {
-      alert('Please enter both Employee ID and Password');
-      return;
+
+    // Determine which login mode is active
+    const loginMode = isBusinessLogin ? 'Business' : 'Employee';
+
+    if (isBusinessLogin) {
+      // Business Login: Validate Business ID and Password
+      if (!businessId || !password) {
+        alert('Please enter both Business ID and Password');
+        return;
+      }
+    } else {
+      // Employee Login: Validate Employee ID and Password
+      if (!employeeId || !password) {
+        alert('Please enter both Employee ID and Password');
+        return;
+      }
     }
 
-    console.log('trying to login');
+    console.log(`Trying to login as ${loginMode}`);
 
     // Call the backend API to handle login
     try {
@@ -35,14 +55,16 @@ const LoginPage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          employeeString: employeeId,
+          // Send the data depending on the login mode
+          employeeString: isBusinessLogin ? businessId : employeeId,
           password
         })
       });
-
+      
+      // Handle the response from the backend
       if (response.status === 200) {
-        alert('Login successful');
-        navigation.navigate('Manager'); // Navigate to the Manager page upon successful login
+        alert(`${loginMode} login successful`);
+        navigation.navigate(isBusinessLogin ? 'Business' : 'Employee'); // Navigate to the Business page upon successful login
       } else {
         alert('Invalid credentials');
       }
@@ -63,26 +85,39 @@ const LoginPage = () => {
         logo={require('../../assets/images/logo1.png')}
         mainImage={require('../../assets/images/two_women.jpg')}
         customStyles={{
-          mobileBottomContainer: isMobile ? { top: '25%' } : {},
+          mobileBottomContainer: isMobile ? { top: '30%' } : {},
+          mobileLogo: isMobile ? { marginTop: 40 } : {},
           contentWrapper: !isMobile ? { flexDirection: 'row-reverse' } : {}, // Reverse layout on web
           inputContainer: !isMobile ? { paddingRight: 0 } : {},
           formContainer: !isMobile ? { paddingLeft: 40, paddingRight: 40 } : {},
         }}
       >
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={[styles.employeeButton, isBusinessLogin ? styles.inactiveButton : styles.activeButton,]} onPress={() => switchLogin('Employee')}>
+            <Text style={styles.buttonSwitchText}>Employee</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.businessButton, isBusinessLogin ? styles.activeButton : styles.inactiveButton,]} onPress={() => switchLogin('Business')}>
+            <Text style={styles.buttonSwitchText}>Business</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Label for the TextInput */}
-        <Text style={styles.label}>Employee ID</Text>
+        <Text style={styles.label}>
+          {isBusinessLogin ? 'Business ID:' : 'Employee ID:'}
+        </Text>
 
         {/* Directly render TextInput components */}
         <TextInput
-          placeholder="Enter your employee ID"
+          placeholder= {isBusinessLogin ? 'Enter Business ID' : ' Enter Employee ID'}
           placeholderTextColor={isMobile ? 'gray' : 'lightgray'}
-          label = "Employee ID"
-          value={employeeId}
-          onChangeText={setEmployeeId}
+          value={isBusinessLogin ? businessId : employeeId}
+          onChangeText={isBusinessLogin ? setBusinessId : setEmployeeId}
           style={styles.input}
         />
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Password:</Text>
         
           <TouchableOpacity
             style={styles.showHideButton}
@@ -127,6 +162,40 @@ const LoginPage = () => {
 };
 
 const styles = StyleSheet.create({
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start', // Align items horizontally at the start (top)
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  employeeButton: {
+    width: 100,
+      //backgroundColor: '#A9C9D9',
+      borderTopLeftRadius: 10,    
+      borderBottomLeftRadius: 10,
+      borderRightWidth: 1,        
+      borderRightColor: 'grey',
+      padding: 7,
+      alignItems: 'center',
+  },
+  businessButton: {
+    width: 100,
+      //backgroundColor: '#A9C9D9',
+      borderTopRightRadius: 10,    
+      borderBottomRightRadius: 10,
+      padding: 7,
+      alignItems: 'center',
+  },
+  activeButton: {
+    backgroundColor: '#A9C9D9', // Active button color
+  },
+  inactiveButton: {
+    backgroundColor: 'lightgray', // Inactive button color
+  },
+  buttonSwitchText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
   label: {
     fontSize: 16,
     marginBottom: 8,
