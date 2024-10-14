@@ -41,7 +41,6 @@ const CommonLayout = ({
                 bounces={false}
                 showsVerticalScrollIndicator={false}
               >
-                
                 {/* Remove aboveInputsContent */}
                 {/* Remove inputFields mapping */}
                 
@@ -74,7 +73,6 @@ const CommonLayout = ({
                     style={[styles.desktopLogo, customStyles?.desktopLogo]}
                   />
                 </View>
-
                 {/* Remove aboveInputsContent */}
                 {/* Remove inputFields mapping */}
                 

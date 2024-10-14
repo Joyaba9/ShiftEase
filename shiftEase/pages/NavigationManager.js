@@ -2,15 +2,13 @@ import React, {useState, useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Dimensions } from 'react-native';
-import WelcomePageMobile from './common/WelcomePageMobile';
-import LoginPage from './auth/LoginPage';
-import ChangePassPage from './auth/ChangePassPage';
-import ForgotPassPage from './auth/ForgotPassPage';
-import RegistrationPage from './auth/RegistrationPage';
-import LandingPage from './common/LandingPage';
-import ManagerPage from './manager/ManagerPage';
-import EmployeePage from './employee/EmployeePage';
-import ManageBusinessPage from './manager/manageBusiness/ManageBusinessPage';
+import WelcomePageMobile from './WelcomePageMobile';
+import LoginPage from './LoginPage';
+import ChangePassPage from './ChangePassPage';
+import ForgotPassPage from './ForgotPassPage';
+import RegistrationPage from './RegistrationPage';
+import LandingPage from './LandingPage';
+import ManagerPage from './ManagerPage';
 
 
 const Stack = createStackNavigator();
@@ -26,7 +24,7 @@ const NavigationManager = () => {
           // If it's mobile, set initial route to WelcomePageMobile
           setInitialRoute('Welcome');
         } else {
-          // If it's desktop, set initial route to LandingPage
+          // If it's desktop, set initial route to LoginPage
           setInitialRoute('Landing');
         }
 
@@ -47,8 +45,6 @@ const NavigationManager = () => {
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Manager" component={ManagerPage} options={{ headerShown: false }}/>
-            <Stack.Screen name="ManageBusiness" component={ManageBusinessPage} options={{ headerShown: false }}/>
-            <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             </Stack.Navigator>
         </NavigationContainer>
     );
