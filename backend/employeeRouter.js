@@ -16,4 +16,5 @@ router.get('/:businessId', async (req, res) => {
     }
 });
 
+
 export default router;

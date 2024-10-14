@@ -3,19 +3,19 @@ import { ScrollView, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../components/NavBar';
+import { useNavigation } from '@react-navigation/native';
 import SidebarButton from '../components/SidebarButton';
 import ManagerPageMobile from './ManagerPageMobile';
-import ManageEmployeePopup from './ManageEmployeePopup.js';
+import ManageEmployeePage from './ManageEmployeePage.js';
 
 const { width } = Dimensions.get('window');
 
 const ManagerPage = () => {
-  const [isPopupVisible, setPopupVisible] = useState(false); // State to manage popup visibility
+  const navigation = useNavigation();
   const isMobile = width < 768; 
 
-  // Function to toggle the popup visibility
-  const togglePopup = () => {
-    setPopupVisible(!isPopupVisible);
+  const goToManageEmployeePage = () => {
+    navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
   };
 
   // Render the mobile layout if it's a mobile screen
@@ -45,12 +45,12 @@ const ManagerPage = () => {
                 onPress={() => {}}
                 customContainerStyle={{ right: -10 }}
             />
-            <SidebarButton
+          <SidebarButton
                 icon={require('../assets/images/employees_talking.png')}
                 label="Manage Employee"
-                onPress={togglePopup} // Open the Manage Employee Popup
+                onPress={goToManageEmployeePage} // Navigate to ManageEmployeePage
                 customContainerStyle={{ right: 10 }}
-            />
+           />
             <SidebarButton
                 icon={require('../assets/images/email_icon.png')}
                 label="Messages"
@@ -140,11 +140,6 @@ const ManagerPage = () => {
               style={styles.desktopLogo}
             />
         </LinearGradient>
-
-        {/* Manage Employee Popup */}
-        {isPopupVisible && (
-          <ManageEmployeePopup onClose={togglePopup} /> // Pass close function to the popup
-        )}
       </View>
     </ScrollView>
   );

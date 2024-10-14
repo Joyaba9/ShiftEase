@@ -27,5 +27,6 @@ export async function fetchEmployees(businessId) {
     }
 }
 
+
 // Example usage (uncomment to test)
 // fetchEmployees("598984").then(employees => console.log('Employees:', employees)).catch(err => console.error('Error:', err));
