@@ -24,11 +24,15 @@ const ManagerPage = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
+    <View style={styles.container}>
       
-        <NavBar />
-        <Text style={styles.dashboardText}>Business Dashboard</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <Image
+          source={require('../assets/images/logo1.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         
         <View style={styles.dashboardContainer}>
           {/* Left Column */}
@@ -129,33 +133,176 @@ const ManagerPage = () => {
           </View>
         </View>
 
-        {/* Bottom Bar with Logo */}
-        <LinearGradient 
-          colors={['#E7E7E7', '#9DCDCD']} 
-          style={styles.bottomBarContainer}
-        >
-            <Image
-              resizeMode="contain"
-              source={require('../assets/images/logo1.png')}
-              style={styles.desktopLogo}
-            />
-        </LinearGradient>
+        {/* Right Pane with Messaging Box */}
+        <View style={styles.rightPane}>
+          <Text style={styles.messagingHeader}>Team Messaging</Text>
+          <View style={styles.messagingBox}></View>
+        </View>
       </View>
-    </ScrollView>
+
+      {/* Modal for adding employee */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={addEmpVisible}
+        onRequestClose={() => setAddEmpVisible(false)}
+      >
+        <View style={styles.addEmpGray}>
+          
+          <View style={styles.addEmpContainer}>
+            <Text style={styles.addEmpHeader}>Add Employee</Text>
+            <View style={styles.addEmpHDivider} />
+            
+            <View style={styles.addEmpRowContainer}>
+              <Image style={styles.userImage} source={require('../assets/images/add_employee_icon 1.png')} resizeMode="contain" />
+              <View style={styles.addEmpVDivider} />
+
+              <View style={styles.addEmpInputContainer}>
+                
+                <View style={styles.inputRow}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>First Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ex: 'John'"
+                      value={fName}
+                      onChangeText={setFName}
+                    />
+                   </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Last Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ex: 'Smith'"
+                      value={lName}
+                      onChangeText={setLName}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Date of Birth</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="yyyy-mm-dd"
+                      value={dob}
+                      onChangeText={setDOB}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Email</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="example@email.com"
+                      keyboardType="email-address"
+                      value={email}
+                      onChangeText={setEmail}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Role</Text>
+                    <TouchableOpacity
+                      style={styles.dropdownButton}
+                      onPress={() => setIsDropdownVisible(prev => !prev)}
+                    >
+                      <Text style={styles.dropdownText}>{role}</Text>
+                    </TouchableOpacity>
+    
+                    {isDropdownVisible && (
+                      <View style={styles.dropdownContainer}>
+                      <FlatList
+                       data={roles}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={styles.dropdownItem}
+                            onPress={() => handleSelectRole(item)}
+                          >
+                            <Text style={styles.dropdownItemText}>{item}</Text>
+                          </TouchableOpacity>
+                        )}
+                      />
+                      </View>
+                    )}
+                  </View>
+              
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Last Four of SSN</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter SSN"
+                      value={ssn}
+                      onChangeText={setSSN}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.buttonRowContainer}>
+                  <TouchableOpacity 
+                    style={styles.bubbleButton} 
+                    onPress={handleCancel}> 
+                    <Text style={styles.buttonText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.bubbleButton} 
+                    onPress={handleAddEmp}>
+                    <Text style={styles.buttonText}>Add User</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+          <Modal
+            transparent={true}
+            visible={isModalVisible}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalText}>Are you sure you want to cancel?</Text>
+                <Text style={styles.modalText}>All information inputed will be loss if you did not add an user.</Text>
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity style={styles.modalButton} onPress={confirmCancel}>
+                    <Text style={styles.buttonText}>Yes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.modalButton} onPress={cancelCancel}>
+                    <Text style={styles.buttonText}>No</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>          
+        </View>
+        
+        </View>
+      </Modal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1, 
-  },
   container: {
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: '#f0f4f8',
+  },
+  
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 20,
-    minHeight: '100%',
-    height: 200,
-    minWidth: 950,
+    padding: 10,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
   dashboardContainer: {
     flexGrow: 1,
@@ -191,69 +338,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   leftPane: {
-    flex: 2,
-    justifyContent: 'space-between',
-    paddingTop: 20,
-    maxWidth: 300,
-    minWidth: 250,
+    flex: 1,
+    justifyContent: 'space-around',
   },
   rightPane: {
     flex: 2,
-    height: '100%',
-    paddingTop: 20,
-    maxWidth: 450,
-    minWidth: 450,
-    alignItems: "flex-end",
-  },
-  gradient: {
-    width: '100%',
-    height: 300,
-    borderRadius: 10, 
-    marginBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 4,
-  },
-  gradientAnnounce: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginTop: 20, 
-    marginBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 4,
-  },
-  announcements: {
-    borderRadius: 10,
     padding: 20,
-  },
-  addIconContainer: {
-    position: 'absolute',
-    bottom: -60,
-    right: 10,
-    zIndex: 1,
-  },
-  addIconContainer2: {
-    position: 'absolute',
-    bottom: -150,
-    right: 10,
-    zIndex: 1,
-  },
-  reportsContainer: {
+    backgroundColor: '#e0e8f0',
     borderRadius: 10,
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 16
-  },
-  performanceContainer: {
-    borderRadius: 10,
-    padding: 20,
   },
   button: {
     backgroundColor: '#ffffff',
@@ -275,14 +367,18 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     padding: 20,
-    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
-  bottomBarContainer: {
-    width: '100%',
-    height: 100,
-    alignItems: 'center',
+
+  addEmpGray: {
+    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   desktopLogo: {
     width: 300,

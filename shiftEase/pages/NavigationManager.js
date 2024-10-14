@@ -27,7 +27,7 @@ const NavigationManager = () => {
           // If it's mobile, set initial route to WelcomePageMobile
           setInitialRoute('Welcome');
         } else {
-          // If it's desktop, set initial route to LandingPage
+          // If it's desktop, set initial route to LoginPage
           setInitialRoute('Landing');
         }
 
