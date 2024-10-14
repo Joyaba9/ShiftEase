@@ -9,6 +9,7 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob) {
     const business_id = 598984;
 
 
+    
     // Assign role_id based on the role
     if (role === 'Employee') {
         roleID = 2;
@@ -41,3 +42,5 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob) {
         console.log('Database connection closed');
     }
 }
+
+
