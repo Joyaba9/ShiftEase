@@ -1,73 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions, FlatList, Modal} from 'react-native';
+import { ScrollView, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import NavBar from '../components/NavBar';
+import { useNavigation } from '@react-navigation/native';
+import SidebarButton from '../components/SidebarButton';
+import ManagerPageMobile from './ManagerPageMobile';
+import ManageEmployeePage from './ManageEmployeePage.js';
 
 const { width } = Dimensions.get('window');
 
 const ManagerPage = () => {
-  const isMobile = width < 768;
+  const navigation = useNavigation();
+  const isMobile = width < 768; 
 
-  const [addEmpVisible, setAddEmpVisible] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-  const [fName, setFName] = useState('');
-  const [lName, setLName] = useState('');
-  const [dob, setDOB] = useState('');
-  const [email, setEmail] = useState('');
-  const [ssn, setSSN] = useState('');
-  const [role, setRole] = useState('Select Role');
-  const roles = ["Manager", "Employee"];
-
-  const handleAddEmp = async () => {
-    if (!fName || !lName || !dob || !email || !ssn || role === "Select Role") {
-      alert('Please make sure all fields are filled in.');
-      return;
-    }
-    
-    try {
-      const response = await fetch('http://localhost:5050/api/addEmp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          role,
-          fName,
-          lName,
-          email,
-          ssn,
-          dob
-        })
-      });
-
-      if (response.status === 200) {
-        alert('Added employeee successful');
-      } else {
-        alert('Invalid credentials');
-      }
-    } catch (err) {
-      console.error('Error during adding emp:', err);
-      alert('Add employee error');
-    }
-
+  const goToManageEmployeePage = () => {
+    navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
   };
 
-  const handleSelectRole = (selectedRole) => {
-    setRole(selectedRole);
-    setIsDropdownVisible(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(true); 
-  };
-
-  const confirmCancel = () => {
-    setIsModalVisible(false); 
-    setAddEmpVisible(false); 
-  };
-
-  const cancelCancel = () => {
-    setIsModalVisible(false); 
-  };
+  // Render the mobile layout if it's a mobile screen
+  if (isMobile) {
+    return <ManagerPageMobile />;
+  }
 
   return (
     <View style={styles.container}>
@@ -80,41 +34,103 @@ const ManagerPage = () => {
           resizeMode="contain"
         />
         
-        {/* Navbar */}
-        <View style={styles.navbar}>
-          <TouchableOpacity>
-            <Text style={styles.navText}>Home</Text>
-          </TouchableOpacity>
+        <View style={styles.dashboardContainer}>
+          {/* Left Column */}
+          <View style={styles.leftPane}>
+            <SidebarButton
+                icon={require('../assets/images/manage_business.png')}
+                label="Manage Business"
+                onPress={() => {}}
+                customContainerStyle={{ right: -10 }}
+            />
+            <SidebarButton
+                icon={require('../assets/images/add_employee_icon.png')}
+                label="Add Employee"
+                onPress={() => {}}
+                customContainerStyle={{ right: -10 }}
+            />
+          <SidebarButton
+                icon={require('../assets/images/employees_talking.png')}
+                label="Manage Employee"
+                onPress={goToManageEmployeePage} // Navigate to ManageEmployeePage
+                customContainerStyle={{ right: 10 }}
+           />
+            <SidebarButton
+                icon={require('../assets/images/email_icon.png')}
+                label="Messages"
+                onPress={() => {}}
+                customContainerStyle={{ right: 20 }}
+                customIconStyle={{ width: 100, height: 100 }}
+            />
+            <SidebarButton
+                icon={require('../assets/images/edit_roles_icon_trans.png')}
+                label="Edit Roles"
+                onPress={() => {}}
+                customContainerStyle={{ right: 10 }}
+            />
+          </View>
 
-          <TouchableOpacity>
-            <Text style={styles.navText}>Settings</Text>
-          </TouchableOpacity>
+          <View style={styles.spacer} />
+          
+          {/* Right Column */}
+          <View style={styles.rightPane}>
+            {/* Announcements Section */}
+            <LinearGradient 
+              colors={['#E7E7E7', '#A7CAD8']} 
+              style={styles.gradientAnnounce}
+            >
+              <View style={styles.announcements}>
+                <View style={styles.topBar}>
+                  <Text style={styles.sectionTitle}>Announcements</Text>
+                  <View style={styles.spacer} />
+                  <Ionicons name="megaphone-outline" size={30} color="black" />
+                </View>
+                <View style={styles.textBox}>
+                    {/* Add Announcements Logic? */}
+                </View>
+                <TouchableOpacity style={styles.addIconContainer}>
+                  <Ionicons name="add-circle" size={50} color="black" />
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
 
-          <TouchableOpacity>
-            <Text style={styles.navText}>Log Out</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            {/* Reports Section */}
+            <LinearGradient 
+              colors={['#E7E7E7', '#A7CAD8']} 
+              style={styles.gradient}
+            >
+                <View style={styles.reportsContainer}>
+                  <View style={styles.topBar}>
+                    <Text style={styles.sectionTitle}>Daily Reports</Text>
+                    <View style={styles.spacer} />
+                    <Ionicons name="document-text-outline" size={30} color="black" />
+                  </View>
+                  <View style={styles.textBox}>
+                      {/* Add Reports Logic? */}
+                  </View>
+                </View>
+            </LinearGradient>
 
-      {/* Main content */}
-      <View style={styles.mainContent}>
-        {/* Left Pane with Buttons */}
-        <View style={styles.leftPane}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Manage Schedule</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={() => setAddEmpVisible(true)}>
-            <Text style={styles.buttonText}>Add Employee</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Manage Employee</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Settings</Text>
-          </TouchableOpacity>
+            {/* Key Performance Section */}
+            <LinearGradient 
+              colors={['#E7E7E7', '#A7CAD8']} 
+              style={styles.gradient}
+            >
+              <View style={styles.performanceContainer}>
+                <View style={styles.topBar}>
+                  <Text style={styles.sectionTitle}>Key Performance Overview</Text>
+                  <View style={styles.spacer} />
+                  <Ionicons name="bar-chart-outline" size={30} color="black" />
+                </View>
+                <View style={styles.textBox}>
+                    {/* Add Performance Logic? */}
+                </View>
+                <TouchableOpacity style={styles.addIconContainer2}>
+                  <Ionicons name="add-circle" size={50} color="black" />
+                </TouchableOpacity>
+              </View>  
+            </LinearGradient>
+          </View>
         </View>
 
         {/* Right Pane with Messaging Box */}
@@ -288,42 +304,49 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
-
-  logo: {
-    width: 120,
-    height: 40,
+  dashboardContainer: {
+    flexGrow: 1,
+    width: '95%',
+    maxWidth: 1200,
+    flexDirection: 'row', // Two columns layout
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginBottom: 50,
+    paddingLeft: 40,
+    paddingRight: 40,
   },
-
-  navbar: {
+  dashboardText: {
+    fontSize: 25,
+    alignSelf: 'flex-start',
+    marginTop: 40,
+    paddingLeft: 60
+  },
+  spacer: {
+    flexGrow: 2, // Grow dynamically to fill space
+    flexShrink: 1, // Shrink if space is limited
+  },
+  icon: {
+    width: 50,
+    height: 50
+  },
+  icon2: {
+    width: 40,
+    height: 40
+  },
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
-  navText: {
-    marginHorizontal: 10,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-
-  mainContent: {
-    flex: 1,
-    flexDirection: 'row',
-    padding: 20,
-  },
-
   leftPane: {
     flex: 1,
     justifyContent: 'space-around',
   },
-
   rightPane: {
     flex: 2,
     padding: 20,
     backgroundColor: '#e0e8f0',
     borderRadius: 10,
   },
-
   button: {
     backgroundColor: '#ffffff',
     padding: 20,
@@ -336,21 +359,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
-
   buttonText: {
     fontSize: 18,
     color: '#333',
   },
-
-  messagingHeader: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-
-  messagingBox: {
+  textBox: {
     flex: 1,
-    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
     shadowColor: '#000',
@@ -366,171 +380,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  addEmpView: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  addEmpText: {
-    marginBottom: 15,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  addEmpContainer: {
-    width: '100%',
-    maxWidth: 1400,
-    backgroundColor: "rgba(255, 255, 255, 1)",
-    borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    padding: 20
-  },
-  addEmpHeader: {
-    fontSize: 40,
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    fontWeight: '400',
-  },
-  addEmpHDivider: {
-    borderBottomColor: 'lightgray',
-    borderBottomWidth: 2,
-    marginVertical: 20,
-    width: '98%',
-    alignSelf: 'center',
-  },
-  addEmpRowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
-  },
-  userImage: {
+  desktopLogo: {
     width: 300,
-    height: 300,
-  },
-  addEmpVDivider: {
-    width: 1,
-    height: '80%',
-    backgroundColor: 'gray',
-    marginHorizontal: 20,
-  },
-  addEmpInputContainer: {
-    flex: 1,
-    padding: 10,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    height: 50,
+    marginTop: 10,
     marginBottom: 10,
-  },
-  inputGroup: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    color: 'gray',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  dropdownButton: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    justifyContent: 'center',
-    borderRadius: 5,
-  },
-  dropdownText: {
-    color: 'gray',
-  },
-  dropdownContainer: {
-    position: 'absolute', 
-    borderColor: 'gray',
-    borderWidth: 1,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    zIndex: 9999,
-    top: 25, 
-    left: 0,
-    right: 0,
-    maxHeight: 200,
-  },
-  dropdownItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  dropdownItemText: {
-    fontSize: 16,
-  },
-  bubbleButton: {
-    borderRadius: 50,
-    backgroundColor: "#fff",
-    width: 80,
-    maxWidth: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3.5,
-    marginHorizontal: 10
-  },
-  buttonText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  buttonRowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    padding: 10,
-    paddingBottom: 30,
-    top: 25
-  },
-
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
-  },
-  modalContainer: {
-    width: '80%',
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  modalButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  modalButton: {
-    padding: 10,
   },
 });
 

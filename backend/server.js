@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import loginRouter from './loginRouter.js';
 import regBusinessRouter from './regBusiness.js'; // Correct import for default export
+import employeeRouter from './employeeRouter.js';
 import getBusinessById from './getBusinessIDRouter.js';
 import addEmpRouter from './addEmpRouter.js';
 
@@ -14,6 +15,8 @@ app.use(express.json());
 
 app.use('/api/regBusiness', regBusinessRouter); // Use the named router
 app.use('/api/login', loginRouter); // Use the login router
+app.use('/api/employees', employeeRouter);
+
 
 app.use('/api/getBusinessId', getBusinessById); 
 
