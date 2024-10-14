@@ -1,4 +1,8 @@
 import getClient from './dbClient.js';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+import firebaseConfig from './Firebase.js'; 
 
 // Login function
 export async function LoginEmployee(employeeString, password) {
