@@ -4,7 +4,7 @@ import getClient from './dbClient.js';
 
 const router = express.Router();
 
-// POST /regBusiness
+// POST regBusiness
 router.post('/', async (req, res) => {
     const { businessName, businessEmail, password } = req.body;
 
@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
         console.log('Missing required fields');
         return res.status(400).json({ message: 'Please enter all fields' });
     }
-
+    
     try {
         // Get the PostgreSQL client from Cloud SQL
         const client = await getClient();
@@ -63,3 +63,5 @@ router.post('/', async (req, res) => {
 });
 
 export default router;
+
+
