@@ -1,8 +1,9 @@
 import getClient from './dbClient.js';
 import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
-//import firebaseConfig from './Firebase.js'; 
+import { auth, signInWithEmailAndPassword } from './firebase.js'; // Import auth from your Firebase module
+
+
 
 // Login function
 export async function LoginEmployee(employeeString, password) {
@@ -23,16 +24,30 @@ export async function LoginEmployee(employeeString, password) {
 
     // Execute the query
     try {
+        // Execute the query in PostgreSQL to find the employee
         const res = await client.query(query, [businessId, userId]);
         console.log('Query Executed');
-        // If the employee is found, return the employee
+        
+        // If the employee is found, retrieve the email and authenticate with Firebase
         if (res.rows.length > 0) {
             const employee = res.rows[0];
-            console.log(`Employee found: ${JSON.stringify(employee)}`);
-            return employee;
+            const email = employee.email; // Get the email from PostgreSQL
+
+            console.log(`Employee found in PostgreSQL: ${JSON.stringify(employee)}`);
+            console.log(`Attempting Firebase authentication for email: ${email}`);
+
+             // Authenticate the employee using Firebase Auth
+             const firebaseUser = await signInWithEmailAndPassword(auth, email, password);
+             console.log(`Firebase authentication successful for user: ${firebaseUser.user.uid}`);
+ 
+            // Return both Firebase and PostgreSQL data
+            return {
+                employee: employee, // PostgreSQL employee data
+                firebaseUser: firebaseUser.user // Firebase Authenticated user data
+            };
         } else {
             // If the employee is not found, throw an error
-            throw new Error('Employee not found');
+            throw new Error('Employee not found in PostgreSQL');
         }
     } catch (err) {
         // Log and throw any errors that occur during the query
@@ -47,3 +62,6 @@ export async function LoginEmployee(employeeString, password) {
 
 // Example usage. This will log the employee object if the employee is found, or log an error if the employee is not found.
 //LoginEmployee("598984U1", 'password').then(employee => console.log('Employee:', employee)).catch(err => console.error('Error:', err));
+
+
+// test with : 598984U32 and password is 09031111
