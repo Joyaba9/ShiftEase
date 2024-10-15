@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import LogOut from '../pages/logOut';
+import LogOut from '../pages/auth/logOut';
 
 const NavBar = () => {
 

@@ -1,6 +1,6 @@
 import react from 'react';
 import { useState } from 'react';
-import NavigationManager from './NavigationManager';
+import NavigationManager from '../NavigationManager';
 
 
 

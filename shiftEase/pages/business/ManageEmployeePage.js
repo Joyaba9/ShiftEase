@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, Image, View, Text, StyleSheet, Button, Alert, TextInput} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import NavBar from '../components/NavBar';
+import NavBar from '../../components/NavBar';
 
 const ManageEmployeePage = () => {
   const [employees, setEmployees] = useState([]);
@@ -168,7 +168,7 @@ const ManageEmployeePage = () => {
         >
           <Image
             resizeMode="contain"
-            source={require('../assets/images/logo1.png')}
+            source={require('../../assets/images/logo1.png')}
             style={styles.desktopLogo}
           />
         </LinearGradient>

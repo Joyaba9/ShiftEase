@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import CommonLayout from "./CommonLayout";
+import CommonLayout from '../common/CommonLayout';
 
 const { width } = Dimensions.get('window');
 
