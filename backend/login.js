@@ -63,7 +63,7 @@ export async function LoginEmployee(employeeString, password) {
                 // You can return a specific response or handle this case as needed
                 return {
                     employee: employee, // PostgreSQL employee data
-                    firebaseUser: firebaseUser.user, // Firebase Authenticated user data
+                    firebaseUser: firebaseUser.user, // Firebase Authenticated user data 
                     promptPasswordChange: true // Indicate that the user should change their password
                 };
             }

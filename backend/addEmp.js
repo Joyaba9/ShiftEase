@@ -42,7 +42,7 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
         console.log('Inserting employee into PostgreSQL database');
         const result = await client.query(insertQuery, [businessId, roleID, fName, lName, email, createdAt, updatedAt, ssn, dob]);
         const empId = result.rows[0].emp_id;
-        console.log(`Employee added to PostgreSQL with ID: ${empId}`);
+        console.log(`Employee added to PostgreSQL with ID: ${empId}`); 
 
           //  add the employee to Firestore under the respective business collection
         const employeeData = {
