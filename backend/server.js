@@ -5,6 +5,7 @@ import regBusinessRouter from './regBusiness.js'; // Correct import for default 
 import employeeRouter from './employeeRouter.js';
 import getBusinessById from './getBusinessIDRouter.js';
 import addEmpRouter from './addEmpRouter.js';
+import logoutRouter from './logout.js';
 
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/employees', employeeRouter);
 app.use('/api/getBusinessId', getBusinessById); 
 
 app.use('/api/addEmp', addEmpRouter); // Use the addEmp router
+app.use('/api/logout', logoutRouter);
 
 // Start the server
 const PORT = process.env.PORT || 5050; // Use port 5050
