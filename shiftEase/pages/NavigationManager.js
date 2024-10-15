@@ -11,7 +11,7 @@ import LandingPage from './LandingPage';
 import ManagerPage from './ManagerPage';
 import EmployeePage from './EmployeePage';
 import ManageEmployeePopup from './ManageEmployeePopup.js';
-
+import LogOut from './logOut.js';
 
 
 const Stack = createStackNavigator();
@@ -51,6 +51,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageEmployee" component={ManageEmployeePopup} options={{ headerShown: false }}/>
             </Stack.Navigator>
+            <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>
     );
 };

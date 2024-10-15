@@ -1,103 +1,142 @@
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from "./CommonLayout";
 
 const { width } = Dimensions.get('window');
 
-const passwordInputFields = [
-    { label: 'Temporary Password', placeholder: 'Enter your password', isPassword: true },
-    { label: 'New Password', placeholder: 'Enter your new password', isPassword: true },
-    { label: 'Confirm New Password', placeholder: 'Confirm your new password', isPassword: true }
-];
-
+// ChangePassPage component
 const ChangePassPage = () => {
-    const isMobile = width < 768;
+  const isMobile = width < 768;
+  const navigation = useNavigation();
 
-    return (
-        <>
-            {isMobile ? (
-            <KeyboardAvoidingView 
-              style={{ flex: 1 }} 
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-            >
-              <CommonLayout
-                inputFields={passwordInputFields}
-                isMobile={isMobile}
-                logo={require("../assets/images/logo1.png")}
-                mainImage={require("../assets/images/retail_worker_happy.jpg")}
-                aboveInputsContent={<Text style={styles.passwordText}>Change Password</Text>}
-              >
+  console.log('ChangePassPage rendered');
 
-                <TouchableOpacity
-                  style={styles.mobileButton}
-                  onPress={() => navigation.navigate('Login')}
-                >
-                  <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
+  // State variables to store form data
+  const [employeeId, setEmployeeId] = useState('');
+  const [currentPass, setCurrentPass] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirmNewPass, setConfirmPass] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-              </CommonLayout>
-            </KeyboardAvoidingView>
-          ) : (
-            <CommonLayout
-                inputFields={passwordInputFields}
-                isMobile={isMobile}
-                logo={require("../assets/images/logo1.png")}
-                mainImage={require("../assets/images/retail_worker_happy.jpg")}
-                aboveInputsContent={<Text style={styles.passwordText}>Change Password</Text>}
-                customStyles={{
-                    logoContainer: {margin: 20}
-                }}
-            >
-    
-                <TouchableOpacity 
-                    style={styles.button} 
-                    onPress={() => navigation.navigate('Login')}
-                >
-                    <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
-            </CommonLayout>
-          )}
-        </>
-    );
+  const handleNewPassword = async () => {
+    // Validate that all fields are filled
+    if (!employeeId || !currentPass || !newPass || !confirmNewPass) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    // Validate that the new password and confirmation password match
+    if (newPass !== confirmNewPass) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    console.log('trying to change password');
+
+    // Call the backend API to handle password change
+    try {
+      const response = await fetch('http://localhost:5050/api/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          employeeId: employeeId,
+          currentPassword: currentPass,
+          newPassword: newPass
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.status === 200) {
+        alert('Password changed successfully');
+        navigation.navigate('Login'); // Navigate to the Login page upon successful password change
+      } else {
+        alert('Failed to change password: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Error during password change:', err);
+      alert('An error occurred during password change. Please try again.');
+    }
+  };
+
+  return (
+    <CommonLayout>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        enabled={isMobile} // Only enable on mobile
+      >
+        <View style={styles.container}>
+          <Text style={styles.header}>Change Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Employee ID"
+            value={employeeId}
+            onChangeText={setEmployeeId}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Current Password"
+            value={currentPass}
+            onChangeText={setCurrentPass}
+            secureTextEntry={!showPassword}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="New Password"
+            value={newPass}
+            onChangeText={setNewPass}
+            secureTextEntry={!showPassword}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm New Password"
+            value={confirmNewPass}
+            onChangeText={setConfirmPass}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Text>{showPassword ? 'Hide' : 'Show'} Password</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={handleNewPassword}>
+            <Text style={styles.buttonText}>Change Password</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </CommonLayout>
+  );
 };
 
 const styles = StyleSheet.create({
-    passwordText: {
-        fontSize: 24,
-        color: "rgba(0, 0, 0, 1)",
-        fontWeight: "500",
-        marginBottom: 30,
-    },
-    mobileButton: {
-      borderRadius: 16,
-      backgroundColor: "rgba(17, 17, 17, 1)",
-      width: 250,
-      maxWidth: "100%",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 70,
-      marginTop: 20,
-      marginBottom: 20,
-    },
-    button: {
-      borderRadius: 16,
-      backgroundColor: "rgba(17, 17, 17, 1)",
-      width: 300,
-      maxWidth: "100%",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 70,
-      marginTop: 90,
-      marginBottom: 90,
-    },
-    buttonText: {
-      fontSize: 24,
-          color: "rgba(255, 255, 255, 1)",
-          fontWeight: "500",
-    }
-  });
-  
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  header: {
+    fontSize: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    height: 40,
+    borderColor: '#000000',
+    borderBottomWidth: 1,
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+});
+
 export default ChangePassPage;
-        

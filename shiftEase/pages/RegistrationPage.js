@@ -30,7 +30,7 @@ const RegistrationPage = () => {
   
     // Call the backend API to register the business
     try {
-      const response = await fetch('http:// 198.72.11.5:5050/api/regBusiness', {
+      const response = await fetch('http://localhost:5050/api/regBusiness', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
