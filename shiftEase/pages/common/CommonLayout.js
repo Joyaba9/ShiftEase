@@ -176,7 +176,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   desktopImage: {
-    borderRadius: 20,
+    borderLeftTopRadius: 20,
+    borderBottomLeftRadius: 20,
     width: '100%',
     height: '100%',
   },
