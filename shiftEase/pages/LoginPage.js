@@ -35,7 +35,7 @@ const LoginPage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          employeeString: employeeId, 
+          employeeString: employeeId,
           password
         })
       });
@@ -48,7 +48,7 @@ const LoginPage = () => {
           alert('Please create a new password');
           navigation.navigate('ChangePass', { employee: data.employee, firebaseUser: data.firebaseUser });
         } else {
-          alert('Login successful' + JSON.stringify(data.promptPasswordChange));
+          alert('Login successful');
           navigation.navigate('Manager'); // Navigate to the Manager page upon successful login
         }
       } else {
