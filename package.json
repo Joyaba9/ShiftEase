@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
     "@react-navigation/native": "^6.1.18",

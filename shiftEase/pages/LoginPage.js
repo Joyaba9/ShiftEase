@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Image, Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from "./CommonLayout";
 
 const { width } = Dimensions.get('window');
@@ -40,9 +40,17 @@ const LoginPage = () => {
         })
       });
 
+      const data = await response.json();
+
       if (response.status === 200) {
-        alert('Login successful');
-        navigation.navigate('Manager'); // Navigate to the Manager page upon successful login
+        const { employee } = data;
+        if (employee.promptPasswordChange) {
+          alert('Please create a new password');
+          navigation.navigate('ChangePass', { employee: data.employee, firebaseUser: data.firebaseUser });
+        } else {
+          alert('Login successful' + JSON.stringify(data.promptPasswordChange));
+          navigation.navigate('Manager'); // Navigate to the Manager page upon successful login
+        }
       } else {
         alert('Invalid credentials');
       }

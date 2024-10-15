@@ -1,12 +1,13 @@
-import getClient from './dbClient.js';
-import { auth, db, createUserWithEmailAndPassword } from './firebase.js'; 
 import { doc, setDoc } from 'firebase/firestore';
+import getClient from './dbClient.js';
+import { auth, createUserWithEmailAndPassword, db } from './firebase.js';
 
 export async function AddEmployee(role, fName, lName, email, ssn, dob, businessId) {
     let roleID;
     let createdAt = new Date();
     let updatedAt = new Date();
 
+    // TODO: USE SQL QUERY TO GET PROPER ROLEIDs
     // Assign role_id based on the role
     if (role === 'Employee') {
         roleID = 2;
@@ -22,11 +23,12 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
     await client.connect();
     console.log('Connected to Database');
 
+    // TODO: USE FIREBASE AUTHENTICATION TO CREATE USER
     businessId = 598984; // Hardcoded business ID for now
 
     // Define the query for inserting employee data
     const insertQuery = `INSERT INTO employees (business_id, role_id, f_name, l_name, email, created_at, updated_at, last4ssn, birthday) 
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING emp_id`;
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING emp_id`;
 
     try {
         // Firebase Authentication: Create user in Firebase using createUserWithEmailAndPassword
@@ -43,7 +45,7 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
         console.log(`Employee added to PostgreSQL with ID: ${empId}`);
 
           //  add the employee to Firestore under the respective business collection
-          const employeeData = {
+        const employeeData = {
             empId,
             uid: userCredential.user.uid,  // Store Firebase UID
             fName,
