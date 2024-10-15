@@ -1,10 +1,40 @@
 import React from 'react';
 import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import LogOut from '../pages/logOut';
 
 const NavBar = () => {
 
     const screenWidth = Dimensions.get('window').width;
+    const navigation = useNavigation();
+
+// Define the handleLogout function is here temnporarily
+const handleLogout = async () => {
+    try {
+        // Send logout request to the backend
+        const response = await fetch('http://localhost:5050/api/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            console.log(result.message); // Logged out successfully
+            // Navigate to Login Page after successful logout
+            navigation.replace('Login');
+        } else {
+            console.error('Logout failed:', result.message);
+        }
+    } catch (error) {
+        console.error('Error during logout:', error);
+    }
+};
+
+
 
     return (
             <LinearGradient 
@@ -40,14 +70,14 @@ const NavBar = () => {
                         />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.logOutButton} onPress={() => {/* Log Out button logic */}}>
-                        <Text style={styles.buttonText}>Log Out</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.logOutButton} onPress={handleLogout}>
+                    <Text style={styles.buttonText}>Log Out</Text>
+                </TouchableOpacity>
                 </View>
 
             </LinearGradient>
-    )
-}
+    );
+};
 
 
 const styles = StyleSheet.create({
