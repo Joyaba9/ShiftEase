@@ -35,7 +35,7 @@ const LandingPage = () => {
           </View>
 
           <View style={styles.topImage}>
-            <Image source={require('../assets/images/shiftEase_logo_trans.png')} resizeMode="contain"/>
+            <Image source={require('../../assets/images/shiftEase_logo_trans.png')} resizeMode="contain"/>
           </View>
 
           <View>
@@ -51,13 +51,13 @@ const LandingPage = () => {
 
           <View style={styles.schedulingImage}>
           <Image 
-            source={require('../assets/images/scheduling_cartoon.png')} 
+            source={require('../../assets/images/scheduling_cartoon.png')} 
             resizeMode="contain"/>
           </View>
 
           <View style={styles.stickyNoteImage}>
           <Image 
-            source={require('../assets/images/stickyNote.png')} 
+            source={require('../../assets/images/stickyNote.png')} 
             resizeMode="contain"/>
           </View>
 
@@ -68,37 +68,37 @@ const LandingPage = () => {
           <View style={styles.boxRow}>
             <LinearGradient colors={['#E0FCFC', '#588989']} style={styles.box}>
               <Text style={styles.boxText}>EMPLOYEE SCHEDULING SOFTWARE</Text>
-              <Image source={require('../assets/images/calendar.png')} style={styles.boxImage} />
+              <Image source={require('../../assets/images/calendar.png')} style={styles.boxImage} />
               <Text style={styles.boxHeader}>Schedule Faster</Text>
               <Text style={styles.boxText}>Create and share with{"\n"}your team in minutes</Text>
             </LinearGradient>
 
             <LinearGradient colors={['#E0FCFC', '#588989']} style={styles.box}>
               <Text style={styles.boxText}>EMPLOYEE TIME TRACKING</Text>
-              <Image source={require('../assets/images/clock1.png')} style={styles.boxImage} />
+              <Image source={require('../../assets/images/clock1.png')} style={styles.boxImage} />
               <Text style={styles.boxHeader}>Track Time Easier</Text>
               <Text style={styles.boxText}>Integrate your schedule{"\n"}with the time clock and{"\n"}reduce labor costs.</Text>
             </LinearGradient>
 
             <LinearGradient colors={['#E0FCFC', '#588989']} style={styles.box}>
               <Text style={styles.boxText}>TEAM MESSAGING</Text>
-              <Image source={require('../assets/images/communication1.png')} style={styles.boxImage} />
+              <Image source={require('../../assets/images/communication1.png')} style={styles.boxImage} />
               <Text style={styles.boxHeader}>Track Time Easier</Text>
               <Text style={styles.boxText}>Connect with everyone{"\n"}across any shift or any{"\n"}department.</Text>
             </LinearGradient>
           </View>
 
           <View style={styles.bottomBox}>
-            <Image source={require('../assets/images/boss.png')} style={styles.bottomBoxImage}/>
+            <Image source={require('../../assets/images/boss.png')} style={styles.bottomBoxImage}/>
             <Text style={styles.bottomBoxText}>"It saves me 8 hours a week. Instead of texting back and forth all day, our employees can use the{"\n"}
               app to switch shifts up, and all I have to do is approve the swap. Love it." - Boss Man, Customer{"\n"}Since 2024</Text>
-            <Image source={require('../assets/images/quotes.png')} style={styles.quoteUpsideImage}/>
-            <Image source={require('../assets/images/quotes.png')} style={styles.quoteRightsideImage}/>
+            <Image source={require('../../assets/images/quotes.png')} style={styles.quoteUpsideImage}/>
+            <Image source={require('../../assets/images/quotes.png')} style={styles.quoteRightsideImage}/>
           </View>
         </View>
 
         <View style={styles.bottomFrame}>
-          <Image source={require('../assets/images/shiftEase_logo_trans.png')} style={styles.bottomImage}/>
+          <Image source={require('../../assets/images/shiftEase_logo_trans.png')} style={styles.bottomImage}/>
         </View>
 
       </View>

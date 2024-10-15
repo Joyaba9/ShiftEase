@@ -2,16 +2,16 @@ import React, {useState, useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Dimensions } from 'react-native';
-import WelcomePageMobile from './WelcomePageMobile';
-import LoginPage from './LoginPage';
-import ChangePassPage from './ChangePassPage';
-import ForgotPassPage from './ForgotPassPage';
-import RegistrationPage from './RegistrationPage';
-import LandingPage from './LandingPage';
-import BusinessPage from './BusinessPage.js';
-import EmployeePage from './EmployeePage';
-import ManageEmployeePopup from './ManageEmployeePopup.js';
-import LogOut from './logOut.js';
+import WelcomePageMobile from './common/WelcomePageMobile.js';
+import LoginPage from './auth/LoginPage.js';
+import ChangePassPage from './auth/ChangePassPage.js';
+import ForgotPassPage from './auth/ForgotPassPage';
+import RegistrationPage from './auth/RegistrationPage';
+import LandingPage from './common/LandingPage.js';
+import BusinessPage from './business/BusinessPage.js';
+import EmployeePage from './employee/EmployeePage.js';
+import ManageEmployeePopup from './business/ManageEmployeePopup.js';
+import LogOut from './auth/logOut.js';
 
 
 const Stack = createStackNavigator();
@@ -28,7 +28,7 @@ const NavigationManager = () => {
           setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Landing');
+          setInitialRoute('Business');
         }
 
 

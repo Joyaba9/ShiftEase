@@ -1,10 +1,10 @@
 import React from 'react';
 import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
-import NavBar from '../components/NavBar';
+import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import SidebarButton from '../components/SidebarButton';
-import ShiftCard from '../components/ShiftCard';
+import SidebarButton from '../../components/SidebarButton';
+import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
 
 const { width } = Dimensions.get('window');
@@ -33,7 +33,7 @@ const EmployeePage = () => {
 
                     <Image
                         resizeMode="contain"
-                        source={require('../assets/images/profile_photo_default.png')}
+                        source={require('../../assets/images/profile_photo_default.png')}
                         style={styles.profilePhoto}
                     />
                 </View>
@@ -42,28 +42,28 @@ const EmployeePage = () => {
                     {/* Left Column */}
                     <View style={styles.leftColumn}>
                         <SidebarButton
-                            icon = {require('../assets/images/view_calendar_icon.png')}
+                            icon = {require('../../assets/images/view_calendar_icon.png')}
                             label = "View Schedule"
                             onPress={ () => {{/* View Schedule Page logic */}}}
                         />
                         <SidebarButton
-                            icon = {require('../assets/images/clipboard_with_checkmark.png')}
+                            icon = {require('../../assets/images/clipboard_with_checkmark.png')}
                             label = "Submit Request"
                             onPress={ () => {{/* Submit Request Page logic */}}}
                         />
                         <SidebarButton
-                            icon = {require('../assets/images/calendar_with_gear.png')}
+                            icon = {require('../../assets/images/calendar_with_gear.png')}
                             label = "Change Availability"
                             onPress={ () => {{/* Change Availability Page logic */}}}
                         />
                         <SidebarButton
-                            icon = {require('../assets/images/offer_up_icon.png')}
+                            icon = {require('../../assets/images/offer_up_icon.png')}
                             label = "Offer Up Shift"
                             onPress={ () => {{/* Offer Up Shift Page logic */}}}
                             customContainerStyle={{ right: -10 }}
                         />
                         <SidebarButton
-                            icon = {require('../assets/images/time_card_icon.png')}
+                            icon = {require('../../assets/images/time_card_icon.png')}
                             label = "Time Card History"
                             onPress={ () => {{/* Time Card History Page logic */}}}
                             customContainerStyle={{ right: 5 }}
@@ -151,7 +151,7 @@ const EmployeePage = () => {
                 >
                     <Image
                         resizeMode="contain"
-                        source={require('../assets/images/logo1.png')}
+                        source={require('../../assets/images/logo1.png')}
                         style={styles.desktopLogo}
                     />
                 </LinearGradient>

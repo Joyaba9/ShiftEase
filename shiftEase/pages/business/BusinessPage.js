@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import NavBar from '../components/NavBar.js';
+import NavBar from '../../components/NavBar.js';
 import { useNavigation } from '@react-navigation/native';
-import SidebarButton from '../components/SidebarButton.js';
+import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
 import ManageEmployeePage from './ManageEmployeePage.js';
 
@@ -94,32 +94,32 @@ const BusinessPage = () => {
           {/* Left Column */}
           <View style={styles.leftPane}>
             <SidebarButton
-              icon={require('../assets/images/manage_business.png')}
+              icon={require('../../assets/images/manage_business.png')}
               label="Manage Business"
               onPress={() => {}}
               customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
-              icon={require('../assets/images/add_employee_icon.png')}
+              icon={require('../../assets/images/add_employee_icon.png')}
               label="Add Employee"
               onPress={() => setAddEmpVisible(true)} // Open the Add Employee Modal
               customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
-              icon={require('../assets/images/employees_talking.png')}
+              icon={require('../../assets/images/employees_talking.png')}
               label="Manage Employee"
               onPress={goToManageEmployeePage} // Navigate to ManageEmployeePage
               customContainerStyle={{ right: 10 }}
             />
             <SidebarButton
-              icon={require('../assets/images/email_icon.png')}
+              icon={require('../../assets/images/email_icon.png')}
               label="Messages"
               onPress={() => {}}
               customContainerStyle={{ right: 20 }}
               customIconStyle={{ width: 100, height: 100 }}
             />
             <SidebarButton
-              icon={require('../assets/images/edit_roles_icon_trans.png')}
+              icon={require('../../assets/images/edit_roles_icon_trans.png')}
               label="Edit Roles"
               onPress={() => {}}
               customContainerStyle={{ right: 10 }}
@@ -171,7 +171,7 @@ const BusinessPage = () => {
   
         {/* Bottom Bar with Logo */}
         <LinearGradient colors={['#E7E7E7', '#9DCDCD']} style={styles.bottomBarContainer}>
-          <Image resizeMode="contain" source={require('../assets/images/logo1.png')} style={styles.desktopLogo} />
+          <Image resizeMode="contain" source={require('../../assets/images/logo1.png')} style={styles.desktopLogo} />
         </LinearGradient>
   
         {/* Modal for adding employee */}
@@ -187,7 +187,7 @@ const BusinessPage = () => {
               <View style={styles.addEmpHDivider} />
   
               <View style={styles.addEmpRowContainer}>
-                <Image style={styles.userImage} source={require('../assets/images/add_employee_icon.png')} resizeMode="contain" />
+                <Image style={styles.userImage} source={require('../../assets/images/add_employee_icon.png')} resizeMode="contain" />
                 <View style={styles.addEmpVDivider} />
   
                 <View style={styles.addEmpInputContainer}>

@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import CommonLayout from "./CommonLayout";
+import CommonLayout from '../common/CommonLayout';
 
 const { width } = Dimensions.get('window');
 
@@ -68,8 +68,8 @@ const LoginPage = () => {
     >
       <CommonLayout
         isMobile={isMobile} // Pass the isMobile prop to CommonLayout
-        logo={require('../assets/images/logo1.png')}
-        mainImage={require('../assets/images/two_women.jpg')}
+        logo={require('../../assets/images/logo1.png')}
+        mainImage={require('../../assets/images/two_women.jpg')}
         customStyles={{
           mobileBottomContainer: isMobile ? { top: '25%' } : {},
           contentWrapper: !isMobile ? { flexDirection: 'row-reverse' } : {}, // Reverse layout on web
