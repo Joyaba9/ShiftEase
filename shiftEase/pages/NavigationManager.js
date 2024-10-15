@@ -25,10 +25,10 @@ const NavigationManager = () => {
         const { width } = Dimensions.get('window');
         if (width < 768) {
           // If it's mobile, set initial route to WelcomePageMobile
-          setInitialRoute('Business');
+          setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LandingPage
-          setInitialRoute('Business');
+          setInitialRoute('Landing');
         }
 
 
