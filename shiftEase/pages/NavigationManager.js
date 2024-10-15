@@ -8,9 +8,10 @@ import ChangePassPage from './auth/ChangePassPage';
 import ForgotPassPage from './auth/ForgotPassPage';
 import RegistrationPage from './auth/RegistrationPage';
 import LandingPage from './common/LandingPage';
-import ManagerPage from './manager/ManagerPage';
+import BusinessPage from './manager/BusinessPage';
 import EmployeePage from './employee/EmployeePage';
 import ManageBusinessPage from './manager/manageBusiness/ManageBusinessPage';
+import AccountPage from './common/AccountPage';
 
 
 const Stack = createStackNavigator();
@@ -24,10 +25,10 @@ const NavigationManager = () => {
         const { width } = Dimensions.get('window');
         if (width < 768) {
           // If it's mobile, set initial route to WelcomePageMobile
-          setInitialRoute('Welcome');
+          setInitialRoute('Business');
         } else {
           // If it's desktop, set initial route to LandingPage
-          setInitialRoute('Landing');
+          setInitialRoute('Business');
         }
 
 
@@ -46,9 +47,10 @@ const NavigationManager = () => {
             <Stack.Screen name="ForgotPass" component={ForgotPassPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
-            <Stack.Screen name="Manager" component={ManagerPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageBusiness" component={ManageBusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Account" component={AccountPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
         </NavigationContainer>
     );

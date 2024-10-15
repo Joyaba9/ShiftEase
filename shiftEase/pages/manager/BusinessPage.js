@@ -1,37 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { ScrollView, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../../components/NavBar';
 import SidebarButton from '../../components/SidebarButton';
-import ManagerPageMobile from './ManagerPageMobile';
+import BusinessPageMobile from './BusinessPageMobile';
 
 const { width } = Dimensions.get('window');
 
-const ManagerPage = () => {
+const BusinessPage = () => {
   const navigation = useNavigation();
+  const [isManagerDashboard, setIsManagerDashboard] = useState(false);
   const isMobile = width < 768; 
 
   // Render the mobile layout if it's a mobile screen
   if (isMobile) {
-    return <ManagerPageMobile />;
+    return <BusinessPageMobile />;
   }
+
+  // Function to switch between dashboards
+  const switchDashboard = () => {
+    setIsManagerDashboard(!isManagerDashboard); // Toggle between Business and Manager dashboard
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
       
         <NavBar />
-        <Text style={styles.dashboardText}>Business Dashboard</Text>
+        
+        <View style={styles.topContainer}>
+
+          {/* Conditionally render the dashboard text based on state */}
+          <Text style={styles.dashboardText}>
+            {isManagerDashboard ? 'Manager Dashboard' : 'Business Dashboard'}
+          </Text>
+
+          {/* Button to switch between dashboards */}
+          <TouchableOpacity onPress={switchDashboard}>
+            <Text style = {styles.managerText}>
+              {isManagerDashboard ? 'Switch to Business Dashboard!' : 'Switch to Manager Dashboard!'}
+            </Text>
+          </TouchableOpacity>
+
+        </View>
         
         <View style={styles.dashboardContainer}>
           {/* Left Column */}
           <View style={styles.leftPane}>
 
             <SidebarButton
-                icon = {require('../../assets/images/manage_business.png')}
-                label = "Manage Business"
+                icon = {isManagerDashboard ? require('../../assets/images/calendar_with_gear.png') : require('../../assets/images/manage_business.png')}
+                label = {isManagerDashboard ? 'Manage Schedule' : 'Manage Business'}
                 onPress={ () => navigation.navigate('ManageBusiness')}
                 customContainerStyle={{ right: -10 }}
             />
@@ -164,6 +185,17 @@ const styles = StyleSheet.create({
     minHeight: '100%',
     height: 200,
     minWidth: 950,
+  },
+  topContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 30,
+  },
+  managerText: {
+    fontSize: 16,
+    paddingRight: 50
   },
   dashboardContainer: {
     flexGrow: 1,
@@ -310,4 +342,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default ManagerPage;
+export default BusinessPage;

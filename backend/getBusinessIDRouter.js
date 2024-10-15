@@ -1,5 +1,5 @@
 import express from 'express';
-import { getBusinessById } from './getBusinessID.js'; 
+import { getBusinessById } from './getBusinessID.js';
 
 const router = express.Router();
 
@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/', async (req, res) => {
     // Extract the business_email from the request body
     const { business_email } = req.body;
+    console.log("Post "+ business_email); 
 
     // Try to retrieve the business_id for the given business_email
     try {

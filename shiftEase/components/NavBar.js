@@ -30,7 +30,7 @@ const NavBar = ({ homeRoute }) => {
                         <Text style={styles.navText}>Settings</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => {/* Account Page logic */}}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Account')}>
                         <Text style={styles.navText}>Account</Text>
                     </TouchableOpacity>
 

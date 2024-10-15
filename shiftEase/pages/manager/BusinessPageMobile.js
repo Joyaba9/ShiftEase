@@ -1,23 +1,34 @@
 import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import BottomMenu from '../../components/BottomMenu';
+import MobileSideMenu from '../../components/MobileSideMenu';
 
-const ManagerPageMobile = () => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-    const toggleMenu = () => {
-      setIsMenuOpen(!isMenuOpen);
+const BusinessPageMobile = () => {
+    const navigation = useNavigation();
+    const [isManagerDashboard, setIsManagerDashboard] = useState(false);
+    
+    // Function to switch between dashboards
+    const switchDashboard = () => {
+        setIsManagerDashboard(!isManagerDashboard); // Toggle between Business and Manager dashboard
     };
 
     const menuItems = [
         { icon: 'home-outline', label: 'Home' },
-        { icon: 'person-outline', label: 'Account' },
-        { icon: 'chatbubble-outline', label: 'Messages' },
+        { icon: 'person-outline', label: 'My Account' },
+        { icon: isManagerDashboard ? 'calendar-outline' : 'briefcase-outline', label: isManagerDashboard ? 'Manage Schedule' : 'Manage Business' },
+        { icon: 'person-add-outline', label: 'Add Employee' },
+        { icon: 'people-outline', label: 'Manage Employee' },
+        { icon: 'create-outline', label: 'Edit Roles' },
         { icon: 'notifications-outline', label: 'Notifications' },
+        { icon: 'settings-outline', label: 'Settings' },
+        { icon: 'log-out-outline', label: 'Log Out' },
+        
     ];
-
+  
+    
     const handleMenuPress = (label) => {
         console.log(`${label} pressed!`);
         // You can handle navigation or any other actions here
@@ -331,4 +342,4 @@ const styles = StyleSheet.create({
 
 });
   
-export default ManagerPageMobile;
+export default BusinessPageMobile;

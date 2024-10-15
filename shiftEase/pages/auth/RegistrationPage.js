@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput, View } from 'react-native';
 import CommonLayout from "../common/CommonLayout";
 import { useNavigation } from '@react-navigation/native';
-import { getBusinessById } from '../manager/manageBusiness/businessMockDatabase';
 
 
 const { width } = Dimensions.get('window');
