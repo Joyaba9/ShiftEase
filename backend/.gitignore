@@ -2,6 +2,7 @@
 Gcloud.js
 Firebase-shiftEase.json
 SQL-gcloud.json
+firebase.js
 
 # Ignore downloaded archives
 backend/google-cloud-cli-*.tar.gz
