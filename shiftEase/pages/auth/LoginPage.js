@@ -94,6 +94,7 @@ const LoginPage = () => {
           mobileBottomContainer: isMobile ? { top: '30%' } : {},
           mobileLogo: isMobile ? { marginTop: 40 } : {},
           contentWrapper: !isMobile ? { flexDirection: 'row-reverse' } : {}, // Reverse layout on web
+          desktopImage: !isMobile ? { borderTopRightRadius: 20, borderBottomRightRadius: 20 } : {},
           inputContainer: !isMobile ? { paddingRight: 0 } : {},
           formContainer: !isMobile ? { paddingLeft: 40, paddingRight: 40 } : {},
         }}

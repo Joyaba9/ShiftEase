@@ -29,8 +29,9 @@ const ForgotPassPage = () => {
                         logo={require("../../assets/images/logo1.png")}
                         mainImage={require("../../assets/images/forgot_password.png")}
                         customStyles={{
-                        mobileBottomContainer: {top: '25%'},
-                        mobileLogo: {marginTop: 30}
+                            mobileBottomContainer: {top: '25%'},
+                            mobileLogo: {marginTop: 30},
+                            desktopImage: !isMobile ? { borderTopLeftRadius: 20, borderBottomLeftRadius: 20 } : {},
                         }}
                         aboveInputsContent={
                             <>
