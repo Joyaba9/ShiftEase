@@ -25,6 +25,17 @@ const ManagerPage = () => {
   const [role, setRole] = useState('Select Role');
   const roles = ["Manager", "Employee"];
 
+  const [addEmpVisible, setAddEmpVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [fName, setFName] = useState('');
+  const [lName, setLName] = useState('');
+  const [dob, setDOB] = useState('');
+  const [email, setEmail] = useState('');
+  const [ssn, setSSN] = useState('');
+  const [role, setRole] = useState('Select Role');
+  const roles = ["Manager", "Employee"];
+
   const goToManageEmployeePage = () => {
     navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
   };
@@ -84,7 +95,7 @@ const ManagerPage = () => {
   if (isMobile) {
     return <ManagerPageMobile />;
   }
-
+  
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
