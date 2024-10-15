@@ -8,7 +8,7 @@ import ChangePassPage from './ChangePassPage';
 import ForgotPassPage from './ForgotPassPage';
 import RegistrationPage from './RegistrationPage';
 import LandingPage from './LandingPage';
-import ManagerPage from './ManagerPage';
+import BusinessPage from './BusinessPage.js';
 import EmployeePage from './EmployeePage';
 import ManageEmployeePopup from './ManageEmployeePopup.js';
 import LogOut from './logOut.js';
@@ -28,7 +28,7 @@ const NavigationManager = () => {
           setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Manager');
+          setInitialRoute('Landing');
         }
 
 
@@ -47,7 +47,7 @@ const NavigationManager = () => {
             <Stack.Screen name="ForgotPass" component={ForgotPassPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
-            <Stack.Screen name="Manager" component={ManagerPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageEmployee" component={ManageEmployeePopup} options={{ headerShown: false }}/>
             </Stack.Navigator>

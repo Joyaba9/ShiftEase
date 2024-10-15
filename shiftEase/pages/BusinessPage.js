@@ -1,29 +1,18 @@
 import React, { useState } from 'react';
-import { ScrollView, Image, View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, TextInput, FlatList } from 'react-native';
+import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import NavBar from '../components/NavBar.js';
 import { useNavigation } from '@react-navigation/native';
-import SidebarButton from '../components/SidebarButton';
-import ManagerPageMobile from './ManagerPageMobile';
+import SidebarButton from '../components/SidebarButton.js';
+import BusinessPageMobile from './BusinessPageMobile.js';
 import ManageEmployeePage from './ManageEmployeePage.js';
-import NavBar from '../components/NavBar';
 
 const { width } = Dimensions.get('window');
 
-const ManagerPage = () => {
+const BusinessPage = () => {
   const navigation = useNavigation();
-  const isMobile = width < 768;
-
-  const [addEmpVisible, setAddEmpVisible] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-  const [fName, setFName] = useState('');
-  const [lName, setLName] = useState('');
-  const [dob, setDOB] = useState('');
-  const [email, setEmail] = useState('');
-  const [ssn, setSSN] = useState('');
-  const [role, setRole] = useState('Select Role');
-  const roles = ["Manager", "Employee"];
+  const isMobile = width < 768; 
 
   const [addEmpVisible, setAddEmpVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -91,11 +80,10 @@ const ManagerPage = () => {
     setIsModalVisible(false);
   };
 
-  // Render the mobile layout if it's a mobile screen
+    // Render the mobile layout if it's a mobile screen
   if (isMobile) {
-    return <ManagerPageMobile />;
+    return <BusinessPageMobile />;
   }
-  
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -559,4 +547,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ManagerPage;
+export default BusinessPage;

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import BottomMenu from '../components/BottomMenu';
 
-const ManagerPageMobile = () => {
+const BusinessPageMobile = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
   
     const toggleMenu = () => {
@@ -331,4 +331,4 @@ const styles = StyleSheet.create({
 
 });
   
-export default ManagerPageMobile;
+export default BusinessPageMobile;
