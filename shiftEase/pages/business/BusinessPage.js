@@ -6,13 +6,18 @@ import NavBar from '../../components/NavBar.js';
 import { useNavigation } from '@react-navigation/native';
 import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
-import ManageEmployeePage from './ManageEmployeePage.js';
 
 const { width } = Dimensions.get('window');
 
 const BusinessPage = () => {
   const navigation = useNavigation();
+  const [isManagerDashboard, setIsManagerDashboard] = useState(false);
   const isMobile = width < 768; 
+
+  // Function to switch between dashboards
+  const switchDashboard = () => {
+    setIsManagerDashboard(!isManagerDashboard); // Toggle between Business and Manager dashboard
+  };
 
   const [addEmpVisible, setAddEmpVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -84,18 +89,34 @@ const BusinessPage = () => {
   if (isMobile) {
     return <BusinessPageMobile />;
   }
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <NavBar />
-        <Text style={styles.dashboardText}>Business Dashboard</Text>
+        <NavBar homeRoute={'Business'}/>
+
+        <View style={styles.topContainer}>
+
+          {/* Conditionally render the dashboard text based on state */}
+          <Text style={styles.dashboardText}>
+            {isManagerDashboard ? 'Manager Dashboard' : 'Business Dashboard'}
+          </Text>
+
+          {/* Button to switch between dashboards */}
+          <TouchableOpacity onPress={switchDashboard}>
+            <Text style = {styles.managerText}>
+              {isManagerDashboard ? 'Switch to Business Dashboard!' : 'Switch to Manager Dashboard!'}
+            </Text>
+          </TouchableOpacity>
+
+        </View>
   
         <View style={styles.dashboardContainer}>
           {/* Left Column */}
           <View style={styles.leftPane}>
             <SidebarButton
-              icon={require('../../assets/images/manage_business.png')}
-              label="Manage Business"
+              icon={isManagerDashboard ? require('../../assets/images/calendar_with_gear.png') : require('../../assets/images/manage_business.png')}
+              label={isManagerDashboard ? 'Manage Schedule' : 'Manage Business'}
               onPress={() => {}}
               customContainerStyle={{ right: -10 }}
             />
@@ -125,7 +146,9 @@ const BusinessPage = () => {
               customContainerStyle={{ right: 10 }}
             />
           </View>
-  
+
+          <View style={styles.spacer} />
+
           {/* Right Column */}
           <View style={styles.rightPane}>
             {/* Announcements Section */}
@@ -269,10 +292,10 @@ const BusinessPage = () => {
               <Text style={styles.modalText}>All information inputted will be lost.</Text>
               <View style={styles.modalButtonContainer}>
                 <TouchableOpacity style={styles.modalButton} onPress={confirmCancel}>
-                  <Text style={styles.buttonText}>Yes</Text>
+                  <Text style={styles.optionText}>Yes</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={cancelCancel}>
-                  <Text style={styles.buttonText}>No</Text>
+                  <Text style={styles.optionText}>No</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -284,59 +307,133 @@ const BusinessPage = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f4f8',
+  scrollContainer: {
+    flex: 1, 
   },
-  
-  header: {
+
+  // container: {
+  //   flex: 1,
+  //   backgroundColor: '#f0f4f8',
+  // },
+  container: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingBottom: 20,
+    minHeight: '100%',
+    height: 200,
+    minWidth: 950,
+  },
+  topContainer: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#ffffff',
+    paddingTop: 30,
+  },
+  managerText: {
+    fontSize: 16,
+    paddingRight: 50
+  },
+  dashboardContainer: {
+    flexGrow: 1,
+    width: '95%',
+    maxWidth: 1200,
+    flexDirection: 'row', // Two columns layout
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginBottom: 50,
+    paddingTop: 20,
+    paddingLeft: 40,
+    paddingRight: 40,
+  },
+  dashboardText: {
+    fontSize: 25,
+    alignSelf: 'flex-start',
+    //marginTop: 40,
+    paddingLeft: 60
+    
+  },
+  spacer: {
+    flexGrow: 2, // Grow dynamically to fill space
+    flexShrink: 1, // Shrink if space is limited
+  },
+  icon: {
+    width: 50,
+    height: 50
+  },
+  icon2: {
+    width: 40,
+    height: 40
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  leftPane: {
+    flex: 2,
+    justifyContent: 'space-between',
+    paddingTop: 20,
+    maxWidth: 300,
+    minWidth: 250,
+  },
+  rightPane: {
+    flex: 2,
+    height: '100%',
+    paddingTop: 20,
+    maxWidth: 450,
+    minWidth: 450,
+    alignItems: "flex-end",
+  },
+  gradient: {
+    width: '100%',
+    height: 300,
+    borderRadius: 10, 
+    marginBottom: 40,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 4,
   },
-
-  logo: {
-    width: 120,
-    height: 40,
-  },
-
-  navbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  navText: {
-    marginHorizontal: 10,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-
-  mainContent: {
-    flex: 1,
-    flexDirection: 'row',
-    padding: 20,
-  },
-
-  leftPane: {
-    flex: 1,
-    justifyContent: 'space-around',
-  },
-
-  rightPane: {
-    flex: 2,
-    padding: 20,
-    backgroundColor: '#e0e8f0',
+  gradientAnnounce: {
+    width: '100%',
+    height: 200,
     borderRadius: 10,
+    marginTop: 20, 
+    marginBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
-
+  announcements: {
+    borderRadius: 10,
+    padding: 20,
+  },
+  addIconContainer: {
+    position: 'absolute',
+    bottom: -60,
+    right: 10,
+    zIndex: 1,
+  },
+  addIconContainer2: {
+    position: 'absolute',
+    bottom: -150,
+    right: 10,
+    zIndex: 1,
+  },
+  reportsContainer: {
+    borderRadius: 10,
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 16
+  },
+  performanceContainer: {
+    borderRadius: 10,
+    padding: 20,
+  },
   button: {
     backgroundColor: '#ffffff',
     padding: 20,
@@ -349,18 +446,15 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
-
   buttonText: {
     fontSize: 18,
     color: '#333',
   },
-
   messagingHeader: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
   },
-
   messagingBox: {
     flex: 1,
     backgroundColor: '#fff',
@@ -372,12 +466,28 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
+  bottomBarContainer: {
+    width: '100%',
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  desktopLogo: {
+    position: 'relative',
+    left: 40,
+    width: 230,
+    height: 100,
+    alignSelf: 'flex-end',
+  },
 
+  //Modal Styles
   addEmpGray: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 20
   },
   addEmpView: {
     width: '80%',
@@ -494,8 +604,8 @@ const styles = StyleSheet.create({
   },
   bubbleButton: {
     borderRadius: 50,
-    backgroundColor: "#fff",
-    width: 80,
+    backgroundColor: "#9FCCF5",
+    width: 100,
     maxWidth: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -507,7 +617,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.5,
     marginHorizontal: 10
   },
-  buttonText: {
+  optionText: {
     fontSize: 16,
     color: '#000',
   },

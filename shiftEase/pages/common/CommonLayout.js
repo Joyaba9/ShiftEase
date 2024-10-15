@@ -59,11 +59,11 @@ const CommonLayout = ({
         >
           <View style={[styles.inputContainer, customStyles?.inputContainer]}>
             <View style={[styles.contentWrapper, customStyles?.contentWrapper]}>
-              <View style={styles.imageContainer}>
+              <View style={[styles.imageContainer , customStyles?.imageContainer]}>
                 <Image
                   resizeMode="cover"
                   source={mainImage}
-                  style={styles.desktopImage}
+                  style={[styles.desktopImage, customStyles?.desktopImage]}
                 />
               </View>
               <View style={[styles.formContainer, customStyles?.formContainer]}>
@@ -176,8 +176,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   desktopImage: {
-    borderLeftTopRadius: 20,
-    borderBottomLeftRadius: 20,
     width: '100%',
     height: '100%',
   },

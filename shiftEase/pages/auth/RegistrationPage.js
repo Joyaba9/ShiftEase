@@ -69,10 +69,11 @@ const RegistrationPage = () => {
         mainImage={require('../../assets/images/woman.png')}
         customStyles={{
           mobileBottomContainer: isMobile ? { top: '25%' } : {},
-          contentWrapper: !isMobile ? { flexDirection: 'row-reverse' } : {}, // Reverse layout on web
-          inputContainer: !isMobile ? { paddingRight: 0 } : {},
+          inputContainer: !isMobile ? { paddingRight: 0, borderLeftTopRadius: 20, borderLeftBottomRadius: 20, } : {},
           formContainer: !isMobile ? { paddingLeft: 40, paddingRight: 40 } : {},
-          desktopLogo: !isMobile ? {height: 90} : {}
+          desktopImage: !isMobile ? { borderTopLeftRadius: 20, borderBottomLeftRadius: 20 } : {},
+          desktopLogo: !isMobile ? {height: 90} : {},
+          imageContainer: !isMobile ? {borderLeftTopRadius: 20, borderLeftBottomRadius: 20,} : {},
         }}
       >
         {/* Directly render TextInput components */}
