@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import LogOut from '../pages/auth/logOut';
 
-const NavBar = () => {
+const NavBar = ({ homeRoute }) => {
 
     const screenWidth = Dimensions.get('window').width;
     const navigation = useNavigation();
@@ -50,7 +50,7 @@ const handleLogout = async () => {
                 <View style={styles.spacer} />
 
                 <View style = {styles.navBarContainer}>
-                    <TouchableOpacity onPress={() => {/* Not sure where 'home' should go */}}>
+                    <TouchableOpacity onPress={() => navigation.navigate(homeRoute)}>
                         <Text style={styles.navText}>Home</Text>
                     </TouchableOpacity>
 
@@ -58,7 +58,7 @@ const handleLogout = async () => {
                         <Text style={styles.navText}>Settings</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => {/* Account Page logic */}}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Account')}>
                         <Text style={styles.navText}>Account</Text>
                     </TouchableOpacity>
 
