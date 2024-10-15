@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Image, View, Text, StyleSheet, Button, Alert, TextInput } from 'react-native';
+import { ScrollView, Image, View, Text, StyleSheet, Button, Alert, TextInput} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../components/NavBar';

@@ -13,7 +13,6 @@ import EmployeePage from './EmployeePage';
 import ManageEmployeePopup from './ManageEmployeePopup.js';
 
 
-
 const Stack = createStackNavigator();
 
 const NavigationManager = () => {
