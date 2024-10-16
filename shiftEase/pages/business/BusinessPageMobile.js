@@ -197,9 +197,6 @@ const styles = StyleSheet.create({
     dashboardText: {
         fontSize: 25,
         alignSelf: 'flex-start',
-        //marginTop: 20,
-        //paddingLeft: 20
-        
     },
     managerText: {
         alignSelf: 'flex-end',
