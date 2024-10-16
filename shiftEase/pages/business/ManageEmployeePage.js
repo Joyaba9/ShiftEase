@@ -91,7 +91,7 @@ const ManageEmployeePage = () => {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <NavBar />
+        <NavBar homeRoute={'Business'}/>
 
         <LinearGradient 
           colors={['#E7E7E7', '#A7CAD8']} 
