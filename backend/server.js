@@ -7,6 +7,7 @@ import getBusinessById from './getBusinessIDRouter.js';
 import loginRouter from './loginRouter.js';
 import regBusinessRouter from './regBusiness.js'; // Correct import for default export
 import logoutRouter from './logout.js';
+import businessRouter from './BusinessDetailsRouter.js';
 
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/employees', employeeRouter);
 app.use('/api/change-password', changePasswordRouter);
 
 app.use('/api/getBusinessId', getBusinessById);
+app.use('/api', businessRouter);
 
 app.use('/api/addEmp', addEmpRouter); // Use the addEmp router
 app.use('/api/logout', logoutRouter);

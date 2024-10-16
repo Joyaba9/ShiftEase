@@ -12,6 +12,7 @@ import BusinessPage from './business/BusinessPage.js';
 import EmployeePage from './employee/EmployeePage.js';
 import ManageEmployeePopup from './business/ManageEmployeePopup.js';
 import LogOut from './auth/logOut.js';
+import AccountPage from './common/AccountPage.js';
 
 
 const Stack = createStackNavigator();
@@ -47,6 +48,7 @@ const NavigationManager = () => {
             <Stack.Screen name="ForgotPass" component={ForgotPassPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Account" component={AccountPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageEmployee" component={ManageEmployeePopup} options={{ headerShown: false }}/>
