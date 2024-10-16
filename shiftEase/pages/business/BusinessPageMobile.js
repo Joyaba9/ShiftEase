@@ -1,256 +1,209 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import MobileSideMenu from '../../components/MobileSideMenu';
 import BottomMenu from '../../components/BottomMenu';
+import AddEmpModal from './AddEmpModal';
 
 const BusinessPageMobile = () => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const navigation = useNavigation();
+
+    const [isManagerDashboard, setIsManagerDashboard] = useState(false);
+    const [addEmpVisible, setAddEmpVisible] = useState(false);
   
-    const toggleMenu = () => {
-      setIsMenuOpen(!isMenuOpen);
+    // Function to switch between dashboards
+    const switchDashboard = () => {
+        setIsManagerDashboard(!isManagerDashboard); // Toggle between Business and Manager dashboard
     };
 
     const menuItems = [
+        { icon: 'home-outline', label: 'Home' },
+        { icon: 'person-outline', label: 'My Account' },
+        { icon: isManagerDashboard ? 'calendar-outline' : 'briefcase-outline', label: isManagerDashboard ? 'Manage Schedule' : 'Manage Business' },
+        { icon: 'person-add-outline', label: 'Add Employee' },
+        { icon: 'people-outline', label: 'Manage Employee' },
+        { icon: 'create-outline', label: 'Edit Roles' },
+        { icon: 'notifications-outline', label: 'Notifications' },
+        { icon: 'settings-outline', label: 'Settings' },
+        { icon: 'log-out-outline', label: 'Log Out' },
+    ];
+
+    const handleMenuItemPress = (label) => {
+        console.log(`${label} pressed!`);
+        // Handle navigation or other actions
+        if (label === 'Home') {
+          navigation.navigate('Business');
+        } else if (label === "My Account") {
+            navigation.navigate('Account');
+        } else if (label === "Add Employee") {
+            setAddEmpVisible(true);
+        } else if (label === "Manage Employee") {
+            navigation.navigate('ManageEmployee');
+        }
+    };
+    
+    const bottomMenuItems = [
         { icon: 'home-outline', label: 'Home' },
         { icon: 'person-outline', label: 'Account' },
         { icon: 'chatbubble-outline', label: 'Messages' },
         { icon: 'notifications-outline', label: 'Notifications' },
     ];
 
-    const handleMenuPress = (label) => {
+    const handleBottomMenuPress = (label) => {
         console.log(`${label} pressed!`);
-        // You can handle navigation or any other actions here
+        if (label === 'Home') {
+            navigation.navigate('Business');
+        } else if (label === "Account") {
+            navigation.navigate('Account');
+        }
     };
 
     return (
         <View style={{ flex: 1 }}>
-            {/* Top Navigaton Bar */}
-            <LinearGradient 
-                colors={['#E7E7E7', '#9DCDCD']} 
-                style={styles.topBarContainer}
-            >
-                <TouchableOpacity onPress={toggleMenu}>
-                    <Image
-                    source={require('../../assets/images/menu_icon.png')}
-                    style={styles.menuIcon}
-                    />
-                </TouchableOpacity>
-
-                <Image
-                    resizeMode="contain"
-                    source={require('../../assets/images/logo1.png')}
-                    style={styles.logo}
+            <View style = {styles.topContainer}>
+                {/* Top Navigaton Bar */}
+                <MobileSideMenu
+                    profileName="John Doe"
+                    menuItems={menuItems}
+                    onMenuItemPress={handleMenuItemPress}
+                    logoSrc={require('../../assets/images/logo1.png')}
+                    profileImageSrc={require('../../assets/images/default_profile.png')}
+                    style={styles.sideMenu}
                 />
-            </LinearGradient>
+            </View>
 
-            {/* Side Menu */}
-            {isMenuOpen && (
-                <View style={styles.sideMenu}>
-                    <View style={styles.profileSection}>
-                        <Image
-                            source={require('../../assets/images/default_profile.png')}
-                            style={styles.profileImage}
-                        />
-                        <Text style={styles.profileName}>User's Name</Text>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.topDashContainer}>
+                        {/* Conditionally render the dashboard text based on state */}
+                        <Text style={styles.dashboardText}>
+                        {isManagerDashboard ? 'Manager Dashboard' : 'Business Dashboard'}
+                        </Text>
+
+                        {/* Button to switch between dashboards */}
+                        <TouchableOpacity onPress={switchDashboard}>
+                        <Text style = {styles.managerText}>
+                            {isManagerDashboard ? 'Switch to Business Dashboard!' : 'Switch to Manager Dashboard!'}
+                        </Text>
+                        </TouchableOpacity>
                     </View>
+                    
+                    <View style={styles.dashboardContainer}>
+                        {/* Announcements Section */}
+                        <LinearGradient 
+                            colors={['#E7E7E7', '#A7CAD8']} 
+                            style={styles.gradientAnnounce}
+                        >
+                            <View style={styles.announcements}>
+                                <View style={styles.topBar}>
+                                    <Text style={styles.sectionTitle}>Announcements</Text>
+                                
+                                    <View style={styles.spacer} />
+                                
+                                    <Ionicons name="megaphone-outline" size={30} color="black" />
+                                </View>
 
-                    {/* Menu Items */}
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="home-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Home</Text>
-                    </TouchableOpacity>
+                                
 
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="person-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>My Account</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="briefcase-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Manage Business</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="person-add-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Add Employee</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="people-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Manage Employee</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="create-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Edit Roles</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="notifications-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Notifications</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="settings-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Settings</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Ionicons name="log-out-outline" size={30} color="#A7CAD8" />
-                        <Text style={styles.menuItemText}>Log Out</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <View style={styles.dashboardContainer}>
-
-                    <Text style={styles.dashboardText}>Business Dashboard</Text>
-
-                    {/* Announcements Section */}
-                    <LinearGradient 
+                                <View style={styles.textBox}>
+                                    {/* Add Announcements Logic? */}
+                                </View>
+                                
+                                <TouchableOpacity style={styles.addIconContainer}>
+                                    <Ionicons name="add-circle" size={50} color="black" />
+                                </TouchableOpacity>
+                            </View>
+                        </LinearGradient>
+                        
+                        
+                        {/* Reports Section */}
+                        <LinearGradient 
                         colors={['#E7E7E7', '#A7CAD8']} 
-                        style={styles.gradientAnnounce}
-                    >
-                        <View style={styles.announcements}>
-                            <View style={styles.topBar}>
-                                <Text style={styles.sectionTitle}>Announcements</Text>
-                            
-                                <View style={styles.spacer} />
-                            
-                                <Ionicons name="megaphone-outline" size={30} color="black" />
+                        style={styles.gradient}
+                        >
+                            <View style={styles.reportsContainer}>
+                                <View style={styles.topBar}>
+                                    <Text style={styles.sectionTitle}> Daily Reports</Text>
+                                    
+                                    <View style={styles.spacer} />
+                                    
+                                    <Ionicons name="document-text-outline" size={30} color="black" />
+                                </View>
+                                <View style={styles.textBox}>
+                                    {/* Add Reports Logic? */}
+                                </View>
                             </View>
+                        </LinearGradient>
 
-                            
+                        {/* Messaging Section */}
+                        <LinearGradient 
+                        colors={['#E7E7E7', '#A7CAD8']} 
+                        style={styles.gradient}
+                        >
+                            <View style={styles.messagingContainer}>
+                                <View style={styles.topBar}>
+                                    <Text style={styles.sectionTitle}>Key Performance Overview</Text>
+                                    
+                                    <View style={styles.spacer} />
 
-                            <View style={styles.textBox}>
-                                {/* Add Announcements Logic? */}
-                            </View>
-                            
-                            <TouchableOpacity style={styles.addIconContainer}>
-                                <Ionicons name="add-circle" size={50} color="black" />
-                            </TouchableOpacity>
-                        </View>
-                    </LinearGradient>
-                    
-                    
-                    {/* Reports Section */}
-                    <LinearGradient 
-                    colors={['#E7E7E7', '#A7CAD8']} 
-                    style={styles.gradient}
-                    >
-                        <View style={styles.reportsContainer}>
-                            <View style={styles.topBar}>
-                                <Text style={styles.sectionTitle}> Daily Reports</Text>
+                                    <Ionicons name="bar-chart-outline" size={30} color="black" />
+                                </View>
+                                <View style={styles.textBox}>
+                                    {/* Add Performance Logic? */}
+                                </View>
                                 
-                                <View style={styles.spacer} />
-                                
-                                <Ionicons name="document-text-outline" size={30} color="black" />
-                            </View>
-                            <View style={styles.textBox}>
-                                {/* Add Reports Logic? */}
-                            </View>
-                        </View>
-                    </LinearGradient>
+                            </View>  
+                        </LinearGradient>
 
-                    {/* Messaging Section */}
-                    <LinearGradient 
-                    colors={['#E7E7E7', '#A7CAD8']} 
-                    style={styles.gradient}
-                    >
-                        <View style={styles.messagingContainer}>
-                            <View style={styles.topBar}>
-                                <Text style={styles.sectionTitle}>Key Performance Overview</Text>
-                                
-                                <View style={styles.spacer} />
-
-                                <Ionicons name="bar-chart-outline" size={30} color="black" />
-                            </View>
-                            <View style={styles.textBox}>
-                                {/* Add Performance Logic? */}
-                            </View>
-                            
-                        </View>  
-                    </LinearGradient>
-
-                </View>    
-            </ScrollView>
+                    </View>    
+                </ScrollView>
             
             {/* Bottom Menu */}
             <View style={{ marginBottom: 100 }}>
-                <BottomMenu menuItems={menuItems} onPressMenuItem={handleMenuPress} />
+                <BottomMenu bottomMenuItems={bottomMenuItems} onPressMenuItem={handleBottomMenuPress} />
             </View>
-        
+
+            {addEmpVisible && (
+                <AddEmpModal 
+                    addEmpVisible={addEmpVisible} 
+                    setAddEmpVisible={setAddEmpVisible}
+                />
+            )}
+
         </View>
     );
 };
     
 const styles = StyleSheet.create({
-    topBarContainer: {
-        width: '100%',
-        height: 120,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingLeft: 20
-    },
-    menuIcon: {
-        width: 20,
-        height: 20,
-        marginTop: 40
-    },
-    logo: {
-        width: 200,
-        height: 200,
-        marginTop: 60
-    },
-    sideMenu: {
-        position: 'absolute',  // Ensure it overlays the main content
-        top: 120,               // Aligns the top of the screen
+    topContainer: {
+        position: 'absolute',
         left: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        width: '60%',
-        height: '100%',
-        zIndex: 10,   
-        padding: 20,
+        top: 0,
+        zIndex: 20, // Ensure it stays above other elements
+        width: '100%', // Adjust to fit the screen
+        height: 120, // Customize this value based on your design
     },
-    profileSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    profileImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-    },
-    profileName: {
-        color: 'white',
-        marginLeft: 15,
-        fontSize: 20,
-    },
-    menuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-    },
-    menuItemText: {
-        color: '#A7CAD8',
-        marginLeft: 10,
-        fontSize: 20,
+    topDashContainer: {
+        paddingHorizontal: 20,
+        marginTop: 150,
     },
     dashboardContainer: {
         flexGrow: 1,
         alignItems: 'center',
-        paddingBottom: 80
+        paddingBottom: 80,
+        //marginTop: 150,
     },
     dashboardText: {
         fontSize: 25,
         alignSelf: 'flex-start',
-        marginTop: 20,
-        paddingLeft: 20
+        //marginTop: 20,
+        //paddingLeft: 20
         
+    },
+    managerText: {
+        alignSelf: 'flex-end',
+        margin: 20,
     },
     gradientAnnounce: {
         width: '90%',

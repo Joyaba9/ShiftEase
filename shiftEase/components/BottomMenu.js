@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const BottomMenu = ({ menuItems, onPressMenuItem }) => {
+const BottomMenu = ({ bottomMenuItems, onPressMenuItem }) => {
     return (
       <View style={styles.bottomMenu}>
-        {menuItems.map((item, index) => (
+        {bottomMenuItems.map((item, index) => (
           <TouchableOpacity key={index} style={styles.menuItem} onPress={() => onPressMenuItem(item.label)}>
             <Ionicons name={item.icon} size={30} color="black" />
             <Text style={styles.menuText}>{item.label}</Text>

@@ -10,9 +10,10 @@ import RegistrationPage from './auth/RegistrationPage';
 import LandingPage from './common/LandingPage.js';
 import BusinessPage from './business/BusinessPage.js';
 import EmployeePage from './employee/EmployeePage.js';
-import ManageEmployeePopup from './business/ManageEmployeePopup.js';
 import LogOut from './auth/logOut.js';
 import AccountPage from './common/AccountPage.js';
+import AddEmpModal from './business/AddEmpModal.js';
+import ManageEmployeePage from './business/ManageEmployeePage.js';
 
 
 const Stack = createStackNavigator();
@@ -26,7 +27,7 @@ const NavigationManager = () => {
         const { width } = Dimensions.get('window');
         if (width < 768) {
           // If it's mobile, set initial route to WelcomePageMobile
-          setInitialRoute('Welcome');
+          setInitialRoute('Business');
         } else {
           // If it's desktop, set initial route to LoginPage
           setInitialRoute('Business');
@@ -51,7 +52,8 @@ const NavigationManager = () => {
             <Stack.Screen name="Account" component={AccountPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
-            <Stack.Screen name="ManageEmployee" component={ManageEmployeePopup} options={{ headerShown: false }}/>
+            <Stack.Screen name="AddEmp" component={AddEmpModal} options={{ headerShown: false }}/>
+            <Stack.Screen name="ManageEmployee" component={ManageEmployeePage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>
