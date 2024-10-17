@@ -2,51 +2,60 @@ import { doc, setDoc } from 'firebase/firestore';
 import getClient from '../db/dbClient.js';
 import { auth, createUserWithEmailAndPassword, db } from '../firebase.js';
 
-//#region FetchEmployees
+//#region Fetch Employees
 
-// Fetch all employees for a specific business
+/**
+ * Retrieves all employees associated with a specific business ID.
+ *
+ * @param {string} businessId - The unique identifier of the business.
+ * @returns {Promise<Array>} - An array of employee records belonging to the business.
+ */
 export async function fetchEmployees(businessId) {
-    const client = await getClient();
+    const client = await getClient(); // Initialize the database client
     console.log('Database Client Obtained');
 
-    await client.connect();
+    await client.connect(); // Establish connection with the database
     console.log('Connected to Database');
 
-    // Query to get all employees for the given business ID
+    // SQL query to fetch all employees associated with the business ID
     const query = `SELECT * FROM employees WHERE business_id = $1`;
 
-    // Execute the query
     try {
-        const res = await client.query(query, [businessId]);
+        const res = await client.query(query, [businessId]); // Execute query
         console.log('Query Executed');
-        // Return the list of employees
-        return res.rows;
+        
+        return res.rows; // Return list of employees
     } catch (err) {
-        // Log and throw any errors that occur during the query
-        console.error('Error executing query:', err);
-        throw err;
+        console.error('Error executing query:', err); // Log any errors
+        throw err; // Rethrow for higher-level error handling
     } finally {
-        await client.end();
+        await client.end(); // Ensure database connection is closed
         console.log('Database connection closed');
     }
 }
 
 //#endregion
 
-//#region UpdateEmployee
+//#region Update Employee
 
-// Function to update employee information
+/**
+ * Updates the information of a specified employee based on provided new data.
+ *
+ * @param {string} employeeId - Unique identifier for the employee to update.
+ * @param {Object} newEmployeeInfo - Object containing the new employee information, including role, name, email, SSN, and birthday.
+ * @returns {Promise<void>} - A promise indicating success or failure.
+ */
 export async function UpdateEmployee(employeeId, newEmployeeInfo) {
-    const client = await getClient();
+    const client = await getClient(); // Initialize the database client
     console.log('Database Client Obtained');
 
-    await client.connect();
+    await client.connect(); // Establish connection with the database
     console.log('Connected to Database');
 
-    // Destructure the new employee information
+    // Destructure new employee information
     const { role_id, f_name, l_name, email, last4ssn, birthday } = newEmployeeInfo;
 
-    // Query to update the employee information
+    // SQL query to update employee information
     const query = `UPDATE employees
                     SET role_id = $1,
                         f_name = $2,
@@ -57,78 +66,87 @@ export async function UpdateEmployee(employeeId, newEmployeeInfo) {
                         updated_at = NOW()
                     WHERE emp_id = $7`;
 
-    // Execute the query
     try {
-        const res = await client.query(query, [role_id, f_name, l_name, email, last4ssn, birthday, employeeId]);
+        const res = await client.query(query, [role_id, f_name, l_name, email, last4ssn, birthday, employeeId]); // Execute query
         console.log('Query Executed');
-        // Check if the update was successful
+
+        // Confirm success of update by checking affected rows
         if (res.rowCount > 0) {
             console.log(`Employee ID ${employeeId} updated successfully`);
         } else {
-            // If the employee is not found, throw an error
-            throw new Error('Employee not found');
+            throw new Error('Employee not found'); // Handle case if employee not found
         }
     } catch (err) {
-        // Log and throw any errors that occur during the query
-        console.error('Error executing query:', err);
-        throw err;
+        console.error('Error executing query:', err); // Log any errors
+        throw err; // Rethrow for higher-level error handling
     } finally {
-        // Close the database connection
-        await client.end();
+        await client.end(); // Ensure database connection is closed
         console.log('Database connection closed');
     }
 }
 
 //#endregion
 
-//#region AddEmployee
+//#region Add Employee
 
+/**
+ * Adds a new employee to both PostgreSQL and Firebase. If successful, stores employee data in Firestore.
+ *
+ * @param {string} role - Role of the employee (e.g., "Employee", "Manager").
+ * @param {string} fName - First name of the employee.
+ * @param {string} lName - Last name of the employee.
+ * @param {string} email - Employee's email address.
+ * @param {string} ssn - Social Security Number of the employee.
+ * @param {string} dob - Date of birth in the format "YYYY-MM-DD".
+ * @param {number} businessId - The unique identifier of the business.
+ * @returns {Promise<Object>} - Object containing employee ID, email, role, and other relevant details.
+ */
 export async function AddEmployee(role, fName, lName, email, ssn, dob, businessId) {
     let roleID;
     let createdAt = new Date();
     let updatedAt = new Date();
+    businessId = 598984; // Temporary business ID for testing
+    // TODO: Implement business ID retrieval from the user's session or other source
 
-    // TODO: USE SQL QUERY TO GET PROPER ROLEIDs
-    // Assign role_id based on the role
+    // Determine role ID based on the provided role
+    // TODO: GET THE INFORMATION FROM DATABASE
     if (role === 'Employee') {
         roleID = 2;
     } else if (role === 'Manager') {
         roleID = 1;
     } else {
-        throw new Error('Invalid role specified');
+        throw new Error('Invalid role specified'); // Throw error if role is not valid
     }
 
-    const client = await getClient();
+    const client = await getClient(); // Initialize the database client
     console.log('Database Client Obtained');
 
-    await client.connect();
+    await client.connect(); // Establish connection with the database
     console.log('Connected to Database');
 
-    // TODO: USE FIREBASE AUTHENTICATION TO CREATE USER
-    businessId = 598984; // Hardcoded business ID for now
-
-    // Define the query for inserting employee data
+    // Define the SQL query to insert employee data into PostgreSQL
     const insertQuery = `INSERT INTO employees (business_id, role_id, f_name, l_name, email, created_at, updated_at, last4ssn, birthday) 
                             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING emp_id`;
 
     try {
-        // Firebase Authentication: Create user in Firebase using createUserWithEmailAndPassword
+        // Generate password based on date of birth and last 4 digits of SSN
         const password = `${dob.slice(5, 7)}${dob.slice(2, 4)}${ssn.slice(-4)}`; // MMYY + last 4 SSN
         console.log(`Attempting to create Firebase user with email: ${email} and generated password`);
 
+        // Firebase Authentication: Create a new user in Firebase with the generated password
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log(`Firebase user created successfully with UID: ${userCredential.user.uid}`);
 
-        // Insert into the PostgreSQL database after creating the user in Firebase
+        // Insert employee into PostgreSQL after creating Firebase user
         console.log('Inserting employee into PostgreSQL database');
         const result = await client.query(insertQuery, [businessId, roleID, fName, lName, email, createdAt, updatedAt, ssn, dob]);
         const empId = result.rows[0].emp_id;
         console.log(`Employee added to PostgreSQL with ID: ${empId}`); 
 
-          //  add the employee to Firestore under the respective business collection
+        // Employee data to be stored in Firestore under business collection
         const employeeData = {
             empId,
-            uid: userCredential.user.uid,  // Store Firebase UID
+            uid: userCredential.user.uid,  // Firebase UID
             fName,
             lName,
             email,
@@ -138,11 +156,11 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
             updatedAt,
         };
 
-        // Create a document in Firestore under the business's collection
+        // Store employee data in Firestore
         await setDoc(doc(db, `businesses/${businessId}/employees`, empId.toString()), employeeData);
         console.log('Employee data stored in Firestore');
 
-        // Return the new employee's ID and relevant data for future use
+        // Return relevant details of the new employee
         return {
             empId,
             email,
@@ -153,20 +171,17 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
             password,
         };
     } catch (err) {
-        // Debugging error logs
-        console.error('An error occurred:', err);
+        console.error('An error occurred:', err); // Log error details
 
         if (err.code) {
-            // Log specific Firebase errors
-            console.error(`Firebase error code: ${err.code}`);
+            console.error(`Firebase error code: ${err.code}`); // Log specific Firebase errors
             console.error(`Firebase error message: ${err.message}`);
         } else {
-            // Log PostgreSQL or other errors
-            console.error(`Non-Firebase error: ${err.message}`);
+            console.error(`Non-Firebase error: ${err.message}`); // Log PostgreSQL or other errors
         }
-        throw err;
+        throw err; // Rethrow for higher-level error handling
     } finally {
-        await client.end();
+        await client.end(); // Ensure the database connection is closed
         console.log('Database connection closed');
     }
 }

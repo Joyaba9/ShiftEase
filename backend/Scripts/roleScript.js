@@ -2,36 +2,37 @@ import getClient from '../dbClient.js';
 
 //#region Create Role
 
-// Function to create a new role
+/**
+ * Creates a new role within the database.
+ *
+ * @param {string} roleName - The name of the role to be created (e.g., "Manager", "Employee").
+ * @returns {Promise<void>} - A promise indicating the role creation success or failure.
+ */
 export async function CreateRole(roleName) {
-    const client = await getClient();
+    const client = await getClient(); // Initialize the database client
     console.log('Database Client Obtained');
 
-    await client.connect();
+    await client.connect(); // Establish connection with the database
     console.log('Connected to Database');
 
-    // Query to insert a new role
-    const query = `INSERT INTO roles (role_name)
-                    VALUES ($1) RETURNING role_id`;
+    // SQL query to insert a new role into the roles table
+    const query = `INSERT INTO roles (role_name) VALUES ($1) RETURNING role_id`;
 
-    // Execute the query
     try {
-        const res = await client.query(query, [roleName]);
+        const res = await client.query(query, [roleName]); // Execute query to insert the role
         console.log('Query Executed');
-        // Check if the insert was successful
+        
+        // Confirm successful insertion of the new role
         if (res.rowCount > 0) {
             console.log(`Role ID ${res.rows[0].role_id} created successfully`);
         } else {
-            // If the role is not created, throw an error
-            throw new Error('Role not created');
+            throw new Error('Role not created'); // Handle failure to create a role
         }
     } catch (err) {
-        // Log and throw any errors that occur during the query
-        console.error('Error executing query:', err);
-        throw err;
+        console.error('Error executing query:', err); // Log any errors
+        throw err; // Rethrow error for higher-level handling
     } finally {
-        // Close the database connection
-        await client.end();
+        await client.end(); // Ensure database connection is closed
         console.log('Database connection closed');
     }
 }

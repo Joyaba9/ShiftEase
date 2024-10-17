@@ -3,73 +3,74 @@ import { getBusinessById, getBusinessDetails, registerBusiness, saveBusinessLoca
 
 const router = express.Router();
 
-//Define the route to fetch fetch business details by business email
+// Route to fetch business details by email
 router.post('/getDetails', async (req, res) => {
-     // Extract the business_email from the request body
     const { business_email } = req.body;
-    console.log("Post "+ business_email);
+    console.log("Post " + business_email);
 
-     // Try to retrieve the business details for the given business email
     try {
-         // Call the getBusinessDetails function to get the business details from the database
+        // Call getBusinessDetails to fetch details of the business from the database
         const businessDetails = await getBusinessDetails(business_email);
         console.log("business details in router: " + businessDetails);
 
-        // If successful, return the business details in a JSON response with status 200 (OK)
-        res.status(200).json({businessDetails});
+        // Send business details in JSON format on success
+        res.status(200).json({ businessDetails });
     } catch (err) {
-        console.error('Error fetching businessDetails:');
+        // Log error and send a 500 status if there's an issue fetching business details
+        console.error('Error fetching businessDetails:', err);
         res.status(500).json({ error: 'Internal server error businessDetails' });
     }
 });
 
-// Define the route to save business location
+// Route to save or update a business location
 router.post('/saveLocation', async (req, res) => {
-    // Extract the business location data from the request body
-    const businessLocationData = req.body;
+    const businessLocationData = req.body; // Extract location data from the request
 
-    // Try to save the business location
     try {
-        // Call the saveBusinessLocation function to save the data and get the new location ID
+        // Call saveBusinessLocation to save or update business location and get location ID
         const businessLocationId = await saveBusinessLocation(businessLocationData);
         console.log("Business location saved with ID:", businessLocationId);
 
-        // If successful, return the new business location ID in a JSON response with status 201 (Created)
+        // Return the new or updated business location ID on success
         res.status(201).json({ businessLocationId });
     } catch (err) {
+        // Log error and respond with 500 status if saving fails
         console.error('Error saving business location:', err);
         res.status(500).json({ error: 'Internal server error while saving business location' });
     }
 });
 
-// Define the route to fetch fetch business ID by business email
+// Route to fetch business ID by email
 router.post('/getBusinessIDFromEmail', async (req, res) => {
-    // Extract the business_email from the request body
-    const { business_email } = req.body;
+    const { business_email } = req.body; // Extract business email from request body
 
-    // Try to retrieve the business_id for the given business_email
     try {
-        // Call the getBusinessById function to get the business_id from the database
+        // Call getBusinessById to retrieve the unique business ID
         const business_id = await getBusinessById(business_email);
 
-        // If successful, return the business_id in a JSON response with status 200 (OK)
-        res.status(200).json({business_id});
+        // Return the business ID in JSON format on success
+        res.status(200).json({ business_id });
     } catch (err) {
+        // Log error and respond with a 500 status if there's an issue
         console.error('Error fetching business_id:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// POST regBusiness
+// Route to register a new business with name, email, and password
 router.post('/register', async (req, res) => {
     const { businessName, businessEmail, password } = req.body;
 
     try {
+        // Call registerBusiness to create a new business entry in the database
         const result = await registerBusiness(businessName, businessEmail, password);
+
+        // Return a success message on successful registration
         res.status(200).json(result);
     } catch (err) {
+        // Log the error and return a 400 status with the error message if registration fails
         res.status(400).json({ message: err.message });
     }
 });
 
-export default router;
+export default router; // Export the router to be used in server.js
