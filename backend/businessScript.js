@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import getClient from './dbClient.js';
 
 // Function to retrieve business details based on the business email
@@ -145,5 +146,83 @@ export async function saveBusinessLocation(businessLocationData) {
         // Close the database connection
         await client.end();
         console.log('Database connection closed');
+    }
+}
+
+// Business ID for a specific business
+export async function getBusinessById(business_email) {
+    const client = await getClient();
+    console.log('Database Client Obtained');
+
+    await client.connect();
+    console.log('Connected to Database');
+
+    // Log the business_email being queried
+    console.log('Querying for business_email:', business_email);
+
+    // Query to get all business_id for the given business_email
+    const query = `SELECT business_id FROM business WHERE LOWER(business_email) = LOWER($1)`;
+
+    // Execute the query
+    try {
+        const res = await client.query(query, [business_email]);
+        console.log('Query Executed');
+        // Return the list of business_id
+        if (res.rows.length > 0) {
+            return res.rows[0].business_id;
+        } else {
+            throw new Error(`Business not found for email: ${business_email}`);
+        };
+    } catch (err) {
+        // Log and throw any errors that occur during the query
+        console.error('Error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+// Function to register a new business
+export async function registerBusiness(businessName, businessEmail, password) {
+    console.log('Received registration request');
+    console.log('Business Name:', businessName, 'Business Email:', businessEmail);
+
+    if (!businessName || !businessEmail || !password) {
+        console.log('Missing required fields');
+        throw new Error('Please enter all fields');
+    }
+
+    try {
+        // Get the PostgreSQL client from Cloud SQL
+        const client = await getClient();
+        await client.connect();
+
+        // Check if the business already exists by name
+        const existingBusinessName = await client.query('SELECT * FROM business WHERE business_name = $1', [businessName]);
+        if (existingBusinessName.rows.length > 0) {
+            console.log('Business name already exists');
+            throw new Error('Business name already exists');
+        }
+
+        // Check if the business already exists by email
+        const existingBusinessEmail = await client.query('SELECT * FROM business WHERE business_email = $1', [businessEmail]);
+        if (existingBusinessEmail.rows.length > 0) {
+            console.log('Business email already exists');
+            throw new Error('Business email already exists');
+        }
+
+        // Hash the password
+        const saltRounds = 10; // Number of salt rounds for bcrypt
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Insert the new business into the database
+        await client.query('INSERT INTO business (business_name, business_email, password) VALUES ($1, $2, $3)', [businessName, businessEmail, hashedPassword]);
+
+        console.log('Business registered successfully');
+        return { message: 'Business registered successfully' };
+    } catch (err) {
+        console.error('Error registering business:', err);
+        throw err;
     }
 }
