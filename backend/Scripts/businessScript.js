@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import getClient from './dbClient.js';
+import getClient from '../db/dbClient.js';
 
 //#region Get Business Details
 

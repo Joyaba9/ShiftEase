@@ -1,9 +1,9 @@
 import express from 'express';
-import { CreateRole } from './createRoleScript.js';
+import { CreateRole } from '../Scripts/createRoleScript.js';
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
+router.post('/create', async (req, res) => {
     const { roleName } = req.body;
 
     if (!roleName) {

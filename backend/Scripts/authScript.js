@@ -1,7 +1,7 @@
 import { updatePassword } from 'firebase/auth';
 import 'firebase/compat/firestore';
-import getClient from './dbClient.js';
-import { auth, signInWithEmailAndPassword } from './firebase.js'; // Import auth from your Firebase module
+import getClient from '../db/dbClient.js';
+import { auth, signInWithEmailAndPassword } from '../firebase.js'; // Import auth from your Firebase module
 
 //#region Generate Default Password
 

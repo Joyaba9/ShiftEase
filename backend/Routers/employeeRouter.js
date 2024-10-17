@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, UpdateEmployee } from './employeeScript.js'; // Adjust the path as needed
+import { AddEmployee, fetchEmployees, UpdateEmployee } from '../Scripts/employeeScript.js'; // Adjust the path as needed
 
 const router = express.Router();
 

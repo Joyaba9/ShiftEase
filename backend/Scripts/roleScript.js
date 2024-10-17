@@ -1,4 +1,6 @@
-import getClient from './dbClient.js';
+import getClient from '../dbClient.js';
+
+//#region Create Role
 
 // Function to create a new role
 export async function CreateRole(roleName) {
@@ -34,9 +36,4 @@ export async function CreateRole(roleName) {
     }
 }
 
-/* Example usage
-const roleName = 'Administrator';
-CreateRole(roleName)
-    .then(() => console.log('Role created successfully'))
-    .catch(err => console.error('Error creating role:', err));
-*/
+//#endregion

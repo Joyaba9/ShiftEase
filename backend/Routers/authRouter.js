@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAuth, signOut } from "firebase/auth";
-import { changeUserPassword, LoginEmployee } from './AuthScript.js';
+import { changeUserPassword, LoginEmployee } from '../Scripts/authScript.js';
 
 const router = express.Router();
 

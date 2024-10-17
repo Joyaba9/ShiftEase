@@ -1,6 +1,6 @@
 import { doc, setDoc } from 'firebase/firestore';
-import getClient from './dbClient.js';
-import { auth, createUserWithEmailAndPassword, db } from './firebase.js';
+import getClient from '../db/dbClient.js';
+import { auth, createUserWithEmailAndPassword, db } from '../firebase.js';
 
 //#region FetchEmployees
 
