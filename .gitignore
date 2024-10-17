@@ -25,3 +25,5 @@ backend/google-cloud-cli-*.tar.gz
 backend/google-cloud-sdk/
 
 
+package.json
+package-lock.json
