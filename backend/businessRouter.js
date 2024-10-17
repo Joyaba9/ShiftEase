@@ -1,5 +1,5 @@
 import express from 'express';
-import { getBusinessById, getBusinessDetails, registerBusiness, saveBusinessLocation } from './BusinessScript.js';
+import { getBusinessById, getBusinessDetails, registerBusiness, saveBusinessLocation } from './businessScript.js';
 
 const router = express.Router();
 

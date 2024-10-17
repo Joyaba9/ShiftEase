@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt';
 import getClient from './dbClient.js';
 
+//#region Get Business Details
+
 // Function to retrieve business details based on the business email
 export async function getBusinessDetails(business_email) {
     // Obtain a database client
@@ -37,6 +39,10 @@ export async function getBusinessDetails(business_email) {
 }
 //Testing Purposes:
 //getBusinessDetails("test@business.com").then(business_id => console.log('BusinessID:', business_id)).catch(err => console.error('Error:', err));
+
+//#endregion
+
+//#region Save Business Location
 
 // Function to save or update a business location
 export async function saveBusinessLocation(businessLocationData) {
@@ -149,6 +155,10 @@ export async function saveBusinessLocation(businessLocationData) {
     }
 }
 
+//#endregion
+
+//#region Get Business ID from Email
+
 // Business ID for a specific business
 export async function getBusinessById(business_email) {
     const client = await getClient();
@@ -182,6 +192,10 @@ export async function getBusinessById(business_email) {
         console.log('Database connection closed');
     }
 }
+
+//#endregion
+
+//#region Register Business
 
 // Function to register a new business
 export async function registerBusiness(businessName, businessEmail, password) {
@@ -226,3 +240,5 @@ export async function registerBusiness(businessName, businessEmail, password) {
         throw err;
     }
 }
+
+//#endregion
