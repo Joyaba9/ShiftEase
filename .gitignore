@@ -27,3 +27,5 @@ backend/google-cloud-sdk/
 
 package.json
 package-lock.json
+shiftEase/package-lock.json
+shiftEase/package.json
