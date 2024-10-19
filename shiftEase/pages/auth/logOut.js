@@ -1,7 +1,5 @@
-import react from 'react';
-import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import NavigationManager from '../NavigationManager';
+import { useState } from 'react';
 
 
 
@@ -14,7 +12,7 @@ const LogOut = () => {
     const logOut = async () => {
         // Call the backend API to log out the user
         try {
-            const response = await fetch('http://137.125.153.205:5050/api/logout', {
+            const response = await fetch('http://137.125.153.205:5050/api/auth/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

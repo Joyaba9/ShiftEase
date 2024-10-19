@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Image, Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from '../common/CommonLayout';
 
 const { width } = Dimensions.get('window');
@@ -36,7 +36,7 @@ const ChangePassPage = () => {
 
     // Call the backend API to handle password change
     try {
-      const response = await fetch('http://localhost:5050/api/change-password', {
+      const response = await fetch('http://localhost:5050/api/auth/changePassword', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

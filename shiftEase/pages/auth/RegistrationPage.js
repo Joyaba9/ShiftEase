@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Image, View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions, TextInput } from 'react-native';
-import CommonLayout from '../common/CommonLayout';
 import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import CommonLayout from '../common/CommonLayout';
 
 const { width } = Dimensions.get('window');
 
@@ -31,7 +31,7 @@ const RegistrationPage = () => {
 
     // Call the backend API to register the business
     try {
-      const response = await fetch('http://localhost:5050/api/regBusiness', {
+      const response = await fetch('http://localhost:5050/api/business/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -4,8 +4,8 @@ import { AddEmployee, fetchEmployees, UpdateEmployee } from '../Scripts/employee
 const router = express.Router();
 
 // Route to fetch all employees for a given business ID
-router.get('/fetchAll', async (req, res) => {
-    const { businessId } = req.body; // Extract the business ID from the request body
+router.get('/fetchAll/:businessId', async (req, res) => {
+    const { businessId } = req.params; // Extract the business ID from the request Parameter
 
     try {
         // Call fetchEmployees to retrieve a list of employees for the given business ID

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, Image, View, Text, KeyboardAvoidingView, TextInput, TouchableOpacity, StyleSheet, Dimensions, Modal, FlatList, Platform, ScrollView} from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -23,7 +23,7 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible }) => {
         }
     
         try {
-          const response = await fetch('http://localhost:5050/api/addEmp', {
+          const response = await fetch('http://localhost:5050/api/employee/add', {
                 method: 'POST',
                     headers: {
                     'Content-Type': 'application/json'
