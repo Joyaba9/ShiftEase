@@ -1,34 +1,29 @@
+// Import required modules
 import cors from 'cors';
 import express from 'express';
-import addEmpRouter from './addEmpRouter.js';
-import changePasswordRouter from './changePasswordRouter.js';
-import employeeRouter from './employeeRouter.js';
-import getBusinessById from './getBusinessIDRouter.js';
-import loginRouter from './loginRouter.js';
-import regBusinessRouter from './regBusiness.js'; // Correct import for default export
-import logoutRouter from './logout.js';
-import businessRouter from './BusinessDetailsRouter.js';
+
+// Import routers
+import authRouter from './Routers/authRouter.js';
+import businessRouter from './Routers/businessRouter.js';
+import employeeRouter from './Routers/employeeRouter.js';
+import roleRouter from './Routers/roleRouter.js';
 
 
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors()); // Enables CORS for all routes
+app.use(express.json()); // Allows parsing JSON requests
 
-app.use('/api/regBusiness', regBusinessRouter); // Use the named router
-app.use('/api/login', loginRouter); // Use the login router
-app.use('/api/employees', employeeRouter);
-app.use('/api/change-password', changePasswordRouter);
+// Routes
+app.use('/api/employee', employeeRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/business', businessRouter);
+app.use('/api/role', roleRouter);
 
-app.use('/api/getBusinessId', getBusinessById);
-app.use('/api', businessRouter);
-
-app.use('/api/addEmp', addEmpRouter); // Use the addEmp router
-app.use('/api/logout', logoutRouter);
 
 // Start the server
-const PORT = process.env.PORT || 5050; // Use port 5050
+const PORT = process.env.PORT || 5050; // Define the port to listen on, default to 5050 if not specified in environment variables
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`); // Log a message when the server starts
 });

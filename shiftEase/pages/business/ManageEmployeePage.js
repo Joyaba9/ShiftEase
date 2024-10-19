@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, Image, View, Text, StyleSheet, Button, Alert, TextInput} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import NavBar from '../../components/NavBar';
 
 const ManageEmployeePage = () => {
@@ -21,7 +21,7 @@ const ManageEmployeePage = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5050/api/employees/${businessId}`);
+      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${businessId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch employees');
       }
@@ -34,7 +34,7 @@ const ManageEmployeePage = () => {
 
   const handleEdit = async () => {
     try {
-      const response = await fetch(`http://localhost:5050/api/employees/${editedEmployee.id}`, {
+      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${editedEmployee.id}`, { // This is not a router, unsure what it is supposed to do.
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ const ManageEmployeePage = () => {
 
   const handleDeleteEmployee = async (employeeId) => {
     try {
-      const response = await fetch(`http://localhost:5050/api/employees/${employeeId}`, {
+      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${employeeId}`, { // This is not a router, unsure what it is supposed to do.
         method: 'DELETE',
       });
 
