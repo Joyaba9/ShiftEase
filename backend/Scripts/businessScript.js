@@ -192,53 +192,69 @@ export async function getBusinessById(business_email) {
 //#region Register Business
 
 /**
- * Registers a new business with a name, email, and hashed password.
+ * Registers a new business by checking for existing records and inserting new data.
  *
- * @param {string} businessName - Name of the business.
- * @param {string} businessEmail - Email of the business.
- * @param {string} password - Password for the business account.
- * @returns {Promise<Object>} - A message confirming registration success or error details.
+ * @param {string} businessName - The name of the business to register.
+ * @param {string} businessEmail - The email of the business to register.
+ * @param {string} password - The password for the business account.
+ * @returns {Promise<Object>} - An object indicating success or failure of the registration.
  */
 export async function registerBusiness(businessName, businessEmail, password) {
-    console.log('Received registration request');
-    console.log('Business Name:', businessName, 'Business Email:', businessEmail);
-
-    // Validate required fields
-    if (!businessName || !businessEmail || !password) {
-        console.log('Missing required fields');
-        throw new Error('Please enter all fields');
-    }
+    let client;
 
     try {
-        const client = await getClient(); // Initialize database client
-        await client.connect(); // Establish connection with the database
+        // Get the PostgreSQL client from Cloud SQL
+        client = await getClient();
+        await client.connect(); // Establish connection to the database
 
-        // Check for existing business name
-        const existingBusinessName = await client.query('SELECT * FROM business WHERE business_name = $1', [businessName]);
+        // Check if the business already exists by name
+        const existingBusinessName = await client.query(
+            'SELECT * FROM business WHERE business_name = $1', 
+            [businessName]
+        );
         if (existingBusinessName.rows.length > 0) {
-            console.log('Business name already exists');
-            throw new Error('Business name already exists');
+            return { success: false, message: 'Business name already exists' };
         }
 
-        // Check for existing business email
-        const existingBusinessEmail = await client.query('SELECT * FROM business WHERE business_email = $1', [businessEmail]);
+        // Check if the business already exists by email
+        const existingBusinessEmail = await client.query(
+            'SELECT * FROM business WHERE business_email = $1', 
+            [businessEmail]
+        );
         if (existingBusinessEmail.rows.length > 0) {
-            console.log('Business email already exists');
-            throw new Error('Business email already exists');
+            return { success: false, message: 'Business email already exists' };
         }
 
-        // Hash password with bcrypt
-        const saltRounds = 10; // Define the number of salt rounds for hashing
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        // Hash the password for security
+        const saltRounds = 10; // Number of salt rounds for bcrypt
+        const passHash = await bcrypt.hash(password, saltRounds);
+        console.log('Password hashed successfully');
 
-        // Insert new business record into the database
-        await client.query('INSERT INTO business (business_name, business_email, password) VALUES ($1, $2, $3)', [businessName, businessEmail, hashedPassword]);
+        // Insert the new business into the database
+        const query = `
+            INSERT INTO business (business_name, business_email, pass_hash, created_at, updated_at) 
+            VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *`;
+        const values = [businessName, businessEmail, passHash];
+        
+        const result = await client.query(query, values);
+        console.log('Business inserted successfully');
 
-        console.log('Business registered successfully');
-        return { message: 'Business registered successfully' };
+        // Return the newly created business data
+        return { success: true, data: result.rows[0] };
     } catch (err) {
-        console.error('Error registering business:', err); // Log any errors
-        throw err; // Rethrow for higher-level handling
+        // Log any errors during the registration process
+        console.error('Error during registration process:', err);
+        throw err; // Rethrow error for higher-level handling
+    } finally {
+        // Ensure the client connection is closed even if an error occurs
+        if (client) {
+            try {
+                await client.end();
+                console.log('Database client connection closed');
+            } catch (closeError) {
+                console.error('Error closing database client connection:', closeError);
+            }
+        }
     }
 }
 

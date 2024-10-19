@@ -61,15 +61,26 @@ router.post('/getBusinessIDFromEmail', async (req, res) => {
 router.post('/register', async (req, res) => {
     const { businessName, businessEmail, password } = req.body;
 
+    // Check for missing fields to prevent undefined values in logic
+    if (!businessName || !businessEmail || !password) {
+        return res.status(400).json({ message: 'Please enter all fields' });
+    }
+
     try {
-        // Call registerBusiness to create a new business entry in the database
+        // Call registerBusiness function to handle business registration
         const result = await registerBusiness(businessName, businessEmail, password);
 
-        // Return a success message on successful registration
-        res.status(200).json(result);
+        // If registration is successful, send a success response
+        if (result.success) {
+            return res.status(201).json(result.data);
+        } else {
+            // If registration fails, send a response with error details
+            return res.status(400).json({ message: result.message });
+        }
     } catch (err) {
-        // Log the error and return a 400 status with the error message if registration fails
-        res.status(400).json({ message: err.message });
+        // Log any errors that occur and return a 500 status for server error
+        console.error('Error during registration process:', err);
+        return res.status(500).json({ message: 'Server error', error: err.message });
     }
 });
 
