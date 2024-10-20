@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../../components/NavBar.js';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
 import AddEmpModal from './AddEmpModal.js';
@@ -14,6 +15,15 @@ const BusinessPage = () => {
   const navigation = useNavigation();
   const [isManagerDashboard, setIsManagerDashboard] = useState(false);
   const isMobile = width < 768; 
+
+  // Access the logged-in business information from Redux
+  const loggedInBusiness = useSelector((state) => state.business.businessInfo);
+
+  // Check if the data exists
+  if (!loggedInBusiness) {
+      console.error('No business is logged in');
+      return null;
+  }
 
   // Function to switch between dashboards
   const switchDashboard = () => {
@@ -145,6 +155,7 @@ const BusinessPage = () => {
         <AddEmpModal 
           addEmpVisible={addEmpVisible} 
           setAddEmpVisible={setAddEmpVisible}
+          businessId={loggedInBusiness.business.business_id}
         />
       </View>
     </ScrollView>

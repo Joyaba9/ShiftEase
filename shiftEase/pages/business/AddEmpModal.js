@@ -3,7 +3,7 @@ import { Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Modal, Platfo
 
 const { width } = Dimensions.get('window');
 
-const AddEmpModal = ({ addEmpVisible, setAddEmpVisible }) => {
+const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
     const isMobile = width < 768; 
 
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -34,12 +34,19 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible }) => {
                     lName,
                     email,
                     ssn,
-                    dob
+                    dob,
+                    businessId
                 })
             });
     
             if (response.status === 200) {
                 alert('Added employee successfully');
+                setFName(''); // Clear the first name field
+                setLName('');
+                setDOB('');
+                setEmail('');
+                setSSN('');
+                setRole('Select Role'); // Reset role selection
             } else {
                 alert('Invalid credentials');
             }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,10 @@ const { width } = Dimensions.get('window');
 const EmployeePage = () => {
 
     const isMobile = width < 768; 
+
+    // Retrieve the logged-in user from Redux store
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+    console.log('Logged in user:', loggedInUser);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -29,7 +34,9 @@ const EmployeePage = () => {
 
                     <View style={styles.spacer} />
 
-                    <Text style = {styles.welcomeText}>Welcome User</Text> 
+                    <Text style = {styles.welcomeText}>
+                        {loggedInUser && loggedInUser.employee ? `Welcome, ${loggedInUser.employee.f_name}` : 'Welcome, User'}
+                    </Text> 
 
                     <Image
                         resizeMode="contain"

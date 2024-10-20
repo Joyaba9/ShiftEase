@@ -3,13 +3,18 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import BusinessHours from './BusinessHours';
-import { getBusinessDetails, saveBusinessLocation } from '../../../backend/api/api';
+import { useSelector } from 'react-redux';
+import { getBusinessDetails, saveBusinessLocation, fetchBusinessDetailsAndLocation } from '../../../backend/api/api';
 
 const { width } = Dimensions.get('window');
 
 const BusinessAccountDetails = () => {
     const navigation = useNavigation();
     const isMobile = width < 768; 
+
+    // Access the logged-in business from the Redux store
+    const loggedInBusiness = useSelector((state) => state.business.businessInfo);
+    console.log("Logged in Business: ", loggedInBusiness);
 
     // State variables to store business details
     const [businessId, setBusinessId] = useState('');
@@ -35,22 +40,49 @@ const BusinessAccountDetails = () => {
 
     console.log("BusinessDetails");
 
-    // Function to fetch business details by business email (e.g., test@business.com)
-    async function fetchBusinessId() {
-        const businessObject = await getBusinessDetails("justRight@gmail.com");
-
-        // Log and set the fetched business details into the state
-        console.log("Business ID:", businessObject.business_id); 
-        
-        setBusinessId(businessObject.business_id);
-        setBusinessName(businessObject.business_name);
-        setBusinessEmail(businessObject.business_email);
-    }   
-    
-    //Automatically fetch business details when the component is mounted
     useEffect(() => {
-        fetchBusinessId();
-    }, []);
+        async function fetchData() {
+            if (loggedInBusiness && loggedInBusiness.business && loggedInBusiness.business.business_email) {
+                try {
+                    // Call fetchBusinessDetailsAndLocation and destructure the returned data
+                    const { businessDetails, businessLocation } = await fetchBusinessDetailsAndLocation(loggedInBusiness.business.business_email);
+    
+                    // Update state with fetched business details
+                    setBusinessId(businessDetails.business_id);
+                    setBusinessName(businessDetails.business_name);
+                    setBusinessEmail(businessDetails.business_email);
+    
+                    // Update state with fetched business location details (if any)
+                    if (businessLocation) {
+                        // Construct the full address from individual components
+                        const fullAddress = `${businessLocation.street_address}, ${businessLocation.city}, ${businessLocation.state} ${businessLocation.zipcode}`;
+
+                        setBusinessAddress(fullAddress);
+                        setBusinessPhoneNum(businessLocation.phone_number);
+    
+                        const hours = businessLocation.business_hours || {}; // Default to empty object if null
+                        setBusinessHours({
+                            Monday: hours.Monday || { open: '', close: '' },
+                            Tuesday: hours.Tuesday || { open: '', close: '' },
+                            Wednesday: hours.Wednesday || { open: '', close: '' },
+                            Thursday: hours.Thursday || { open: '', close: '' },
+                            Friday: hours.Friday || { open: '', close: '' },
+                            Saturday: hours.Saturday || { open: '', close: '' },
+                            Sunday: hours.Sunday || { open: '', close: '' },
+                        });
+                    } else {
+                        console.log("No business location data found, using default empty values.");
+                    }
+                } catch (error) {
+                    console.error('Error fetching business details and location:', error);
+                }
+            } else {
+                console.error('No business email found for logged-in business');
+            }
+        }
+    
+        fetchData();
+    }, [loggedInBusiness]);
 
     // Function to toggle between "edit mode" and "view mode"
     const handleEditToggle = () => {
@@ -81,7 +113,7 @@ const BusinessAccountDetails = () => {
     // Function to save the business location
     async function handleSaveProfile() {
         // Basic validation: Check if required fields are provided
-        if (!businessId || !businessName || !businessPhoneNum || !businessAddress) {
+        if (!businessId || !businessName || !businessPhoneNum || !businessAddress) { 
             alert("Please fill in all required fields.");
             return; 
         }
@@ -160,7 +192,7 @@ const BusinessAccountDetails = () => {
 
                     {/* Display the business name */}
                     <Text style={styles.userNameText}>
-                        {businessName || "Loading..."}
+                        {businessName ? businessName : "Business name loading..."}
                     </Text>
                 </View>
 

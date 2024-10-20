@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt';
 import getClient from '../db/dbClient.js';
+import { auth, createUserWithEmailAndPassword, db } from '../firebase.js';
+import { setDoc, doc } from 'firebase/firestore';
 
 //#region Get Business Details
 
@@ -147,6 +149,29 @@ export async function saveBusinessLocation(businessLocationData) {
 
 //#endregion
 
+export async function getBusinessLocation(businessId) {
+    const client = await getClient();
+    await client.connect();
+
+    // Fetching business location including business hours (JSON)
+    const query = `SELECT street_address, city, state, zipcode, phone_number, business_hours 
+                   FROM business_locations WHERE business_id = $1`;
+    
+    try {
+        const res = await client.query(query, [businessId]);
+        if (res.rows.length > 0) {
+            return res.rows[0];
+        } else {
+            return null; // No data found
+        }
+    } catch (err) {
+        console.error('Error fetching business location:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 //#region Get Business ID from Email
 
 /**
@@ -225,22 +250,62 @@ export async function registerBusiness(businessName, businessEmail, password) {
             return { success: false, message: 'Business email already exists' };
         }
 
+        // Firebase Authentication: Create a new user in Firebase with the provided email and password
+        console.log(`Attempting to create Firebase user for email: ${businessEmail}`);
+        let firebaseUser;
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, businessEmail, password);
+            firebaseUser = userCredential.user;
+
+            // Ensure firebaseUser is not undefined before accessing properties
+            if (!firebaseUser || !firebaseUser.uid) {
+                throw new Error('Firebase user creation failed or Firebase user is undefined');
+            }
+            
+            console.log(`Firebase user created successfully with UID: ${firebaseUser.uid}`);
+        } catch (firebaseError) {
+            if (firebaseError.code === 'auth/email-already-in-use') {
+                console.error('Email already in use in Firebase');
+                return { success: false, message: 'Email is already in use' };
+            }
+            throw firebaseError;
+        }
+        
         // Hash the password for security
         const saltRounds = 10; // Number of salt rounds for bcrypt
         const passHash = await bcrypt.hash(password, saltRounds);
         console.log('Password hashed successfully');
 
-        // Insert the new business into the database
+        // Insert the new business into the PostgreSQL database
         const query = `
             INSERT INTO business (business_name, business_email, pass_hash, created_at, updated_at) 
             VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *`;
         const values = [businessName, businessEmail, passHash];
-        
+
         const result = await client.query(query, values);
-        console.log('Business inserted successfully');
+        const businessData = result.rows[0]; // This line assigns the inserted business data
+        console.log('Business inserted successfully into PostgreSQL:', businessData);
+
+        // Store business data in Firestore
+        const firestoreBusinessData = {
+            businessId: businessData.business_id,
+            businessName: businessData.business_name,
+            businessEmail: businessData.business_email,
+            firebaseUid: firebaseUser.uid,
+            createdAt: new Date(), // Firebase uses timestamps
+        };
+
+        await setDoc(doc(db, `businesses`, businessData.business_id.toString()), firestoreBusinessData);
+        console.log('Business data stored in Firestore');
 
         // Return the newly created business data
-        return { success: true, data: result.rows[0] };
+        return { 
+            success: true, 
+            data: {
+                ...businessData,
+                firebaseUid: firebaseUser.uid // Attach the Firebase UID to the business data
+            }
+        };  
     } catch (err) {
         // Log any errors during the registration process
         console.error('Error during registration process:', err);

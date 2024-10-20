@@ -1,6 +1,6 @@
 import express from 'express';
 //import { getAuth, signOut } from "firebase/auth";
-import { changeUserPassword, LoginEmployee } from '../Scripts/authScript.js';
+import { changeUserPassword, LoginEmployee, LoginBusiness } from '../Scripts/authScript.js';
 
 const router = express.Router();
 
@@ -44,6 +44,25 @@ router.post('/login', async (req, res) => {
         
         // Send success response with employee data if login was successful
         res.status(200).json({ success: true, employee });
+    } catch (err) {
+        // If login fails, return an error response with details
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+// Route to log in a business using Firebase and PostgreSQL
+router.post('/loginBusiness', async (req, res) => {
+    const { businessEmail, password } = req.body;
+
+    // Log the login request to help trace login actions in debugging
+    console.log('Business login request received:', businessEmail, password);
+
+    try {
+        // Call LoginBusiness to authenticate and retrieve business data
+        const business = await LoginBusiness(businessEmail, password);
+
+        // Send success response with business data if login was successful
+        res.status(200).json({ success: true, business });
     } catch (err) {
         // If login fails, return an error response with details
         res.status(400).json({ success: false, message: err.message });
