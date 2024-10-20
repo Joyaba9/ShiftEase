@@ -23,6 +23,7 @@ const BusinessHours = ({ businessHours = {}, isEditing, setBusinessHours }) => {
                             style={[styles.hoursInput, isEditing && styles.editableInput]}
                             value={businessHours[day]?.open || ''}
                             placeholder="Open Time"
+                            placeholderTextColor= 'grey' 
                             readOnly={!isEditing}
                             onChangeText={(value) => handleHoursChange(day, 'open', value)}
                         />
@@ -31,6 +32,7 @@ const BusinessHours = ({ businessHours = {}, isEditing, setBusinessHours }) => {
                             style={[styles.hoursInput, isEditing && styles.editableInput]}
                             value={businessHours[day]?.close || ''}
                             placeholder="Close Time"
+                            placeholderTextColor= 'grey'
                             readOnly={!isEditing}
                             onChangeText={(value) => handleHoursChange(day, 'close', value)}
                         />

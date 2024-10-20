@@ -32,7 +32,11 @@ const BusinessPage = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <ScrollView 
+      contentContainerStyle={styles.scrollContainer}
+      showsVerticalScrollIndicator={false} 
+      showsHorizontalScrollIndicator={false}
+    >
       <View style={styles.container}>
         <NavBar homeRoute={'Business'}/>
 

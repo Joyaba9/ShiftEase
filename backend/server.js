@@ -18,7 +18,7 @@ app.use(express.json()); // Allows parsing JSON requests
 // Routes
 app.use('/api/employee', employeeRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/business', businessRouter);
+app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
 
 
