@@ -4,7 +4,7 @@ import { getBusinessById, getBusinessDetails, registerBusiness, saveBusinessLoca
 const router = express.Router();
 
 // Route to fetch business details by email
-router.post('/getDetails', async (req, res) => {
+router.post('/getBusinessDetails', async (req, res) => {
     const { business_email } = req.body;
     console.log("Post " + business_email);
 
@@ -23,7 +23,7 @@ router.post('/getDetails', async (req, res) => {
 });
 
 // Route to save or update a business location
-router.post('/saveLocation', async (req, res) => {
+router.post('/saveBusinessLocation', async (req, res) => {
     const businessLocationData = req.body; // Extract location data from the request
 
     try {

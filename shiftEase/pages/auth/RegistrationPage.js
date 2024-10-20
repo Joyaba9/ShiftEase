@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from '../common/CommonLayout';
+import { registerBusiness } from '../../../backend/api/api';
 
 const { width } = Dimensions.get('window');
 
@@ -15,47 +16,18 @@ const RegistrationPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
-  const registerBusiness = async () => {
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
 
-    // Validate that all fields are filled
-    if (!businessName || !businessEmail || !password) {
-      alert('Please fill in all the fields');
-      return;
-    }
-
-    // Call the backend API to register the business
-    try {
-      const response = await fetch('http://localhost:5050/api/business/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          businessName,
-          businessEmail,
-          password
-        })
-      });
+  const handleRegister = async () => {
+    // Call the registerBusiness function and pass the necessary arguments
+    const result = await registerBusiness(businessName, businessEmail, password, confirmPassword, navigation);
   
-      // Check the response status
-      if (response.status === 201) {
-        alert('Business registered successfully');
-         navigation.navigate('Business');
-      } else {
-        alert('Error registering business');
-      }
-    } catch (err) {
-      console.error('Error registering business:', err);
-      alert('Error registering business');
+    if (result) {
+      console.log("Business successfully registered", result);
+    } else {
+      console.log("Business registration failed");
     }
   };
-      
+
 
   return (
     <KeyboardAvoidingView
@@ -151,7 +123,7 @@ const RegistrationPage = () => {
         />
 
         {/* Register Button */}
-        <TouchableOpacity style={styles.registerButton} onPress={registerBusiness}>
+        <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
 

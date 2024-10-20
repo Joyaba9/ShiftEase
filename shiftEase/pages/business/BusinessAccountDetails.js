@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import BusinessHours from './BusinessHours';
 import { getBusinessDetails, saveBusinessLocation } from '../../../backend/api/api';
 
+const { width } = Dimensions.get('window');
+
 const BusinessAccountDetails = () => {
+    const navigation = useNavigation();
+    const isMobile = width < 768; 
+
     // State variables to store business details
     const [businessId, setBusinessId] = useState('');
     const [businessName, setBusinessName] = useState('');
@@ -137,10 +143,10 @@ const BusinessAccountDetails = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={!isMobile ? styles.container : styles.mobileContainer}>
 
             {/* Left column with profile photo and account overview */}
-            <View style={styles.leftColumn}>
+            <View style={!isMobile ? styles.leftColumn : styles.mobileTopPortion}>
                 <View style={styles.topContainer}>
                     <TouchableOpacity style={styles.addIconContainer}>
                         <Ionicons name="add-circle" size={35} color="#9FCCF5" />
@@ -157,16 +163,20 @@ const BusinessAccountDetails = () => {
                         {businessName || "Loading..."}
                     </Text>
                 </View>
+
+                {!isMobile ?
                 <View style={styles.bottomContainer}>
                     <TouchableOpacity style={styles.sideContainer} onPress={() => {}}>
                         <Ionicons name="list-outline" size={20} color="black" />
                         <Text style={styles.sideText}> Account Overview </Text>
                     </TouchableOpacity>
-                </View>
+                </View> : ""
+                }
+
             </View>
 
             {/* Right column with editable business details */}
-            <View style={styles.rightColumn}>
+            <View style={!isMobile ? styles.rightColumn : styles.mobileBottomPortion}>
                 <Text style={styles.title}>Business Information</Text>
                 
                 <View>
@@ -254,6 +264,23 @@ const BusinessAccountDetails = () => {
 };
 
 const styles = StyleSheet.create({
+    //Mobile Styles
+    mobileContainer: {
+        flexDirection: 'column',
+    },
+    mobileTopPortion: {
+        width: width,
+        backgroundColor: '#F1F1F1',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 10,
+
+    },
+    mobileBottomPortion: {
+        width: width,
+        padding: 20,
+    },
+    //Web Styles
     container: {
         flexDirection: 'row',
         height: '80%',

@@ -1,5 +1,50 @@
 const baseURL = "http://localhost:5050/api/";
 
+// Function to register a business
+export async function registerBusiness(businessName, businessEmail, password, confirmPassword, navigation) {
+    console.log("Calling Backend to register business " + businessEmail);
+    
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    // Validate that all fields are filled
+    if (!businessName || !businessEmail || !password) {
+      alert('Please fill in all the fields');
+      return;
+    }
+
+    // Call the backend API to register the business
+    try {
+      const response = await fetch(baseURL + "register", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            businessName: businessName,
+            businessEmail: businessEmail,
+            password: password
+        })
+      });
+  
+      // Check the response status
+      if (response.status === 201) {
+        alert('Business registered successfully');
+         navigation.navigate('Business');
+      } else {
+        alert('Error registering business');
+      }
+    } catch (err) {
+      console.error('Error registering business:', err);
+      alert('Error registering business');
+    }
+
+    return null;
+}
+
 // Function to fetch business details using the business email
 export async function getBusinessDetails(businessEmail) {
     console.log("Calling Backend " + baseURL + "getBusinessDetails " + businessEmail);
