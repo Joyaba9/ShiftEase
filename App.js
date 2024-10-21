@@ -1,16 +1,21 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import { Provider } from 'react-redux';
 import NavigationManager from './shiftEase/pages/NavigationManager';
+import { store } from './shiftEase/redux/store';
 
 
 
 export default function App() {
   console.log("App is rendering");
   return (
-    <View style={styles.container}>
-      <NavigationManager />
-      <StatusBar style="auto" />
-    </View>
+    // Wrap the app in the Provider and pass the store
+    <Provider store={store}>
+      <View style={styles.container}>
+        <NavigationManager />
+        <StatusBar style="auto" />
+      </View>
+    </Provider>
   );
 }
 

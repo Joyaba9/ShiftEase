@@ -137,6 +137,59 @@ export async function LoginEmployee(employeeString, password) {
 
 //#endregion
 
+//#region Login Business
+
+/**
+ * Authenticates a business by checking credentials against PostgreSQL and Firebase.
+ * 
+ * @param {string} businessEmail - The email of the business.
+ * @param {string} password - The password for the business.
+ * @returns {Promise<Object>} - An object containing PostgreSQL business data and Firebase authenticated user data.
+ */
+export async function LoginBusiness(businessId, password) {
+    const client = await getClient();
+    console.log('Database Client Obtained');
+
+    await client.connect();
+    console.log('Connected to Database');
+
+    // SQL query to retrieve business data
+    const query = `SELECT * FROM business WHERE business_id = $1`;
+
+    try {
+        const res = await client.query(query, [businessId]);
+        console.log('Query Executed');
+        
+        // Check if business exists in database
+        if (res.rows.length > 0) {
+            const business = res.rows[0];
+
+            console.log(`Business found in PostgreSQL: ${JSON.stringify(business)}`);
+            console.log(`Attempting Firebase authentication for business email: ${business.business_email}`);
+
+            // Perform Firebase authentication
+            const firebaseUser = await signInWithEmailAndPassword(auth, business.business_email, password);
+            console.log(`Firebase authentication successful for user: ${firebaseUser.user.uid}`);
+
+            // Return business data if authentication is successful
+            return {
+                business: business,
+                firebaseUser: firebaseUser.user
+            };
+        } else {
+            throw new Error('Business not found in PostgreSQL');
+        }
+    } catch (err) {
+        console.error('Error executing query:', err); // Log any errors
+        throw err; // Rethrow for higher-level error handling
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
+
 //#region Change User Firebase Password
 
 /**

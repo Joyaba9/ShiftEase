@@ -1,5 +1,8 @@
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../../redux/actions/userActions';
+import { loginBusiness } from '../../redux/actions/userActions'; 
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from '../common/CommonLayout';
 
@@ -9,6 +12,7 @@ const { width } = Dimensions.get('window');
 const LoginPage = () => {
   const isMobile = width < 768;
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   console.log('LoginPage rendered');
 
@@ -23,6 +27,13 @@ const LoginPage = () => {
   const [businessId, setBusinessId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Access the login state from Redux using the useSelector hook
+  // It pulls values from the Redux store, including loading (login in progress), error (any login error), and loggedInUser (the logged-in user's data).
+  const { loading, error, loggedInUser } = useSelector((state) => state.user);
+
+  // Access the business login state from Redux
+  const { loading: businessLoading, error: businessError, businessInfo } = useSelector((state) => state.business);
   
 
   const handleLogin = async () => {
@@ -30,55 +41,46 @@ const LoginPage = () => {
     const loginMode = isBusinessLogin ? 'Business' : 'Employee';
 
 
-    if (isBusinessLogin) {
-      // Business Login: Validate Business ID and Password
-      if (!businessId || !password) {
-        alert('Please enter both Business ID and Password');
-        return;
-      }
-    } else {
-      // Employee Login: Validate Employee ID and Password
-      if (!employeeId || !password) {
-        alert('Please enter both Employee ID and Password');
-        return;
-      }
+    if (isBusinessLogin && (!businessId || !password)) {
+      alert('Please enter both Business ID and Password');
+      return;
+    }
+    if (!isBusinessLogin && (!employeeId || !password)) {
+      alert('Please enter both Employee ID and Password');
+      return;
     }
 
-    console.log('trying to login');
     console.log(`Trying to login as ${loginMode}`);
 
-    // Call the backend API to handle login
-    try {
-      const response = await fetch('http://localhost:5050/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          employeeString: isBusinessLogin ? businessId : employeeId,
-          password
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.status === 200) {
-        const { employee } = data;
-        if (employee.promptPasswordChange) {
-          alert('Please create a new password');
-          navigation.navigate('ChangePass', { employee: data.employee, firebaseUser: data.firebaseUser });
-        } else {
-          alert('Login successful');
-          navigation.navigate(isBusinessLogin ? 'Business' : 'Employee');
-        }
-      } else {
-        alert('Invalid credentials');
-      }
-    } catch (err) {
-      console.error('Error during login:', err);
-      alert('Login error');
+    // If it's a business login, dispatch the loginBusiness action
+    if (isBusinessLogin) {
+      dispatch(loginBusiness(businessId, password));
+    } else {
+      // If it's an employee login, dispatch the loginUser action
+      const employeeString = `${businessId}U${employeeId}`; // You might want to ensure correct formatting
+      dispatch(loginUser(employeeString, password));
     }
   };
+
+  // useEffect hook that watches the loggedInUser value from Redux
+  // It triggers when the loggedInUser changes, and based on the user data, it performs navigation or shows alerts
+  useEffect(() => {
+    if (loggedInUser) {
+      // If the user needs to change their password, navigate to the ChangePass page
+      if (loggedInUser.promptPasswordChange) {
+        navigation.navigate('ChangePass', { employee: loggedInUser });
+      } else {
+        // If the login is successful, show an alert and navigate to either Business or Employee page based on the login mode
+        alert('Login successful');
+        navigation.navigate(isBusinessLogin ? 'Business' : 'Employee');
+      }
+    }
+    if (businessInfo) {
+      alert('Business login successful');
+      navigation.navigate('Business');
+    }
+  }, [loggedInUser, businessInfo, navigation]); // This effect runs when either loggedInUser or navigation changes
+
 
   return (
     <KeyboardAvoidingView

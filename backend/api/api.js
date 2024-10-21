@@ -82,6 +82,61 @@ export async function getBusinessDetails(businessEmail) {
 
 }
 
+// Function to fetch business location details by business ID
+export async function getBusinessLocation(business_id) {
+    const baseURL = "http://localhost:5050/api/";
+
+    try {
+        // Make a POST request to fetch business location by business_id
+        const response = await fetch(baseURL + "getBusinessLocation", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "business_id": business_id
+            })
+        });
+
+        // Parse the JSON response
+        const data = await response.json();
+
+        // Check if the location details are returned successfully
+        if (data && data.businessLocation) {
+            return data.businessLocation;
+        } else {
+            throw new Error('Business location not found');
+        }
+    } catch (error) {
+        // Log any errors during the API call
+        console.error("Error fetching business location:", error);
+        throw error;
+    }
+}
+
+// Function to fetch business details and location by business email
+export async function fetchBusinessDetailsAndLocation(business_email) {
+    try {
+        const businessObject = await getBusinessDetails(business_email);
+        // Check if business details are found
+        if (businessObject && businessObject.business_id) {
+            // Fetch business location details using the business ID
+            const businessLocation = await getBusinessLocation(businessObject.business_id);
+
+            return {
+                businessDetails: businessObject,
+                businessLocation: businessLocation || null,  // Return null if no location found
+            };
+        } else {
+            throw new Error('Business not found');
+        }
+    } catch (error) {
+        console.error('Error fetching business details and location:', error);
+        throw error;
+    }
+    
+}
+
 // Function to save business location details to the backend
 export async function saveBusinessLocation(businessLocationData) {
     console.log("Calling Backend to Save Business Location", businessLocationData);

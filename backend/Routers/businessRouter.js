@@ -1,5 +1,5 @@
 import express from 'express';
-import { getBusinessById, getBusinessDetails, registerBusiness, saveBusinessLocation } from '../Scripts/businessScript.js';
+import { getBusinessById, getBusinessDetails, getBusinessLocation, registerBusiness, saveBusinessLocation } from '../Scripts/businessScript.js';
 
 const router = express.Router();
 
@@ -19,6 +19,24 @@ router.post('/getBusinessDetails', async (req, res) => {
         // Log error and send a 500 status if there's an issue fetching business details
         console.error('Error fetching businessDetails:', err);
         res.status(500).json({ error: 'Internal server error businessDetails' });
+    }
+});
+
+// Route to get business location by business_id
+router.post('/getBusinessLocation', async (req, res) => {
+    const { business_id } = req.body;
+
+    try {
+        const businessLocation = await getBusinessLocation(business_id); // Fetch business location from database
+
+        if (businessLocation) {
+            res.status(200).json({ businessLocation });
+        } else {
+            res.status(404).json({ error: 'Business location not found' });
+        }
+    } catch (err) {
+        console.error('Error fetching business location:', err);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

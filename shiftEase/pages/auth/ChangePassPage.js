@@ -36,7 +36,7 @@ const ChangePassPage = () => {
 
     // Call the backend API to handle password change
     try {
-      const response = await fetch('http://localhost:5050/api/auth/changePassword', {
+      const response = await fetch('http://localhost:5050/api/changePassword', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

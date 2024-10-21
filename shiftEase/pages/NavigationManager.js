@@ -30,7 +30,7 @@ const NavigationManager = () => {
           setInitialRoute('Account');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Business');
+          setInitialRoute('Login');
         }
 
 

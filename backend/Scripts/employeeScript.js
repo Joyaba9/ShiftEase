@@ -105,7 +105,7 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
     let roleID;
     let createdAt = new Date();
     let updatedAt = new Date();
-    businessId = 598984; // Temporary business ID for testing
+    //businessId = 598984; // Temporary business ID for testings
     // TODO: Implement business ID retrieval from the user's session or other source
 
     // Determine role ID based on the provided role
