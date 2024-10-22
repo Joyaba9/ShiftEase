@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
+import { doc, setDoc } from 'firebase/firestore';
 import getClient from '../db/dbClient.js';
 import { auth, createUserWithEmailAndPassword, db } from '../firebase.js';
-import { setDoc, doc } from 'firebase/firestore';
 
 //#region Get Business Details
 
@@ -20,7 +20,7 @@ export async function getBusinessDetails(business_email) {
     console.log('Connected to Database');
 
     // SQL query to fetch business details by email
-    const query = `SELECT business_id, business_name, business_email FROM business WHERE LOWER(business_email) = LOWER($1)`;
+    const query = `SELECT business_id, business_name, business_email FROM businesses WHERE LOWER(business_email) = LOWER($1)`;
 
     try {
         const res = await client.query(query, [business_email]); // Execute query
@@ -155,7 +155,7 @@ export async function getBusinessLocation(businessId) {
 
     // Fetching business location including business hours (JSON)
     const query = `SELECT street_address, city, state, zipcode, phone_number, business_hours 
-                   FROM business_locations WHERE business_id = $1`;
+                    FROM business_locations WHERE business_id = $1`;
     
     try {
         const res = await client.query(query, [businessId]);
@@ -191,7 +191,7 @@ export async function getBusinessById(business_email) {
     console.log('Querying for business_email:', business_email);
 
     // SQL query to fetch business ID by email
-    const query = `SELECT business_id FROM business WHERE LOWER(business_email) = LOWER($1)`;
+    const query = `SELECT business_id FROM businesses WHERE LOWER(business_email) = LOWER($1)`;
 
     try {
         const res = await client.query(query, [business_email]); // Execute query
