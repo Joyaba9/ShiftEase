@@ -120,9 +120,15 @@ export async function fetchBusinessDetailsAndLocation(business_email) {
         const businessObject = await getBusinessDetails(business_email);
         // Check if business details are found
         if (businessObject && businessObject.business_id) {
-            // Fetch business location details using the business ID
-            const businessLocation = await getBusinessLocation(businessObject.business_id);
+            let businessLocation = null;
 
+            // Fetch business location details using the business ID
+            try {
+                businessLocation = await getBusinessLocation(businessObject.business_id);
+            } catch (error) {
+                console.warn('Business location not found or not set:', error);  // Warn if location isn't found
+            }
+            
             return {
                 businessDetails: businessObject,
                 businessLocation: businessLocation || null,  // Return null if no location found
