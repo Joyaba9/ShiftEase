@@ -1,19 +1,19 @@
-import React, {useState, useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import React, { useEffect, useState } from 'react';
 import { Dimensions } from 'react-native';
-import WelcomePageMobile from './common/WelcomePageMobile.js';
-import LoginPage from './auth/LoginPage.js';
 import ChangePassPage from './auth/ChangePassPage.js';
 import ForgotPassPage from './auth/ForgotPassPage';
-import RegistrationPage from './auth/RegistrationPage';
-import LandingPage from './common/LandingPage.js';
-import BusinessPage from './business/BusinessPage.js';
-import EmployeePage from './employee/EmployeePage.js';
+import LoginPage from './auth/LoginPage.js';
 import LogOut from './auth/logOut.js';
-import AccountPage from './common/AccountPage.js';
+import RegistrationPage from './auth/RegistrationPage';
 import AddEmpModal from './business/AddEmpModal.js';
+import BusinessPage from './business/BusinessPage.js';
 import ManageEmployeePage from './business/ManageEmployeePage.js';
+import AccountPage from './common/AccountPage.js';
+import LandingPage from './common/LandingPage.js';
+import WelcomePageMobile from './common/WelcomePageMobile.js';
+import EmployeePage from './employee/EmployeePage.js';
 
 
 const Stack = createStackNavigator();
@@ -27,10 +27,10 @@ const NavigationManager = () => {
         const { width } = Dimensions.get('window');
         if (width < 768) {
           // If it's mobile, set initial route to WelcomePageMobile
-          setInitialRoute('Account');
+          setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Login');
+          setInitialRoute('Landing');
         }
 
 

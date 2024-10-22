@@ -234,7 +234,7 @@ export async function registerBusiness(businessName, businessEmail, password) {
 
         // Check if the business already exists by name
         const existingBusinessName = await client.query(
-            'SELECT * FROM business WHERE business_name = $1', 
+            'SELECT * FROM businesses WHERE business_name = $1', 
             [businessName]
         );
         if (existingBusinessName.rows.length > 0) {
@@ -243,7 +243,7 @@ export async function registerBusiness(businessName, businessEmail, password) {
 
         // Check if the business already exists by email
         const existingBusinessEmail = await client.query(
-            'SELECT * FROM business WHERE business_email = $1', 
+            'SELECT * FROM businesses WHERE business_email = $1', 
             [businessEmail]
         );
         if (existingBusinessEmail.rows.length > 0) {
@@ -278,9 +278,9 @@ export async function registerBusiness(businessName, businessEmail, password) {
 
         // Insert the new business into the PostgreSQL database
         const query = `
-            INSERT INTO business (business_name, business_email, pass_hash, created_at, updated_at) 
-            VALUES ($1, $2, $3, NOW(), NOW()) RETURNING *`;
-        const values = [businessName, businessEmail, passHash];
+            INSERT INTO businesses (business_name, business_email, created_at, updated_at)
+            VALUES ($1, $2, NOW(), NOW()) RETURNING *`;
+        const values = [businessName, businessEmail];
 
         const result = await client.query(query, values);
         const businessData = result.rows[0]; // This line assigns the inserted business data
