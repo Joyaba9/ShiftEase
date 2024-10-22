@@ -154,7 +154,7 @@ export async function LoginBusiness(businessId, password) {
     console.log('Connected to Database');
 
     // SQL query to retrieve business data
-    const query = `SELECT * FROM business WHERE business_id = $1`;
+    const query = `SELECT * FROM businesses WHERE business_id = $1`;
 
     try {
         const res = await client.query(query, [businessId]);
