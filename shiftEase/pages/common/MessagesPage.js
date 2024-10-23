@@ -91,7 +91,12 @@ const MessagesPage = () => {
                 id: messages.length + 1,
                 sender: "You",
                 text: message,
-                timestamp: new Date().toLocaleTimeString(),
+                // Format timestamp to only show hours and minutes
+                timestamp: new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                }),
             };
             setMessages(prevMessages => [...prevMessages, newMessage]); // Add new message to the list
             setMessage(''); // Clear the message input after sending
@@ -104,6 +109,9 @@ const MessagesPage = () => {
             ]);
 
             setSelectedContact([]);
+
+            // Set Inbox as the selected button when a message is sent
+            setSelectedButton('inbox');
         }
     };
 
