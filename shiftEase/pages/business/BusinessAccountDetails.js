@@ -52,7 +52,7 @@ const BusinessAccountDetails = () => {
                     setBusinessName(businessDetails.business_name);
                     setBusinessEmail(businessDetails.business_email);
     
-                    // Update state with fetched business location details (if any)
+                    // Update state with fetched business location details (if any) 
                     if (businessLocation) {
                         // Construct the full address from individual components
                         const fullAddress = `${businessLocation.street_address}, ${businessLocation.city}, ${businessLocation.state} ${businessLocation.zipcode}`;
