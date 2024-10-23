@@ -17,10 +17,12 @@ const MessagesPage = () => {
     const [employees, setEmployees] = useState([]); // To hold the list of employees
     const [filteredEmployees, setFilteredEmployees] = useState([]); // To hold the filtered list of employees based on search query
     const [isTextInputFocused, setIsTextInputFocused] = useState(false);
-    const [selectedContact, setSelectedContact] = useState(''); // To hold the selected contact
+    const [selectedContact, setSelectedContact] = useState([]); // To hold the selected contact
 
     const [selectedButton, setSelectedButton] = useState(null);
     const [showCenterColumn2, setShowCenterColumn2] = useState(false);
+    const [inputHeight, setInputHeight] = useState(45);
+    const [message, setMessage] = useState('');
     
     const handleButtonPress = (button) => {
         setSelectedButton(button); // Set the selected button on press
@@ -57,8 +59,21 @@ const MessagesPage = () => {
   
     const handleContactSelect = (contact) => {
         console.log('Contact selected:', contact);
-        setSelectedContact(contact); // Set the selected contact
+
+        if (selectedContact.includes(contact)) {
+            // Remove the contact if it's already selected
+            setSelectedContact(prevSelected => prevSelected.filter(item => item !== contact));
+        } else {
+            // Add the contact if it's not already selected
+            setSelectedContact(prevSelected => [...prevSelected, contact]);
+        }
+
         setQuery(''); // Clear the search query
+    };
+
+    // Handle removing a contact when the "X" button is pressed
+    const handleRemoveContact = (contact) => {
+        setSelectedContact(prevSelected => prevSelected.filter(item => item !== contact));
     };
 
     return (
@@ -135,7 +150,7 @@ const MessagesPage = () => {
                 {/* Conditionally display centerColumn1 or centerColumn2 */}
                 {!showCenterColumn2 ? (
                     <View style={styles.centerColumn}>
-                        <View style={styles.sendBubbleContainer}>
+                        <View>
                             <Image
                                 resizeMode="contain"
                                 source={require('../../assets/images/send_bubble.png')}
@@ -148,8 +163,17 @@ const MessagesPage = () => {
                 ) : (
                     <View style={styles.centerColumn2}>
                         <View style={styles.topMessageContainer}>
-                            <Text style={styles.toText}>To: {selectedContact}</Text> 
-
+                            <Text style={styles.toText}>
+                                To:{" "}
+                                    {selectedContact.map((contact, index) => (
+                                    <View key={index} style={styles.selectedContactContainer}>
+                                        <Text style={styles.selectedContactText}>{contact}</Text>
+                                        <TouchableOpacity onPress={() => handleRemoveContact(contact)}>
+                                            <Text style={styles.removeContactText}>X</Text> {/* "X" button to remove contact */}
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </Text>
                             <TextInput
                                 style={styles.searchInput}
                                 value={query}
@@ -182,6 +206,31 @@ const MessagesPage = () => {
                                 />
                             )}
                         </View>
+                        <View style={styles.conversationContainer}>
+                            
+                        </View>
+                        <View style={styles.wholeMessageContainer}>
+                            <View style={[styles.messageContainer, { height: inputHeight }]}>
+                                <TextInput
+                                    style={[styles.messageInput, { height: inputHeight }]}
+                                    placeholder='Message'
+                                    placeholderTextColor="grey"
+                                    multiline // Allows multiline input
+                                    value={message}
+                                    onChangeText={setMessage}
+                                    onContentSizeChange={(event) => {
+                                        setInputHeight(Math.max(45, event.nativeEvent.contentSize.height)); // Adjust height dynamically
+                                    }}
+                                />
+                            </View>
+                            <TouchableOpacity>
+                                <Image          
+                                    resizeMode="contain"
+                                    source={require('../../assets/images/send.png')}
+                                    style={styles.sendButton}
+                                />
+                            </TouchableOpacity>   
+                        </View>
                     </View>
                 )}
             </View>
@@ -208,7 +257,12 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         height: height,
         borderWidth: 2,
-        borderColor: '#E4E6EB'
+        borderColor: '#E4E6EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 4,
     },
     leftTopContainer: {
         flex: 1,
@@ -292,10 +346,6 @@ const styles = StyleSheet.create({
         height: 300,
         resizeMode: 'cover',
     },
-    noMessagesText: {
-        fontSize: 30,
-        marginTop: 40,
-    },
     messagesText: {
         fontSize: 20, 
         marginTop: 20,
@@ -307,20 +357,40 @@ const styles = StyleSheet.create({
         height: height,
         alignItems: 'center',
         justifyContent: 'center',
-        // borderWidth: 2,
-        // borderColor: 'blue'
     },
+    sendBubbleImg: {
+        width: 300,
+        height: 300,
+        resizeMode: 'cover',
+    },
+    noMessagesText: {
+        fontSize: 30,
+        marginTop: 40,
+    },
+    //Center Column 2 Styles
     centerColumn2: {
         flex: 2,
         height: height,
         alignItems: 'center',
-        //justifyContent: 'center',
-        // borderWidth: 2,
-        // borderColor: 'blue'
     },
     toText: {
         fontSize: 20,
         marginRight: 10,
+    },
+    selectedContactContainer: {
+        backgroundColor: '#AFD9FF',
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 10,
+        padding: 8,
+        borderRadius: 10
+    },
+    selectedContactText: {
+        paddingRight: 10
+    },
+    removeContactText: {
+        fontSize: 16,
+        color: '#066ACE', 
     },
     topMessageContainer: {
         flexDirection: 'row',
@@ -328,15 +398,56 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
         borderWidth: 2,
-        borderColor: '#E4E6EB'
+        borderColor: '#E4E6EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 4,
     },
-    sendBubbleContainer: {
-
+    conversationContainer: {
+        flex: 1,
+        width: '100%', 
+        borderWidth: 2,
+        borderColor: 'red',
+        marginVertical: 10,
     },
-    sendBubbleImg: {
-        width: 300,
-        height: 300,
-        resizeMode: 'cover',
+    wholeMessageContainer: {
+        //flex: 1,
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 10,
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: 'purple',
+    },
+    messageContainer: {
+        backgroundColor: '#E4E6EB',
+        borderRadius: 25,
+        paddingHorizontal: 10,
+        minHeight: 45,
+        width: '90%', 
+        alignSelf: 'center',
+        borderWidth: 2,
+        borderColor: 'green'
+    },
+    messageInput: {
+        width: '100%',
+        paddingVertical: 8,
+        paddingHorizontal: 5, 
+        color: 'black',
+        fontSize: 16,
+        alignSelf: 'flex-end',
+        textAlignVertical: 'top',
+        minHeight: 45,
+        height: 'auto',
+    },
+    sendButton: {
+        width: 30,
+        height: 30,
+        marginLeft: 10,
     },
     //Flat List Styles
     wholeContactContainer: {
