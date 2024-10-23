@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, FlatList, TouchableWithoutFeedback, Pressable} from 'react-native';
 import { useSelector } from 'react-redux';
+import { mockChats, mockMessages } from './MockMessagesData';
+import { Hoverable } from 'react-native-web-hover';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,9 +22,15 @@ const MessagesPage = () => {
     const [selectedContact, setSelectedContact] = useState([]); // To hold the selected contact
 
     const [selectedButton, setSelectedButton] = useState(null);
+    const [showLeftBottomContainer2, setShowLeftBottomContainer2] = useState(false);
+
     const [showCenterColumn2, setShowCenterColumn2] = useState(false);
     const [inputHeight, setInputHeight] = useState(45);
     const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [activeContact, setActiveContact] = useState([]);
+    const [isHovered, setIsHovered] = useState(false);
+    
     
     const handleButtonPress = (button) => {
         setSelectedButton(button); // Set the selected button on press
@@ -74,6 +82,29 @@ const MessagesPage = () => {
     // Handle removing a contact when the "X" button is pressed
     const handleRemoveContact = (contact) => {
         setSelectedContact(prevSelected => prevSelected.filter(item => item !== contact));
+    };
+
+    // Handle sending a message
+    const handleSendMessage = () => {
+        if (message.trim() && selectedContact.length > 0) {
+            const newMessage = {
+                id: messages.length + 1,
+                sender: "You",
+                text: message,
+                timestamp: new Date().toLocaleTimeString(),
+            };
+            setMessages(prevMessages => [...prevMessages, newMessage]); // Add new message to the list
+            setMessage(''); // Clear the message input after sending
+            setInputHeight(45); // Reset the input height
+            setShowLeftBottomContainer2(true)
+
+            setActiveContact(prevActive => [
+                ...prevActive,
+                ...selectedContact.filter(contact => !prevActive.includes(contact)),
+            ]);
+
+            setSelectedContact([]);
+        }
     };
 
     return (
@@ -132,19 +163,43 @@ const MessagesPage = () => {
                         </View>    
                     </View>
 
-                    {/* List of Chats */}
-                    <View style={styles.leftBottomContainer}>
-                        <View style={styles.messageBubbleContainer}>
-                            <Image
-                                resizeMode="contain"
-                                source={require('../../assets/images/chat_bubble.png')}
-                                style={styles.messageBubbleImg}
+                    {!showLeftBottomContainer2 ? (
+                        /* List of Chats */
+                        <View style={styles.leftBottomContainer}>
+                            <View style={styles.messageBubbleContainer}>
+                                <Image
+                                    resizeMode="contain"
+                                    source={require('../../assets/images/chat_bubble.png')}
+                                    style={styles.messageBubbleImg}
+                                />
+                            </View>
+
+                            <Text style={styles.noMessagesText}>No Messages</Text>
+                            <Text style={styles.messagesText}>New messages will appear here.</Text>
+                        </View>
+                    ) : (
+                        <View style={styles.leftBottomContainer2}>
+                            <FlatList
+                                data={mockChats} // Use mock chat data
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({ item }) => {
+                                    return (
+                                        <TouchableOpacity 
+                                            style={[styles.chatPreviewContainer, isHovered && styles.hoveredChat]}
+                                            onMouseEnter={() => setIsHovered(true)}
+                                            onMouseLeave={() => setIsHovered(false)}
+                                        >
+                                            <View style={styles.chatPreviewTopContainer}> 
+                                                <Text style={styles.contactName}>{item.contact}</Text>
+                                                <Text style={styles.timestamp}>{item.timestamp}</Text>
+                                            </View>
+                                            <Text style={styles.messagePreview}>{item.lastMessage}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                }}
                             />
                         </View>
-
-                        <Text style={styles.noMessagesText}>No Messages</Text>
-                        <Text style={styles.messagesText}>New messages will appear here.</Text>
-                    </View>
+                    )}
                 </View>
                 
                 {/* Conditionally display centerColumn1 or centerColumn2 */}
@@ -161,27 +216,41 @@ const MessagesPage = () => {
                         <Text style={styles.noMessagesText}>No Chats Selected</Text> 
                     </View> 
                 ) : (
+                    // Display centerColumn2 
                     <View style={styles.centerColumn2}>
-                        <View style={styles.topMessageContainer}>
-                            <Text style={styles.toText}>
-                                To:{" "}
-                                    {selectedContact.map((contact, index) => (
-                                    <View key={index} style={styles.selectedContactContainer}>
-                                        <Text style={styles.selectedContactText}>{contact}</Text>
-                                        <TouchableOpacity onPress={() => handleRemoveContact(contact)}>
-                                            <Text style={styles.removeContactText}>X</Text> {/* "X" button to remove contact */}
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </Text>
-                            <TextInput
-                                style={styles.searchInput}
-                                value={query}
-                                onChangeText={text => setQuery(text)}
-                                onFocus={() => setIsTextInputFocused(true)} // Show FlatList when focused
-                                onBlur={() => setTimeout(() => setIsTextInputFocused(false), 200)}
-                            />
-                        </View>
+                        {activeContact.length > 0 ? (
+                                <View style={styles.contactTopMessageContainer}>
+                                    <Text style={styles.toText}>
+                                        {activeContact.map((contact, index) => (
+                                            <Text key={index} style={styles.activeContactText}>
+                                                {contact}
+                                                {index < activeContact.length - 1 && ", "}
+                                            </Text>
+                                        ))}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View style={styles.topMessageContainer}>
+                                    <Text style={styles.toText}>
+                                        To:{" "}
+                                            {selectedContact.map((contact, index) => (
+                                            <View key={index} style={styles.selectedContactContainer}>
+                                                <Text style={styles.selectedContactText}>{contact}</Text>
+                                                <TouchableOpacity onPress={() => handleRemoveContact(contact)}>
+                                                    <Text style={styles.removeContactText}>X</Text> {/* "X" button to remove contact */}
+                                                </TouchableOpacity>
+                                            </View>
+                                        ))}
+                                    </Text>
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        value={query}
+                                        onChangeText={text => setQuery(text)}
+                                        onFocus={() => setIsTextInputFocused(true)} // Show FlatList when focused
+                                        onBlur={() => setTimeout(() => setIsTextInputFocused(false), 200)}
+                                    />
+                                </View>
+                            )}
                         
                         <View style={styles.wholeContactContainer}>
                             {isTextInputFocused && (
@@ -207,7 +276,18 @@ const MessagesPage = () => {
                             )}
                         </View>
                         <View style={styles.conversationContainer}>
-                            
+                            <FlatList
+                                data={messages} // Use mock message data
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({ item }) => (
+                                    <View style={item.sender === "You" ? styles.sentMessage : styles.receivedMessage}>
+                                        <Text style={styles.messageText}>{item.text}</Text>
+                                        
+                                        <Text style={styles.timestamp}>{item.timestamp}</Text>
+                                    </View>
+                                )}
+                                inverted
+                            />
                         </View>
                         <View style={styles.wholeMessageContainer}>
                             <View style={[styles.messageContainer, { height: inputHeight }]}>
@@ -223,7 +303,7 @@ const MessagesPage = () => {
                                     }}
                                 />
                             </View>
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={handleSendMessage}>
                                 <Image          
                                     resizeMode="contain"
                                     source={require('../../assets/images/send.png')}
@@ -331,6 +411,7 @@ const styles = StyleSheet.create({
     selectedButtonText: {
         color: '#066ACE', 
     },
+    //Left Bottom Container Styles
     leftBottomContainer: {
         flex: 4,
         justifyContent: 'center',
@@ -350,6 +431,42 @@ const styles = StyleSheet.create({
         fontSize: 20, 
         marginTop: 20,
         color: 'grey'
+    },
+    //Left Bottom Container 2 Styles
+    leftBottomContainer2: {
+        flex: 3,
+        //justifyContent: 'center',
+        alignItems: 'flex-start',
+        paddingHorizontal: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#E4E6EB'
+    },
+    chatPreviewContainer: {
+        width: 330,
+        paddingVertical: 10,
+        paddingHorizontal: 5,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E4E6EB'
+    },
+    hoveredChat: {
+        backgroundColor: '#f0f0f0', // Background color on hover
+    },
+    chatPreviewTopContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 5
+    },
+    contactName: {
+        fontSize: 18,
+        fontWeight: 'semibold'
+    },
+    timestamp: {
+        fontSize: 12,
+        color: '#888',
+    },
+    messagePreview: {
+        fontSize: 14,
+        color: '#555',
     },
     //Center Column Styles
     centerColumn: {
@@ -405,12 +522,37 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 4,
     },
+    contactTopMessageContainer: {
+        width: '100%',
+        alignItems: 'center',
+        padding: 10,
+        borderWidth: 2,
+        borderColor: '#E4E6EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 4,
+    },
     conversationContainer: {
         flex: 1,
         width: '100%', 
         borderWidth: 2,
         borderColor: 'red',
-        marginVertical: 10,
+        padding: 10,
+    },
+    sentMessage: {
+        width: 'auto',
+        alignSelf: 'flex-end',
+    },
+    messageText: {
+        fontSize: 18,
+        color: 'white',
+        backgroundColor: '#1588FF',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginBottom: 3,
+        borderRadius: 30,
     },
     wholeMessageContainer: {
         //flex: 1,
