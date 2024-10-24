@@ -218,7 +218,8 @@ export async function SoftDeleteEmployee(businessId, employeeId) {
         // Set the employee as inactive
         const updateEmployeeQuery = `
             UPDATE employees
-            SET is_active = false
+            SET is_active = false,
+                updated_at = CURRENT_TIMESTAMP
             WHERE emp_id = $1;
         `;
         await client.query(updateEmployeeQuery, [employeeId]);
