@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, UpdateEmployee } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -71,6 +71,24 @@ router.post('/add', async (req, res) => {
     } catch (err) {
         // Log error and return a 400 status with error details if addition fails
         res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+// Route to soft delete an employee
+router.put('/softDeleteEmployee', async (req, res) => {
+    const { businessId, employeeId } = req.body;
+
+    // Validate inputs
+    if (!businessId || !employeeId) {
+        return res.status(400).json({ success: false, message: 'Business ID and Employee ID are required' });
+    }
+
+    try {
+        // Call the script to soft delete the employee
+        const result = await SoftDeleteEmployee(businessId, employeeId);
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
 });
 

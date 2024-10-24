@@ -187,3 +187,65 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
 }
 
 //#endregion
+
+/**
+ * "Deletes" an employee by setting them inactive and removing future requests,
+ * only if the employee is associated with the specified business ID.
+ *
+ * @param {number} businessId - The ID of the business.
+ * @param {number} employeeId - The ID of the employee to be "deleted".
+ * @returns {Promise<Object>} - Result indicating the employee's status update and deleted requests.
+ */
+export async function SoftDeleteEmployee(businessId, employeeId) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Check if the employee is associated with the specified business ID
+        const employeeCheckQuery = `
+            SELECT emp_id FROM employees
+            WHERE emp_id = $1 AND business_id = $2 AND is_active = true;
+        `;
+        const employeeCheckRes = await client.query(employeeCheckQuery, [employeeId, businessId]);
+        
+        if (employeeCheckRes.rows.length === 0) {
+            throw new Error('Employee not found or not associated with the specified business ID.');
+        }
+
+        // Begin transaction
+        await client.query('BEGIN');
+
+        // Set the employee as inactive
+        const updateEmployeeQuery = `
+            UPDATE employees
+            SET is_active = false
+            WHERE emp_id = $1;
+        `;
+        await client.query(updateEmployeeQuery, [employeeId]);
+
+        // Delete future requests for the employee
+        const deleteFutureRequestsQuery = `
+            DELETE FROM requests
+            WHERE emp_id = $1
+            AND start_date > CURRENT_DATE;
+        `;
+        const deleteResult = await client.query(deleteFutureRequestsQuery, [employeeId]);
+        const deletedRequestCount = deleteResult.rowCount;
+
+        // Commit transaction
+        await client.query('COMMIT');
+
+        return {
+            success: true,
+            message: 'Employee set as inactive and future requests deleted.',
+            deletedRequests: deletedRequestCount
+        };
+    } catch (err) {
+        // Rollback transaction in case of error
+        await client.query('ROLLBACK');
+        console.error('Error soft deleting employee:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
