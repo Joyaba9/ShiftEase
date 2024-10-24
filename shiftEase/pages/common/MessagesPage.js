@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, FlatList, TouchableWithoutFeedback, Pressable} from 'react-native';
 import { useSelector } from 'react-redux';
 import { mockChats, mockMessages } from './MockMessagesData';
-import { Hoverable } from 'react-native-web-hover';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,8 +12,8 @@ const MessagesPage = () => {
     const loggedInUser = useSelector((state) => state.business.businessInfo);
     const businessId = loggedInUser?.business?.business_id;
     
+    console.log(loggedInUser)
     console.log(businessId)
-
 
     const [query, setQuery] = useState(''); // To hold the search query
     const [employees, setEmployees] = useState([]); // To hold the list of employees
@@ -30,7 +30,7 @@ const MessagesPage = () => {
     const [messages, setMessages] = useState([]);
     const [activeContact, setActiveContact] = useState([]);
     const [isHovered, setIsHovered] = useState(false);
-    
+    const [selectedChat, setSelectedChat] = useState(null);
     
     const handleButtonPress = (button) => {
         setSelectedButton(button); // Set the selected button on press
@@ -86,33 +86,33 @@ const MessagesPage = () => {
 
     // Handle sending a message
     const handleSendMessage = () => {
+
         if (message.trim() && selectedContact.length > 0) {
             const newMessage = {
                 id: messages.length + 1,
                 sender: "You",
                 text: message,
-                // Format timestamp to only show hours and minutes
-                timestamp: new Date().toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                }),
+                timestamp: new Date().toLocaleTimeString(),
             };
             setMessages(prevMessages => [...prevMessages, newMessage]); // Add new message to the list
             setMessage(''); // Clear the message input after sending
             setInputHeight(45); // Reset the input height
-            setShowLeftBottomContainer2(true)
-
+            setShowLeftBottomContainer2(true);
+    
             setActiveContact(prevActive => [
                 ...prevActive,
                 ...selectedContact.filter(contact => !prevActive.includes(contact)),
             ]);
-
+    
             setSelectedContact([]);
-
+    
             // Set Inbox as the selected button when a message is sent
             setSelectedButton('inbox');
         }
+    };
+
+    const handleChatPress = (chatId) => {
+        setSelectedChat(chatId); // Set the currently selected chat
     };
 
     return (
@@ -193,9 +193,10 @@ const MessagesPage = () => {
                                 renderItem={({ item }) => {
                                     return (
                                         <TouchableOpacity 
-                                            style={[styles.chatPreviewContainer, isHovered && styles.hoveredChat]}
+                                            style={[styles.chatPreviewContainer, isHovered && styles.hoveredChat, selectedChat === item.id && styles.selectedChat]}
                                             onMouseEnter={() => setIsHovered(true)}
                                             onMouseLeave={() => setIsHovered(false)}
+                                            onPress={() => handleChatPress(item.id)}
                                         >
                                             <View style={styles.chatPreviewTopContainer}> 
                                                 <Text style={styles.contactName}>{item.contact}</Text>
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     },
     messagesText: {
         fontSize: 20, 
-        marginTop: 20,
+        //marginTop: 20,
         color: 'grey'
     },
     //Left Bottom Container 2 Styles
@@ -445,23 +446,28 @@ const styles = StyleSheet.create({
         flex: 3,
         //justifyContent: 'center',
         alignItems: 'flex-start',
-        paddingHorizontal: 10,
+        //paddingHorizontal: 10,
         borderTopWidth: 1,
         borderTopColor: '#E4E6EB'
     },
     chatPreviewContainer: {
-        width: 330,
+        width: 355,
         paddingVertical: 10,
-        paddingHorizontal: 5,
+        paddingHorizontal: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#E4E6EB'
     },
     hoveredChat: {
         backgroundColor: '#f0f0f0', // Background color on hover
     },
+    selectedChat: {
+        backgroundColor: '#AFD9FF', // Change background color when selected
+        borderRadius: 10
+    },
     chatPreviewTopContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        //marginTop: 10,
         marginBottom: 5
     },
     contactName: {
