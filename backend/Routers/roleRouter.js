@@ -1,5 +1,5 @@
 import express from 'express';
-import { CreateRole, CreateRoleWithPermissions, UpdateRoleWithPermissions } from '../Scripts/roleScript.js';
+import { CreateRole, CreateRoleWithPermissions, GetRolesByBusinessAndManagerStatus, UpdateRoleWithPermissions } from '../Scripts/roleScript.js';
 
 const router = express.Router();
 
@@ -57,6 +57,34 @@ router.put('/updateRoleWithPermissions', async (req, res) => {
         // Call the script to update the role with permissions and manager flag
         const result = await UpdateRoleWithPermissions(businessId, roleId, roleName, permissions, isManager);
         res.status(200).json(result);
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+});
+
+// Route to get roles by business ID
+router.get('/getRoles', async (req, res) => {
+    const { businessId, roleType } = req.body;
+
+    // Validate businessId input
+    if (!businessId) {
+        return res.status(400).json({ success: false, message: 'Business ID is required' });
+    }
+
+    // Determine the manager filter based on roleType
+    let managerFilter = null;
+    if (roleType === 'manager') {
+        managerFilter = true;
+    } else if (roleType === 'employee') {
+        managerFilter = false;
+    } else if (roleType !== 'all' && roleType !== undefined) {
+        return res.status(400).json({ success: false, message: 'Invalid roleType. Use "manager", "employee", or "all".' });
+    }
+
+    try {
+        // Call the script to get roles by business ID and manager status
+        const roles = await GetRolesByBusinessAndManagerStatus(Number(businessId), managerFilter);
+        res.status(200).json({ success: true, roles });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }

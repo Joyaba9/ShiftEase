@@ -39,6 +39,8 @@ export async function CreateRole(roleName) {
 
 //#endregion
 
+//#region Create Role With Permissions
+
 /**
  * Creates a new role, assigns permissions, and sets manager status.
  *
@@ -97,6 +99,10 @@ export async function CreateRoleWithPermissions(businessId, roleName, permission
         await client.end();
     }
 }
+
+//#endregion
+
+//#region Update Role With Permissions
 
 /**
  * Updates an existing role, its permissions, and manager status.
@@ -196,3 +202,48 @@ export async function UpdateRoleWithPermissions(businessId, roleId, roleName, pe
         await client.end();
     }
 }
+
+//#endregion
+
+//#region Get Roles By Business ID
+
+/**
+ * Retrieves roles based on business ID and optional manager status.
+ *
+ * @param {number} businessId - The ID of the business.
+ * @param {boolean|null} isManager - Filter roles based on manager status.
+ *                                   Set to true to return only manager roles,
+ *                                   false for non-manager roles, or null for all roles.
+ * @returns {Promise<Array>} - List of role IDs and names matching the criteria.
+ */
+export async function GetRolesByBusinessAndManagerStatus(businessId, isManager = null) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Base query to retrieve roles by business ID (or global roles with business_id of 0)
+        let query = `
+            SELECT role_id, role_name, is_manager
+            FROM roles
+            WHERE (business_id = $1 OR business_id = 0)
+        `;
+        const queryParams = [businessId];
+
+        // Add condition for manager status if specified
+        if (isManager !== null) {
+            query += ' AND is_manager = $2';
+            queryParams.push(isManager);
+        }
+
+        // Execute the query
+        const res = await client.query(query, queryParams);
+        return res.rows;
+    } catch (err) {
+        console.error('Error retrieving roles:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+//#endregion
