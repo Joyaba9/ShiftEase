@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Modal } from 'react-native';
+import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../../components/NavBar.js';
@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
 import AddEmpModal from './AddEmpModal.js';
+import MessagesPage from '../common/MessagesPage.js';
 
 const { width } = Dimensions.get('window');
 
@@ -40,6 +41,16 @@ const BusinessPage = () => {
   if (isMobile) {
     return <BusinessPageMobile />;
   }
+
+  const handleOpenWindow = () => {
+    if (Platform.OS === 'web') {
+      // This will open MessagesPage in a new browser tab
+      window.open('/messages', '_blank', 'width=800,height=600,resizable,scrollbars');
+    } else {
+      // Fallback for mobile to navigate within the app
+      navigation.navigate('Messages');
+    }
+  };
 
   return (
     <ScrollView 
@@ -90,7 +101,7 @@ const BusinessPage = () => {
             <SidebarButton
               icon={require('../../assets/images/email_icon.png')}
               label="Messages"
-              onPress={() => {}}
+              onPress={handleOpenWindow}
               customContainerStyle={{ right: 20 }}
               customIconStyle={{ width: 100, height: 100 }}
             />

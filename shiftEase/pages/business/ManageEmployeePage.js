@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Alert, Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import NavBar from '../../components/NavBar';
 
@@ -8,13 +9,20 @@ const ManageEmployeePage = () => {
   const [employees, setEmployees] = useState([]);
   const [editedEmployee, setEditedEmployee] = useState(null); // For the employee being edited
   const [isEditing, setIsEditing] = useState(false); // For toggling edit mode
+
+  // Get businessId from Redux store
+  const loggedInUser = useSelector((state) => state.business.businessInfo);
+  const businessId = loggedInUser?.business?.business_id;
+
+  console.log(loggedInUser)
+  console.log(businessId)
   
   useEffect(() => {
     fetchEmployees();
   }, []);
 
   const fetchEmployees = async () => {
-    const businessId = localStorage.getItem('businessId');
+    //const businessId = localStorage.getItem('businessId');
     if (!businessId) {
       console.error('Business ID not found');
       return;
@@ -34,7 +42,7 @@ const ManageEmployeePage = () => {
 
   const handleEdit = async () => {
     try {
-      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${editedEmployee.id}`, { // This is not a router, unsure what it is supposed to do.
+      const response = await fetch(`http://localhost:5050/api/employee/update/${editedEmployee.id}`, { 
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +68,7 @@ const ManageEmployeePage = () => {
 
   const handleDeleteEmployee = async (employeeId) => {
     try {
-      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${employeeId}`, { // This is not a router, unsure what it is supposed to do.
+      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${employeeId}`, { 
         method: 'DELETE',
       });
 
@@ -108,9 +116,9 @@ const ManageEmployeePage = () => {
               {employees.length === 0 ? (
                 <Text>No employees found.</Text>
               ) : (
-                employees.map((employee) => (
-                  <View key={employee.id} style={styles.employeeRow}>
-                    <Text>{`${employee.firstName} ${employee.lastName}`}</Text>
+                employees.map((employee, index) => (
+                  <View key={index} style={styles.employeeRow}>
+                    <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
                     <View style={styles.buttonsContainer}>
                       <Button 
                         title="Edit" 
@@ -134,13 +142,13 @@ const ManageEmployeePage = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="First Name"
-                  value={editedEmployee.firstName}
+                  value={editedEmployee.f_name}
                   onChangeText={(value) => handleInputChange('firstName', value)}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Last Name"
-                  value={editedEmployee.lastName}
+                  value={editedEmployee.l_name}
                   onChangeText={(value) => handleInputChange('lastName', value)}
                 />
                 <TextInput
@@ -152,7 +160,7 @@ const ManageEmployeePage = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="Last 4 SSN"
-                  value={editedEmployee.ssn}
+                  value={editedEmployee.last4ssn}
                   onChangeText={(value) => handleInputChange('ssn', value)}
                 />
                 <Button title="Save Changes" onPress={handleEdit} />
