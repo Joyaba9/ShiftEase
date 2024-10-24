@@ -7,6 +7,7 @@ import authRouter from './Routers/authRouter.js';
 import businessRouter from './Routers/businessRouter.js';
 import employeeRouter from './Routers/employeeRouter.js';
 import roleRouter from './Routers/roleRouter.js';
+import scheduleRouter from './Routers/scheduleRouter.js';
 
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/employee', employeeRouter);
 app.use('/api', authRouter);
 app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
+app.use('/api/schedule', scheduleRouter);
 
 
 // Start the server
