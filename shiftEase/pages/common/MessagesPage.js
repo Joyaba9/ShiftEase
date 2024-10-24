@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, FlatList, TouchableWithoutFeedback, Pressable} from 'react-native';
 import { useSelector } from 'react-redux';
+import { fetchEmployees } from '../../../backend/api/employeeApi';
 import { mockChats, mockMessages } from './MockMessagesData';
 
 
@@ -15,104 +16,134 @@ const MessagesPage = () => {
     console.log(loggedInUser)
     console.log(businessId)
 
-    const [query, setQuery] = useState(''); // To hold the search query
-    const [employees, setEmployees] = useState([]); // To hold the list of employees
-    const [filteredEmployees, setFilteredEmployees] = useState([]); // To hold the filtered list of employees based on search query
-    const [isTextInputFocused, setIsTextInputFocused] = useState(false);
-    const [selectedContact, setSelectedContact] = useState([]); // To hold the selected contact
-
-    const [selectedButton, setSelectedButton] = useState(null);
-    const [showLeftBottomContainer2, setShowLeftBottomContainer2] = useState(false);
-
+    const [chatState, setChatState] = useState({
+        query: '',              // Search query for filtering employees
+        employees: [],          // Full list of employees
+        filteredEmployees: [],  // Filtered list based on search
+        selectedContact: [],    // Selected contacts for the current message
+        activeContact: [],      // Contacts with ongoing conversations
+        messages: [],           // List of messages
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [message, setMessage] = useState(''); // Input message
+    const [selectedChat, setSelectedChat] = useState(null); // ID of the currently selected chat
+    const [showLeftBottomContainer2, setShowLeftBottomContainer2] = useState(false); // To toggle chat visibility
     const [showCenterColumn2, setShowCenterColumn2] = useState(false);
-    const [inputHeight, setInputHeight] = useState(45);
-    const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([]);
-    const [activeContact, setActiveContact] = useState([]);
-    const [isHovered, setIsHovered] = useState(false);
-    const [selectedChat, setSelectedChat] = useState(null);
+
+    const [isTextInputFocused, setIsTextInputFocused] = useState(false);  // Manage focus on text input
+    const [selectedButton, setSelectedButton] = useState(null); // Which button is selected (e.g., Inbox, Managers, Coworkers)
+    const [inputHeight, setInputHeight] = useState(45); // Dynamic input height for multiline text inputs
     
+    // Handle button press for Inbox, Managers, Coworkers buttons
     const handleButtonPress = (button) => {
         setSelectedButton(button); // Set the selected button on press
     };
 
+    // Fetch employees from the backend API
+    const getEmployees = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const data = await fetchEmployees(businessId); // Fetch employees based on the businessId
+          setChatState((prevState) => ({ ...prevState, employees: data, filteredEmployees: data }));
+        } catch (error) {
+          setError('Error fetching employees');
+        } finally {
+          setLoading(false);
+        }
+    }, [businessId]);
+    
+      // Fetch employees when component mounts or when businessId changes
+      useEffect(() => {
+        if (businessId) {
+          getEmployees();   // Fetch employees once businessId is available
+        }
+      }, [businessId, getEmployees]);
+
+      // Filter employees based on the search query
+      useEffect(() => {
+        setChatState((prevState) => ({
+            ...prevState,
+            filteredEmployees: prevState.employees.filter(employee => {
+                const fullName = `${employee?.f_name ?? ''} ${employee?.l_name ?? ''}`.toLowerCase();
+                return fullName.includes(prevState.query.toLowerCase()); // Check if employee's name matches the query
+            })
+            }));
+        }, [chatState.query, chatState.employees]);
+
+    // When the message icon is pressed, show the employee list and center column
     const handleMessageIconPress = async () => {
         setShowCenterColumn2(true); // Show centerColumn2
-
-      try {
-        const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${businessId}`);
-
-        if (response.ok) {
-            // Fetch employees when the message icon is pressed
-            const fetchedEmployees = await response.json();
-            setEmployees(fetchedEmployees);
-            setFilteredEmployees(fetchedEmployees); // Initially, all employees are shown
-        } else {
-            console.error('Failed to fetch employees:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-      }
+        getEmployees(); // Fetch employees on icon press
     };
-  
-    // Update the filtered list of employees when the search query changes
-    useEffect(() => {
-        setFilteredEmployees(
-            employees.filter(employee => {
-                const fullName = `${employee?.f_name ?? ''} ${employee?.l_name ?? ''}`.toLowerCase();
-                return fullName.includes(query.toLowerCase());
-            })
-        );
-    }, [query, employees]);
-  
+
+    // Update the search query in the state
+    const handleQueryChange = (query) => {
+        setChatState((prevState) => ({ ...prevState, query }));
+    };
+
+    // Select or deselect a contact when clicked
     const handleContactSelect = (contact) => {
         console.log('Contact selected:', contact);
 
-        if (selectedContact.includes(contact)) {
-            // Remove the contact if it's already selected
-            setSelectedContact(prevSelected => prevSelected.filter(item => item !== contact));
-        } else {
-            // Add the contact if it's not already selected
-            setSelectedContact(prevSelected => [...prevSelected, contact]);
-        }
-
-        setQuery(''); // Clear the search query
+        setChatState((prevState) => {
+            // Check if the contact is already selected
+            const isSelected = prevState.selectedContact.includes(contact);
+            const newSelected = isSelected
+              ? prevState.selectedContact.filter(item => item !== contact) // Remove if already selected
+              : [...prevState.selectedContact, contact]; // Add if not selected
+      
+              return { 
+                  ...prevState, 
+                  selectedContact: newSelected, 
+                  query: '' // Clear the search query after selection
+              };
+        });
     };
 
     // Handle removing a contact when the "X" button is pressed
     const handleRemoveContact = (contact) => {
-        setSelectedContact(prevSelected => prevSelected.filter(item => item !== contact));
+        setChatState((prevState) => ({
+            ...prevState,
+            selectedContact: prevState.selectedContact.filter(item => item !== contact),
+            activeContact: prevState.activeContact.filter(item => item !== contact), // Also remove from active contacts  
+        }));
     };
 
     // Handle sending a message
     const handleSendMessage = () => {
-
-        if (message.trim() && selectedContact.length > 0) {
+        if (message.trim() && chatState.selectedContact.length > 0) {
             const newMessage = {
-                id: messages.length + 1,
-                sender: "You",
-                text: message,
-                timestamp: new Date().toLocaleTimeString(),
+              id: chatState.messages.length + 1,
+              sender: 'You',
+              text: message,
+              timestamp: new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                }),
             };
-            setMessages(prevMessages => [...prevMessages, newMessage]); // Add new message to the list
-            setMessage(''); // Clear the message input after sending
-            setInputHeight(45); // Reset the input height
-            setShowLeftBottomContainer2(true);
-    
-            setActiveContact(prevActive => [
-                ...prevActive,
-                ...selectedContact.filter(contact => !prevActive.includes(contact)),
-            ]);
-    
-            setSelectedContact([]);
-    
-            // Set Inbox as the selected button when a message is sent
-            setSelectedButton('inbox');
+      
+            setChatState((prevState) => {
+              // Add the message and update active contacts
+              const updatedContacts = [...prevState.activeContact, ...prevState.selectedContact.filter(contact => !prevState.activeContact.includes(contact))];
+              return {
+                ...prevState,
+                messages: [...prevState.messages, newMessage],
+                activeContact: updatedContacts,
+                selectedContact: [],
+              };
+            });
+      
+            setMessage(''); // Clear the input
+            setShowLeftBottomContainer2(true); // Show the chat container
         }
     };
 
+    // Handle chat press to view conversation of the selected chat
     const handleChatPress = (chatId) => {
-        setSelectedChat(chatId); // Set the currently selected chat
+        setSelectedChat(chatId); // Set which chat is selected to display its messages
     };
 
     return (
@@ -142,7 +173,7 @@ const MessagesPage = () => {
                             </TouchableOpacity>
                             <TextInput
                                 style={styles.searchInput}
-                                placeholder="Search contacts..."
+                                placeholder="Search messages..."
                                 placeholderTextColor="grey"
                             />
                         </View>
@@ -172,7 +203,7 @@ const MessagesPage = () => {
                     </View>
 
                     {!showLeftBottomContainer2 ? (
-                        /* List of Chats */
+                        /* Show when there are no chats */
                         <View style={styles.leftBottomContainer}>
                             <View style={styles.messageBubbleContainer}>
                                 <Image
@@ -186,6 +217,7 @@ const MessagesPage = () => {
                             <Text style={styles.messagesText}>New messages will appear here.</Text>
                         </View>
                     ) : (
+                        /* List of Chats (Mock for now)*/
                         <View style={styles.leftBottomContainer2}>
                             <FlatList
                                 data={mockChats} // Use mock chat data
@@ -193,9 +225,7 @@ const MessagesPage = () => {
                                 renderItem={({ item }) => {
                                     return (
                                         <TouchableOpacity 
-                                            style={[styles.chatPreviewContainer, isHovered && styles.hoveredChat, selectedChat === item.id && styles.selectedChat]}
-                                            onMouseEnter={() => setIsHovered(true)}
-                                            onMouseLeave={() => setIsHovered(false)}
+                                            style={[styles.chatPreviewContainer, selectedChat === item.id && styles.selectedChat]}
                                             onPress={() => handleChatPress(item.id)}
                                         >
                                             <View style={styles.chatPreviewTopContainer}> 
@@ -211,7 +241,7 @@ const MessagesPage = () => {
                     )}
                 </View>
                 
-                {/* Conditionally display centerColumn1 or centerColumn2 */}
+                {/* Center Column: Display conversation or selected contacts */}
                 {!showCenterColumn2 ? (
                     <View style={styles.centerColumn}>
                         <View>
@@ -227,22 +257,23 @@ const MessagesPage = () => {
                 ) : (
                     // Display centerColumn2 
                     <View style={styles.centerColumn2}>
-                        {activeContact.length > 0 ? (
+                        {chatState.activeContact.length > 0 ? (
                                 <View style={styles.contactTopMessageContainer}>
                                     <Text style={styles.toText}>
-                                        {activeContact.map((contact, index) => (
+                                        {chatState.activeContact.map((contact, index) => (
                                             <Text key={index} style={styles.activeContactText}>
                                                 {contact}
-                                                {index < activeContact.length - 1 && ", "}
+                                                {index < chatState.activeContact.length - 1 && ", "}
                                             </Text>
                                         ))}
                                     </Text>
                                 </View>
                             ) : (
+                                // Show selected contacts (before message is sent)
                                 <View style={styles.topMessageContainer}>
                                     <Text style={styles.toText}>
                                         To:{" "}
-                                            {selectedContact.map((contact, index) => (
+                                        {chatState.selectedContact.map((contact, index) => (
                                             <View key={index} style={styles.selectedContactContainer}>
                                                 <Text style={styles.selectedContactText}>{contact}</Text>
                                                 <TouchableOpacity onPress={() => handleRemoveContact(contact)}>
@@ -253,18 +284,18 @@ const MessagesPage = () => {
                                     </Text>
                                     <TextInput
                                         style={styles.searchInput}
-                                        value={query}
-                                        onChangeText={text => setQuery(text)}
+                                        value={chatState.query}
+                                        onChangeText={handleQueryChange}
                                         onFocus={() => setIsTextInputFocused(true)} // Show FlatList when focused
                                         onBlur={() => setTimeout(() => setIsTextInputFocused(false), 200)}
                                     />
                                 </View>
                             )}
-                        
+                        {/* FlatList for showing employee search results */}
                         <View style={styles.wholeContactContainer}>
                             {isTextInputFocused && (
                                 <FlatList
-                                data={filteredEmployees}
+                                data={chatState.filteredEmployees} // Filtered employees to display based on search
                                 keyExtractor={item => item?.emp_id?.toString()}
                                 renderItem={({ item }) => {
                                     console.log("Rendering employee:", `${item.f_name} ${item.l_name}`);
@@ -284,9 +315,11 @@ const MessagesPage = () => {
                                 />
                             )}
                         </View>
+
+                        {/* Conversation container displaying messages */}
                         <View style={styles.conversationContainer}>
                             <FlatList
-                                data={messages} // Use mock message data
+                                data={chatState.messages} // Display all messages in the current chat
                                 keyExtractor={(item) => item.id.toString()}
                                 renderItem={({ item }) => (
                                     <View style={item.sender === "You" ? styles.sentMessage : styles.receivedMessage}>
@@ -298,6 +331,8 @@ const MessagesPage = () => {
                                 inverted
                             />
                         </View>
+
+                        {/* Input field and send button for typing and sending messages */}
                         <View style={styles.wholeMessageContainer}>
                             <View style={[styles.messageContainer, { height: inputHeight }]}>
                                 <TextInput
@@ -444,9 +479,7 @@ const styles = StyleSheet.create({
     //Left Bottom Container 2 Styles
     leftBottomContainer2: {
         flex: 3,
-        //justifyContent: 'center',
         alignItems: 'flex-start',
-        //paddingHorizontal: 10,
         borderTopWidth: 1,
         borderTopColor: '#E4E6EB'
     },
