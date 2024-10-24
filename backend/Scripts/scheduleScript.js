@@ -1,9 +1,11 @@
 import getClient from '../db/dbClient.js';
 
+//#region Get Available Employees
+
 /**
  * Fetches employees' availability for a specific day and date,
- * xcluding those with approved time-off requests.
- * 
+ * excluding those with approved time-off requests.
+ *
  * @param {number} businessId - The business ID.
  * @param {string} day - The day of the week (e.g., 'Monday', 'Tuesday').
  * @param {string} date - The target date to check availability (e.g., 'YYYY-MM-DD').
@@ -50,9 +52,13 @@ export async function getAvailableEmployees(businessId, day, date) {
     }
 }
 
+//#endregion
+
+//#region Create Weekly Schedule
+
 /**
  * Creates a weekly schedule for a business starting from the given week start date.
- * 
+ *
  * @param {number} businessId - The ID of the business.
  * @param {string} weekStartDate - The start date of the week (YYYY-MM-DD format).
  * @returns {Promise<Object>} - The created schedule details.
@@ -103,9 +109,13 @@ export async function createWeeklySchedule(businessId, weekStartDate) {
     }
 }
 
+//#endregion
+
+//#region Create Shift
+
 /**
  * Creates a shift for a specific employee.
- * 
+ *
  * @param {number} employeeId - The ID of the employee.
  * @param {number} scheduleId - The ID of the schedule to which the shift belongs.
  * @param {string} date - The date of the shift (YYYY-MM-DD format).
@@ -165,6 +175,10 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
     }
 }
 
+//#endregion
+
+//#region Get Shifts by Schedule ID
+
 /**
  * Fetches all shifts related to a specific schedule ID.
  *
@@ -220,3 +234,5 @@ export async function getShiftsByScheduleId(scheduleId) {
         await client.end();
     }
 }
+
+//#endregion
