@@ -24,7 +24,7 @@ const linking = {
     config: {
       screens: {
         // Welcome: 'welcome',
-        // Login: 'login',
+        Login: 'login',
         // ChangePass: 'changepass',
         // ForgotPass: 'forgotpass',
         // Registration: 'registration',

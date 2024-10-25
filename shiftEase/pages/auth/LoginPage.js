@@ -9,12 +9,17 @@ import CommonLayout from '../common/CommonLayout';
 const { width } = Dimensions.get('window');
 
 // LoginPage component
-const LoginPage = () => {
+const LoginPage = ({ isLoggingOut }) => {
   const isMobile = width < 768;
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
   console.log('LoginPage rendered');
+
+  // Check if logging out is in progress and block rendering
+  if (isLoggingOut) {
+    return <div>Logging out...</div>;
+  }
 
   const [isBusinessLogin, setIsBusinessLogin] = useState(false);
 
@@ -62,24 +67,35 @@ const LoginPage = () => {
     }
   };
 
+  const [isRehydrated, setIsRehydrated] = useState(false);
+
+  useEffect(() => {
+    // Set rehydrated to true once the component has mounted
+    setIsRehydrated(true);
+  }, []); // This will only run once after the component mounts
+
   // useEffect hook that watches the loggedInUser value from Redux
   // It triggers when the loggedInUser changes, and based on the user data, it performs navigation or shows alerts
   useEffect(() => {
-    if (loggedInUser) {
-      // If the user needs to change their password, navigate to the ChangePass page
-      if (loggedInUser.promptPasswordChange) {
-        navigation.navigate('ChangePass', { employee: loggedInUser });
+    if (isRehydrated) {
+      if (loggedInUser) {
+        // If the user needs to change their password, navigate to the ChangePass page
+        if (loggedInUser.promptPasswordChange) {
+          navigation.navigate('ChangePass', { employee: loggedInUser });
+        } else {
+          // If the login is successful, show an alert and navigate to either Business or Employee page based on the login mode
+          alert('Login successful');
+          navigation.navigate(isBusinessLogin ? 'Business' : 'Employee');
+        }
+      } else if (businessInfo) {
+        alert('Business login successful');
+        navigation.navigate('Business');
       } else {
-        // If the login is successful, show an alert and navigate to either Business or Employee page based on the login mode
-        alert('Login successful');
-        navigation.navigate(isBusinessLogin ? 'Business' : 'Employee');
+        // No logged-in user or business, ensure staying on Login page
+        console.log('No user or business logged in, staying on login page.');
       }
-    }
-    if (businessInfo) {
-      alert('Business login successful');
-      navigation.navigate('Business');
-    }
-  }, [loggedInUser, businessInfo, navigation]); // This effect runs when either loggedInUser or navigation changes
+    } 
+  }, [loggedInUser, businessInfo, navigation, isBusinessLogin, isRehydrated]); // This effect runs when either loggedInUser or navigation changes
 
 
   return (
