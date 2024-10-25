@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
 import AddEmpModal from './AddEmpModal.js';
+import AnnouncementsModal from './AnnouncementsModal.js';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +32,7 @@ const BusinessPage = () => {
   };
 
   const [addEmpVisible, setAddEmpVisible] = useState(false);
+  const [announcementsVisible, setAnnouncementsVisible] = useState(false);
 
   const goToManageEmployeePage = () => {
     navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
@@ -116,7 +118,7 @@ const BusinessPage = () => {
                 </View>
                 <View style={styles.textBox}></View>
                 <TouchableOpacity style={styles.addIconContainer}>
-                  <Ionicons name="add-circle" size={50} color="black" />
+                  <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
                 </TouchableOpacity>
               </View>
             </LinearGradient>
@@ -155,6 +157,12 @@ const BusinessPage = () => {
         <AddEmpModal 
           addEmpVisible={addEmpVisible} 
           setAddEmpVisible={setAddEmpVisible}
+          businessId={loggedInBusiness.business.business_id}
+        />
+
+        <AnnouncementsModal
+          announcementsVisible={announcementsVisible}
+          setAnnouncementsVisible={setAnnouncementsVisible}
           businessId={loggedInBusiness.business.business_id}
         />
       </View>
