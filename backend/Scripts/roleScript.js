@@ -247,3 +247,80 @@ export async function GetRolesByBusinessAndManagerStatus(businessId, isManager =
 }
 
 //#endregion
+
+//#region Get All Permissions
+
+/**
+ * Retrieves all permissions from the database.
+ *
+ * @returns {Promise<Array>} - List of all permissions with their ids and names.
+ */
+export async function GetAllPermissions() {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Query to get all permissions
+        const getPermissionsQuery = `
+            SELECT permission_id, permission_name
+            FROM permissions;
+        `;
+
+        const result = await client.query(getPermissionsQuery);
+        return result.rows;
+    } catch (err) {
+        console.error('Error retrieving permissions:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+//#endregion
+
+//#region Get Role Permissions
+
+/**
+ * Retrieves all permissions for a given role, ensuring the role is associated 
+ * with the specified business ID or has a business ID of 0.
+ *
+ * @param {number} businessId - The ID of the business.
+ * @param {number} roleId - The ID of the role.
+ * @returns {Promise<Array>} - List of permissions associated with the role.
+ */
+export async function GetRolePermissions(businessId, roleId) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Check if the role is associated with the specified business ID or has a business ID of 0
+        const roleCheckQuery = `
+            SELECT role_id
+            FROM roles
+            WHERE role_id = $1 AND (business_id = $2 OR business_id = 0);
+        `;
+        const roleCheckRes = await client.query(roleCheckQuery, [roleId, businessId]);
+
+        if (roleCheckRes.rows.length === 0) {
+            throw new Error('Role not found or not associated with the specified business ID.');
+        }
+
+        // Query to get all permissions associated with the role
+        const getPermissionsQuery = `
+            SELECT p.permission_id, p.permission_name
+            FROM role_permissions rp
+            JOIN permissions p ON rp.permission_id = p.permission_id
+            WHERE rp.role_id = $1;
+        `;
+        
+        const result = await client.query(getPermissionsQuery, [roleId]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error retrieving role permissions:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+//#endregion

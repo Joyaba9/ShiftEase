@@ -1,5 +1,5 @@
 import express from 'express';
-import { CreateRole, CreateRoleWithPermissions, GetRolesByBusinessAndManagerStatus, UpdateRoleWithPermissions } from '../Scripts/roleScript.js';
+import { CreateRole, CreateRoleWithPermissions, GetAllPermissions, GetRolePermissions, GetRolesByBusinessAndManagerStatus, UpdateRoleWithPermissions } from '../Scripts/roleScript.js';
 
 const router = express.Router();
 
@@ -85,6 +85,35 @@ router.get('/getRoles', async (req, res) => {
         // Call the script to get roles by business ID and manager status
         const roles = await GetRolesByBusinessAndManagerStatus(Number(businessId), managerFilter);
         res.status(200).json({ success: true, roles });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+});
+
+// Route to get all permissions
+router.get('/getPermissions', async (req, res) => {
+    try {
+        // Call the script to get all permissions
+        const permissions = await GetAllPermissions();
+        res.status(200).json({ success: true, permissions });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+});
+
+// Route to get permissions for a specific role
+router.get('/getRolePermissions', async (req, res) => {
+    const { businessId, roleId } = req.body;
+
+    // Validate inputs
+    if (!businessId || !roleId) {
+        return res.status(400).json({ success: false, message: 'Business ID and Role ID are required.' });
+    }
+
+    try {
+        // Call the script to get role permissions
+        const permissions = await GetRolePermissions(Number(businessId), Number(roleId));
+        res.status(200).json({ success: true, permissions });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
