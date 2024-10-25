@@ -1,17 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import LogOut from '../pages/auth/logOut';
+import { store, persistor } from '../redux/store';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/reducers/userReducer';
+import { logoutBusiness } from '../redux/reducers/businessReducer';
+import { auth } from '../../backend/firebase';
+import { signOut } from "firebase/auth";
+import { setPersistence, browserSessionPersistence } from "firebase/auth";
+
 
 const NavBar = ({ homeRoute }) => {
 
     const screenWidth = Dimensions.get('window').width;
+    const dispatch = useDispatch();
     const navigation = useNavigation();
+    const [isLoggingOut, setIsLoggingOut] = useState('');
+    
 
 // Define the handleLogout function is here temnporarily
 const handleLogout = async () => {
     try {
+        // Set a local state variable to track the logout process
+        setIsLoggingOut(true);
+        // Ensure that Firebase does not automatically restore the session
+        await setPersistence(auth, browserSessionPersistence);
+
+        //const auth = getAuth(); // Get Firebase Auth instance
+        await signOut(auth);
+        console.log("Signed out from Firebase");
+
         // Send logout request to the backend
         const response = await fetch('http://localhost:5050/api/logout', {
             method: 'POST',
@@ -24,13 +43,41 @@ const handleLogout = async () => {
 
         if (response.ok) {
             console.log(result.message); // Logged out successfully
-            // Navigate to Login Page after successful logout
-            navigation.replace('Login');
+
+            localStorage.clear();
+
+            // Dispatch logout actions for both user and business
+            dispatch(logout());
+            dispatch(logoutBusiness());
+            
+
+            // Purge persisted state after logout
+            await persistor.purge();
+            console.log("Persistor purged");
+
+            // Log the persistor state to check if it's null or still holds any data
+            console.log("Persistor state after purge:", persistor.getState());
+            console.log("Firebase Auth current user:", auth.currentUser);
+            console.log('Redux state after logout:', store.getState());
+
+            if (!auth.currentUser && !store.getState().user) {
+                console.log("Redux and Firebase cleared");
+                // The user is fully signed out from Firebase
+                setTimeout(() => {
+                    console.log('Navigating to login page...');
+                    navigation.replace('Login');
+                    setIsLoggingOut(false);
+                }, 500);
+            } else {
+                console.log("Still logging out...");
+            }
         } else {
             console.error('Logout failed:', result.message);
+            setIsLoggingOut(false);
         }
     } catch (error) {
         console.error('Error during logout:', error);
+        setIsLoggingOut(false);
     }
 };
 

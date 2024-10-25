@@ -35,6 +35,8 @@ const userSlice = createSlice({
       // It clears the loggedInUser data from the state.
       logout: (state) => {
         state.loggedInUser = null;
+        state.loading = false;
+        state.error = null;
       },
     },
 });

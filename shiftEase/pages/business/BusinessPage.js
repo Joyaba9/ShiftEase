@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,6 @@ import { useSelector } from 'react-redux';
 import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
 import AddEmpModal from './AddEmpModal.js';
-import MessagesPage from '../common/MessagesPage.js';
 
 const { width } = Dimensions.get('window');
 
@@ -21,10 +20,12 @@ const BusinessPage = () => {
   const loggedInBusiness = useSelector((state) => state.business.businessInfo);
 
   // Check if the data exists
-  if (!loggedInBusiness) {
-      console.error('No business is logged in');
-      return null;
-  }
+  useEffect(() => {
+    if (!loggedInBusiness) {
+        console.error('No business is logged in');
+        navigation.replace('Login');
+    }
+  }, [loggedInBusiness, navigation]);
 
   // Function to switch between dashboards
   const switchDashboard = () => {
@@ -36,6 +37,15 @@ const BusinessPage = () => {
   const goToManageEmployeePage = () => {
     navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
   };
+
+  // Early loading check (non-hook related) to avoid return early
+  if (!loggedInBusiness) {
+    return (
+      <div>
+        <p>Loading...</p> {/* Fallback UI */}
+      </div>
+    );
+  }
 
   // Render the mobile layout if it's a mobile screen
   if (isMobile) {

@@ -27,6 +27,8 @@ const businessSlice = createSlice({
       // Action for business logout
       logoutBusiness: (state) => {
         state.businessInfo = null;
+        state.loading = false;
+        state.error = null;
       },
     },
 
