@@ -2,9 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
 
 const ManageEmployeePage = () => {
+
+  const loggedInUser = useSelector((state) => state.business.businessInfo);
+  const businessId = loggedInUser?.business?.business_id;
+
   const [employees, setEmployees] = useState([]);
   const [editedEmployee, setEditedEmployee] = useState(null); // For the employee being edited
   const [isEditing, setIsEditing] = useState(false); // For toggling edit mode
@@ -14,7 +19,6 @@ const ManageEmployeePage = () => {
   }, []);
 
   const fetchEmployees = async () => {
-    const businessId = localStorage.getItem('businessId');
     if (!businessId) {
       console.error('Business ID not found');
       return;
@@ -60,8 +64,15 @@ const ManageEmployeePage = () => {
 
   const handleDeleteEmployee = async (employeeId) => {
     try {
-      const response = await fetch(`http://localhost:5050/api/employee/fetchAll/${employeeId}`, { // This is not a router, unsure what it is supposed to do.
-        method: 'DELETE',
+      const response = await fetch('http://localhost:5050/api/employee/softDeleteEmployee', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          businessId: businessId, // Replace this with the actual business ID
+          employeeId: employeeId,
+        }),
       });
 
       if (!response.ok) {
@@ -110,7 +121,7 @@ const ManageEmployeePage = () => {
               ) : (
                 employees.map((employee) => (
                   <View key={employee.id} style={styles.employeeRow}>
-                    <Text>{`${employee.firstName} ${employee.lastName}`}</Text>
+                    <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
                     <View style={styles.buttonsContainer}>
                       <Button 
                         title="Edit" 
@@ -134,13 +145,13 @@ const ManageEmployeePage = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="First Name"
-                  value={editedEmployee.firstName}
+                  value={editedEmployee.f_name}
                   onChangeText={(value) => handleInputChange('firstName', value)}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Last Name"
-                  value={editedEmployee.lastName}
+                  value={editedEmployee.l_name}
                   onChangeText={(value) => handleInputChange('lastName', value)}
                 />
                 <TextInput
@@ -152,7 +163,7 @@ const ManageEmployeePage = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="Last 4 SSN"
-                  value={editedEmployee.ssn}
+                  value={editedEmployee.last4ssn}
                   onChangeText={(value) => handleInputChange('ssn', value)}
                 />
                 <Button title="Save Changes" onPress={handleEdit} />
