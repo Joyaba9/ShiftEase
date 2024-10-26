@@ -151,7 +151,7 @@ const SchedulePage = () => {
                         {/* Draggable FlatList showing employees */}
                         <View style={styles.employeeList}>
                             <View style={[styles.employeeTopContainer, { zIndex: isDropdownVisible ? 1 : 0 }]}>
-                                <Text style={styles.title}> All Team Members</Text>
+                                <Text style={styles.title}> {titleOption === "All" ? "All Team Members" : titleOption}</Text>
 
                                 <TouchableOpacity 
                                     style={styles.dropdownButton} 
