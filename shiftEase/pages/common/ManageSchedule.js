@@ -21,12 +21,12 @@ const SchedulePage = () => {
     const [inputRowCount, setInputRowCount] = useState(String(rowCount));
 
     const [employees, setEmployees] = useState([
-        { id: '1', name: 'Alonzo Carter' },
-        { id: '2', name: 'Emily Song' },
-        { id: '3', name: 'Jonathan Richardson' },
-        { id: '4', name: 'Kenneth Park' },
-        { id: '5', name: 'Riya Patel' },
-        { id: '6', name: 'Stephanie Sanchez' },
+        { id: '1', name: 'Alonzo Carter', role: 'Manager' },
+        { id: '2', name: 'Emily Song', role: 'Manager' }, 
+        { id: '3', name: 'Jonathan Richardson', role: 'Employee' },
+        { id: '4', name: 'Kenneth Park', role: 'Employee' },
+        { id: '5', name: 'Riya Patel', role: 'Employee' },
+        { id: '6', name: 'Stephanie Sanchez', role: 'Employee' },
     ]);
 
     const getDateRangeText = () => {
@@ -85,7 +85,12 @@ const SchedulePage = () => {
         style={styles.employeeItem}
         onLongPress={drag} // Long press to drag
         >
-        <Text>{item.name}</Text>
+            <View style={styles.topEmployeeItem}>
+                <Text>{item.name}</Text>
+                <Text>Hrs: 0</Text>
+            </View>
+        
+            <Text style = {styles.roleText}>{item.role}</Text>
         </TouchableOpacity>
     );
 
@@ -364,13 +369,18 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         elevation: 2,
     },
+    topEmployeeItem: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between'
+    },
+    roleText: {
+        marginTop: 5,
+        marginLeft: 5
+    },
     shiftsContainer: {
         flex: 1,
-        //padding: 10,s
         backgroundColor: '#fafafa',
-        //justifyContent: 'center',
-        //alignItems: 'center',
-        //marginLeft: 10,
         borderRadius: 5,
         borderWidth: 2,
         borderColor: 'orange'
@@ -402,7 +412,7 @@ const styles = StyleSheet.create({
     },
     gridCell: {
         flex: 1,
-        minHeight: 60,
+        minHeight: 70,
         padding: 10,
         borderRightWidth: 1,
         borderRightColor: '#ccc',
