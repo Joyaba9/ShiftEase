@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useRef, useEffect, forwardRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-const ScheduleGrid = forwardRef(({ employeeAssignments, shiftAssignments, onDrop, onRemove }, ref) => {
+const ScheduleGrid = forwardRef(({ employeeAssignments, shiftAssignments, rowCount, onDrop, onRemove }, ref) => {
     const cellRefs = useRef({});
 
     useImperativeHandle(ref, () => ({
@@ -33,7 +33,7 @@ const ScheduleGrid = forwardRef(({ employeeAssignments, shiftAssignments, onDrop
 
     return (
         <View style={styles.gridContainer}>
-            {[...Array(4)].map((_, rowIndex) => (
+            {[...Array(rowCount)].map((_, rowIndex) => (
                 <View key={rowIndex} style={styles.gridRow}>
                     {[...Array(7)].map((_, colIndex) => {
                         const cellId = `${rowIndex}-${colIndex}`;
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     },
     gridCell: {
         flex: 1,
-        height: 80,
+        height: 70,
         backgroundColor: '#f0f0f0',
         alignItems: 'center',
         justifyContent: 'center',
