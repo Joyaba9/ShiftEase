@@ -228,12 +228,14 @@ const SchedulePage = () => {
                                                 {...panResponder.panHandlers}
                                                 style={[employee.pan.getLayout(), styles.draggable]}
                                             >
-                                                <View style={styles.topEmployeeItem}>
-                                                    <Text>{employee.name}</Text>
-                                                    <Text>Hrs: 0</Text>
-                                                </View>
+                                                <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.gradient}>
+                                                    <View style={styles.topEmployeeItem}>
+                                                        <Text>{employee.name}</Text>
+                                                        <Text>Hrs: 0</Text>
+                                                    </View>
 
-                                                <Text style = {styles.roleText}>{employee.role}</Text>
+                                                    <Text style = {styles.roleText}>{employee.role}</Text>
+                                                </LinearGradient>
                                             </Animated.View>
                                         );
                                     })}
@@ -253,6 +255,7 @@ const SchedulePage = () => {
 
                                 <ScheduleGrid
                                     ref={scheduleGridRef}
+                                    dates={dates}
                                     employeeAssignments={employeeAssignments}
                                     shiftAssignments={shiftAssignments}
                                     rowCount = {rowCount}
@@ -265,7 +268,7 @@ const SchedulePage = () => {
                         <View style={styles.bottomShiftContainer}>
                                 <Text>Set Number of Rows:</Text>
                                 <TextInput
-                                    style={styles.input}
+                                    style={styles.rowInput}
                                     value={inputRowCount}
                                     //keyboardType="numeric"
                                     onChangeText={handleRowCountChange}  // Update row count dynamically
@@ -314,7 +317,7 @@ const SchedulePage = () => {
                                 <Animated.View
                                     key={shift.id}
                                     {...panResponder.panHandlers}
-                                    style={[shift.pan.getLayout(), styles.draggable, { backgroundColor: 'lightgreen' }]}
+                                    style={[shift.pan.getLayout(), styles.draggableShifts, { backgroundColor: 'lightgreen' }]}
                                 >
                                     <Text style={styles.text}>{shift.time}</Text>
                                 </Animated.View>
@@ -487,22 +490,20 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         alignSelf: 'stretch',
         overflow: 'hidden',
-        borderWidth: 2,
-        borderColor: 'red'
+        // borderWidth: 2,
+        // borderColor: 'red'
     },
     gridHeader: {
+        flex:1,
         flexDirection: 'row',
-        width: '100%',
+        //width: '100%',
         maxWidth: '100%',
         overflow: 'hidden',
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
     },
     gridHeaderCell: {
-        width: '14.29%',
-        //flex: 1,
-        //flexShrink: 1,
-        //width: 'auto',
+        minWidth: '14.29%',
         padding: 10,
         alignItems: 'center',
         backgroundColor: '#e7e7e7',
@@ -513,8 +514,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     shiftContainer: { 
-        //flex: 0.5,
+        width: '30%',
         alignSelf: 'flex-start',
+        marginLeft: 30,
         padding: 10, 
         backgroundColor: '#e8f5e9' 
     },
@@ -523,11 +525,16 @@ const styles = StyleSheet.create({
         marginBottom: 10 
     },
     inputRow: { 
+        width: '100%',
         flexDirection: 'row', 
+        //justifyContent: 'space-evenly',
         alignItems: 'center', 
-        marginBottom: 10 
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: 'red'
     },
     input: { 
+        minWidth: '35%',
         borderWidth: 1, 
         padding: 5, 
         marginRight: 10, 
@@ -535,10 +542,14 @@ const styles = StyleSheet.create({
     draggable: {
         width: '100%',
         height: 60,
-        backgroundColor: '#fff',
+        justifyContent: 'center',
+        marginBottom: 10,
+    },
+    gradient: {
+        width: '100%',
+        height: 60,
         justifyContent: 'center',
         padding: 10,
-        marginBottom: 10,
         borderRadius: 10
     },
     bottomShiftContainer: {
@@ -548,7 +559,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
     },
-    input: {
+    draggableShifts: {  
+        width: '40%',
+        padding: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+    rowInput: {
         borderColor: 'gray',
         borderWidth: 1,
         borderRadius: 10,
