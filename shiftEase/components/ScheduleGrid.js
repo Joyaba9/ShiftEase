@@ -35,7 +35,7 @@ const ScheduleGrid = forwardRef(({ employeeAssignments, shiftAssignments, onDrop
         <View style={styles.gridContainer}>
             {[...Array(4)].map((_, rowIndex) => (
                 <View key={rowIndex} style={styles.gridRow}>
-                    {[...Array(4)].map((_, colIndex) => {
+                    {[...Array(7)].map((_, colIndex) => {
                         const cellId = `${rowIndex}-${colIndex}`;
                         return (
                             <TouchableOpacity
@@ -63,15 +63,22 @@ const ScheduleGrid = forwardRef(({ employeeAssignments, shiftAssignments, onDrop
 });
 
 const styles = StyleSheet.create({
-    gridContainer: { flexDirection: 'column' },
-    gridRow: { flexDirection: 'row' },
+    gridContainer: { 
+        flexDirection: 'column',
+        width: '100%'
+    },
+    gridRow: { 
+        flexDirection: 'row',
+        width: '100%' 
+    },
     gridCell: {
-        width: 80,
+        flex: 1,
         height: 80,
-        margin: 5,
         backgroundColor: '#f0f0f0',
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
     },
 });
 

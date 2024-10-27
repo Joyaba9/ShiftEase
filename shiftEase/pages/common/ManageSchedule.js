@@ -219,15 +219,27 @@ const SchedulePage = () => {
                                     );
                                 })}
                         </View>
+                        
+                        {/* Grid for the shifts */}
+                        <View style={styles.gridContainer}>
+                            {/* Render days of the week as headers */}
+                            <View style={styles.gridHeader}>
+                                {dates.map((date, index) => (
+                                    <TouchableOpacity key={index} style={styles.gridHeaderCell}>
+                                        <Text>{date.toDateString()}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
 
 
-                        <ScheduleGrid
-                            ref={scheduleGridRef}
-                            employeeAssignments={employeeAssignments}
-                            shiftAssignments={shiftAssignments}
-                            onDrop={onDrop}
-                            onRemove={onRemove}
-                        />
+                            <ScheduleGrid
+                                ref={scheduleGridRef}
+                                employeeAssignments={employeeAssignments}
+                                shiftAssignments={shiftAssignments}
+                                onDrop={onDrop}
+                                onRemove={onRemove}
+                            />
+                        </View>
                     </View>
                 </View>
 
@@ -302,7 +314,7 @@ const styles = StyleSheet.create({
     },
     wholeScheduleContainer: {
         //flex: 1,
-        width: '100%',
+        width: '95%',
         minWidth: '60%',
         minHeight: '50%',
         borderWidth: 2,
@@ -311,7 +323,7 @@ const styles = StyleSheet.create({
     topContainer: {
         flexDirection: 'row',
         height: 80,
-        width: '95%',
+        width: '100%',
         alignItems: 'center',
         alignSelf: 'center',
         justifyContent: 'space-between',
@@ -355,12 +367,11 @@ const styles = StyleSheet.create({
     },
     scheduleContainer: {
         flexDirection: 'row',
-        width: '95%',
+        width: '100%',
         alignSelf: 'center',
-        //marginHorizontal: 30,
         minHeight: '50%',
         borderWidth: 2,
-        borderColor: 'green'
+        // borderColor: 'green'
     },
     employeeTopContainer: {
         flexDirection: 'row',
@@ -424,13 +435,41 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     roleText: {
-        //marginTop: 5,
         marginLeft: 5
     },
+    gridContainer: {
+        flex: 2,
+        flexDirection: 'column',
+        alignSelf: 'stretch',
+        overflow: 'hidden',
+        // borderWidth: 2,
+        // borderColor: 'red'
+    },
+    gridHeader: {
+        flexDirection: 'row',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    gridHeaderCell: {
+        width: '14.29%',
+        //flex: 1,
+        //flexShrink: 1,
+        //width: 'auto',
+        padding: 10,
+        alignItems: 'center',
+        backgroundColor: '#e7e7e7',
+        borderRightWidth: 1,
+        borderRightColor: '#ccc',
+    },
+    gridHeaderText: {
+        fontWeight: 'bold',
+    },
     shiftContainer: { 
-        flex: 0.5,
+        //flex: 0.5,
         alignSelf: 'flex-start',
-        //width: '30%', 
         padding: 10, 
         backgroundColor: '#e8f5e9' 
     },
@@ -447,7 +486,6 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         padding: 5, 
         marginRight: 10, 
-        //flex: 1 
     },
     draggable: {
         width: '100%',
@@ -458,7 +496,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         borderRadius: 10
     },
-    //text: { color: '#fff' },
 });
 
 export default SchedulePage;
