@@ -248,6 +248,45 @@ export async function GetRolesByBusinessAndManagerStatus(businessId, isManager =
 
 //#endregion
 
+/**
+ * Retrieves roles based on business ID and optional manager status.
+ *
+ * @param {number} businessId - The ID of the business.
+ * @param {boolean|null} isManager - Filter roles based on manager status.
+ *                                   Set to true to return only manager roles,
+ *                                   false for non-manager roles, or null for all roles.
+ * @returns {Promise<Array>} - List of role IDs and names matching the criteria.
+ */
+export async function GetRolesByOnlyBusinessAndManagerStatus(businessId, isManager = null) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Base query to retrieve roles by business ID (or global roles with business_id of 0)
+        let query = `
+            SELECT role_id, role_name, is_manager
+            FROM roles
+            WHERE (business_id = $1)
+        `;
+        const queryParams = [businessId];
+
+        // Add condition for manager status if specified
+        if (isManager !== null) {
+            query += ' AND is_manager = $2';
+            queryParams.push(isManager);
+        }
+
+        // Execute the query
+        const res = await client.query(query, queryParams);
+        return res.rows;
+    } catch (err) {
+        console.error('Error retrieving roles:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 //#region Get All Permissions
 
 /**
@@ -318,6 +357,66 @@ export async function GetRolePermissions(businessId, roleId) {
     } catch (err) {
         console.error('Error retrieving role permissions:', err);
         throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+/**
+ * Deletes a role if no employees are associated with it and it meets the criteria.
+ * @param {number} roleId - ID of the role to delete.
+ * @param {number} businessId - ID of the business associated with the role.
+ * @returns {object} - Result message with success or failure.
+ */
+export async function DeleteRole(roleId, businessId) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Step 1: Check if the role is associated with businessId 0
+        const roleCheckQuery = `
+            SELECT business_id FROM roles WHERE role_id = $1`;
+        const roleCheckRes = await client.query(roleCheckQuery, [roleId]);
+
+        if (roleCheckRes.rowCount === 0) {
+            return { success: false, message: 'Role not found.' };
+        }
+
+        const roleBusinessId = roleCheckRes.rows[0].business_id;
+        if (roleBusinessId === 0) {
+            return { success: false, message: 'Cannot delete global roles (businessId = 0).' };
+        }
+
+        // Step 2: Ensure role is associated with the provided business ID
+        if (roleBusinessId !== businessId) {
+            return { success: false, message: 'Cannot delete role not associated with your business.' };
+        }
+
+        // Step 3: Check if any employees are associated with the role
+        const employeeCheckQuery = `
+            SELECT emp_id FROM employees WHERE role_id = $1 AND business_id = $2`;
+        const employeeCheckRes = await client.query(employeeCheckQuery, [roleId, businessId]);
+
+        if (employeeCheckRes.rowCount > 0) {
+            return { success: false, message: 'Cannot delete role. Employees are associated with this role.' };
+        }
+
+        // Step 4: Delete from role_permissions table
+        const deletePermissionsQuery = `
+            DELETE FROM role_permissions WHERE role_id = $1
+        `;
+        await client.query(deletePermissionsQuery, [roleId]);
+
+        // Step 5: Delete from roles table
+        const deleteRoleQuery = `
+            DELETE FROM roles WHERE role_id = $1 AND business_id = $2`;
+        await client.query(deleteRoleQuery, [roleId, businessId]);
+
+        return { success: true, message: 'Role deleted successfully.' };
+
+    } catch (err) {
+        console.error('Error deleting role:', err);
+        return { success: false, message: 'Server error occurred while deleting role.', error: err.message };
     } finally {
         await client.end();
     }
