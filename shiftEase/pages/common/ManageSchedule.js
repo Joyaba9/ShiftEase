@@ -1,25 +1,32 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Image, Dimensions, View, Button, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, PanResponder, FlatList } from 'react-native';
 import NavBar from '../../components/NavBar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDateRangeText, changeDate, getWeekDates, getDayView } from '../../components/useCalendar';
 import ScheduleGrid from '../../components/ScheduleGrid';
+import { useSelector } from 'react-redux';
+import { fetchEmployeesWithRoles } from '../../../backend/api/employeeApi';
 
 const { width, height } = Dimensions.get('window');
 
 const SchedulePage = () => {
 
+    // Get businessId from Redux store
+    const loggedInUser = useSelector((state) => state.business.businessInfo);
+    const businessId = loggedInUser?.business?.business_id;
+    console.log(loggedInUser);
+    console.log(businessId);
+
     const [view, setView] = useState('week');
     const [currentDate, setCurrentDate] = useState(new Date());
+    console.log("Current date:", currentDate);
 
     const dates = view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
 
-    const [employees, setEmployees] = useState([
-        { id: '1', name: 'Alonzo Carter', role: 'Manager', pan: new Animated.ValueXY() },
-        { id: '2', name: 'Emily Song', role: 'Manager', pan: new Animated.ValueXY() },
-        { id: '3', name: 'Jonathan Richardson', role: 'Employee', pan: new Animated.ValueXY() },
-    ]);
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [titleOption, setTitleOption] = useState('All');
@@ -35,6 +42,43 @@ const SchedulePage = () => {
     const DEFAULT_ROW_COUNT = 6;
     const [rowCount, setRowCount] = useState(DEFAULT_ROW_COUNT);
     const [inputRowCount, setInputRowCount] = useState(String(rowCount));
+
+    // Fetch employees from the backend API
+    const getEmployees = useCallback(async () => {
+        console.log("Trying to fetch employees");
+        setLoading(true);
+        setError(null);
+        try {
+        const data = await fetchEmployeesWithRoles(businessId); // Fetch employees based on the businessId
+
+        // Add `pan` property with Animated.ValueXY for drag functionality
+        const employeesWithPan = data.map((employee) => ({
+            ...employee,
+            pan: new Animated.ValueXY(),
+        }));
+
+        setEmployees(employeesWithPan);
+        } catch (error) {
+        setError('Error fetching employees');
+        } finally {
+        setLoading(false);
+        }
+    }, [businessId]);
+
+    // Fetch employees when component mounts or when businessId changes
+    useEffect(() => {
+        if (businessId) {
+        getEmployees();
+        }
+    }, [businessId, getEmployees]);
+
+    useEffect(() => {
+        console.log('Employees set in state with roles:', employees); // Final check for role_name here
+    }, [employees]);
+
+    // Loading or error handling can be added here as needed
+    if (loading) return <Text>Loading...</Text>;
+    if (error) return <Text>{error}</Text>;
 
     const handleSelectTitle = (selectedTitle) => {
         setTitleOption(selectedTitle);
@@ -72,16 +116,19 @@ const SchedulePage = () => {
     // Handle drop by setting employee assignment
     const handleDrop = (gesture, employee, type) => {
         const { moveX, moveY } = gesture;
-        if (scheduleGridRef.current) {
+        console.log("Drop gesture:", { moveX, moveY });
+        if (scheduleGridRef.current && moveX && moveY) {
+            console.log("Calling handleDrop with:", moveX, moveY, employee, type);
             scheduleGridRef.current.handleDrop(moveX, moveY, employee, type);
         }
     };
 
     const onDrop = (cellId, item, type) => {
+        console.log("onDrop called with:", cellId, item, type);
         if (type === 'employee') {
             setEmployeeAssignments((prev) => ({
                 ...prev,
-                [cellId]: [...(prev[cellId] || []), item.name],
+                [cellId]: item,
             }));
         } else if (type === 'shift') {
             setShiftAssignments((prev) => ({
@@ -204,39 +251,13 @@ const SchedulePage = () => {
                                     
                                 </View>
                                     {/*{employees.filter(emp => !emp.assigned).map((employee) => {*/}
-                                    {employees.map((employee) => {
-                                        const panResponder = PanResponder.create({
-                                            onStartShouldSetPanResponder: () => true,
-                                            onPanResponderMove: Animated.event(
-                                                [null, { dx: employee.pan.x, dy: employee.pan.y }],
-                                                { useNativeDriver: false }
-                                            ),
-                                            onPanResponderRelease: (e, gesture) => {
-                                                handleDrop(gesture, employee, 'employee'); // Ensure type is 'employee'
-                                                Animated.spring(employee.pan, {
-                                                    toValue: { x: 0, y: 0 },
-                                                    useNativeDriver: false,
-                                                }).start();
-                                            },
-                                        });
-
-                                        return (
-                                            <Animated.View
-                                                key={employee.id}
-                                                {...panResponder.panHandlers}
-                                                style={[employee.pan.getLayout(), styles.draggable, { zIndex: 1000},]}
-                                            >
-                                                <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.gradient}>
-                                                    <View style={styles.topEmployeeItem}>
-                                                        <Text>{employee.name}</Text>
-                                                        <Text>Hrs: 0</Text>
-                                                    </View>
-
-                                                    <Text style = {styles.roleText}>{employee.role}</Text>
-                                                </LinearGradient>
-                                            </Animated.View>
-                                        );
-                                    })}
+                                    {employees.map((employee) => (
+                                        <AnimatedEmployeeItem 
+                                            key={employee.emp_id} 
+                                            employee={employee}
+                                            handleDrop={handleDrop}
+                                        />
+                                    ))}
                             </View>
                             
                             {/* Grid for the shifts */}
@@ -330,6 +351,36 @@ const SchedulePage = () => {
                 </LinearGradient>
             </View>
         </ScrollView>
+    );
+};
+
+// Subcomponent for each employee to handle dragging
+const AnimatedEmployeeItem = ({ employee, handleDrop }) => {
+    const panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: Animated.event(
+        [null, { dx: employee.pan.x, dy: employee.pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (e, gesture) => {
+        handleDrop(gesture, employee, 'employee');
+        Animated.spring(employee.pan, {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: false,
+        }).start();
+    },
+    });
+  
+    return (
+      <Animated.View {...panResponder.panHandlers} style={[employee.pan.getLayout(), styles.draggable]}>
+        <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.gradient}>
+            <View style={styles.topEmployeeItem}>
+                <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
+                <Text>Hrs: 0</Text>
+            </View>
+            <Text style={styles.roleText}>{employee.role_name}</Text>
+        </LinearGradient>
+      </Animated.View>
     );
 };
 

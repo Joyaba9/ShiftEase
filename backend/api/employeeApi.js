@@ -15,3 +15,17 @@ export const fetchEmployees = async (businessId) => {
         throw error;
       }
 };
+
+export const fetchEmployeesWithRoles = async (businessId) => {
+  try {
+      const response = await fetch(baseURL + `employee/fetchAll/${businessId}`);
+      if (response.ok) {
+          const data = await response.json();
+          return data;
+      }
+      throw new Error('Failed to fetch employees with roles');
+  } catch (error) {
+      console.error('Error fetching employees with roles:', error);
+      throw error;
+  }
+};
