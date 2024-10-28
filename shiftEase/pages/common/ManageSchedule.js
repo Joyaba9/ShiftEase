@@ -45,7 +45,7 @@ const SchedulePage = () => {
     const [shiftAssignments, setShiftAssignments] = useState({});
     const scheduleGridRef = useRef(null);
 
-    const DEFAULT_ROW_COUNT = 6;
+    const DEFAULT_ROW_COUNT = 8;
     const [rowCount, setRowCount] = useState(DEFAULT_ROW_COUNT);
     const [inputRowCount, setInputRowCount] = useState(String(rowCount));
 
@@ -337,7 +337,11 @@ const SchedulePage = () => {
 
                                     
                                 </View>
-                                    <ScrollView>
+                                    <ScrollView 
+                                        contentContainerStyle={{ flexGrow: 1, paddingVertical: 10 }}
+                                        showsVerticalScrollIndicator={false} 
+                                        showsHorizontalScrollIndicator={false}
+                                    >
                                         {filteredEmployees.map((employee) => (
                                             <AnimatedEmployeeItem 
                                                 key={employee.emp_id} 
@@ -446,6 +450,14 @@ const SchedulePage = () => {
     );
 };
 
+// Helper function to convert time to 12-hour format with AM/PM
+const formatTime = (timeStr) => {
+    const [hour, minute] = timeStr.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12; // Convert 0 to 12 for 12 AM/PM
+    return `${formattedHour}:${minute.toString().padStart(2, '0')} ${period}`;
+};
+
 // Subcomponent for each employee to handle dragging
 const AnimatedEmployeeItem = ({ employee, handleDrop }) => {
     const panResponder = PanResponder.create({
@@ -462,15 +474,28 @@ const AnimatedEmployeeItem = ({ employee, handleDrop }) => {
         }).start();
     },
     });
+
+    // Check if availability text is present
+    const hasAvailability = employee.start_time && employee.end_time;
   
     return (
       <Animated.View {...panResponder.panHandlers} style={[employee.pan.getLayout(), styles.draggable]}>
-        <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.gradient}>
+        <LinearGradient 
+            colors={['#E7E7E7', '#A7CAD8']} 
+            style = {[styles.gradient, hasAvailability && styles.expandedGradient]}
+        >
             <View style={styles.topEmployeeItem}>
                 <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
                 <Text>Hrs: 0</Text>
             </View>
             <Text style={styles.roleText}>{employee.role_name}</Text>
+
+            {/* Display start and end time if available */}
+            {hasAvailability && (
+                <Text style={styles.availabilityText}>
+                    {`Available: ${formatTime(employee.start_time)} - ${formatTime(employee.end_time)}`}
+                </Text>
+            )}
         </LinearGradient>
       </Animated.View>
     );
@@ -508,8 +533,8 @@ const styles = StyleSheet.create({
         width: '95%',
         minWidth: '60%',
         minHeight: '60%',
-        borderWidth: 2,
-        borderColor: 'orange'
+        // borderWidth: 2,
+        // borderColor: 'orange'
     },
     topContainer: {
         flexDirection: 'row',
@@ -560,9 +585,9 @@ const styles = StyleSheet.create({
         width: '100%',
         minHeight: '50%',
         alignSelf: 'center',
-        minHeight: '50%',
-        borderWidth: 1,
-        borderColor: 'black'
+        minHeight: '45%',
+        // borderWidth: 1,
+        // borderColor: 'black'
     },
     employeeTopContainer: {
         flexDirection: 'row',
@@ -612,14 +637,12 @@ const styles = StyleSheet.create({
     employeeContainer: { 
         position: 'relative',
         width: '25%',
-        height: '100%',
+        maxHeight: 610,
         padding: 10,
         backgroundColor: '#f7f7f7',
         borderRightWidth: 1,
         borderRightColor: '#ccc',
         marginBottom: 20,
-        // borderWidth: 2,
-        // borderColor: 'purple'
     },
     topEmployeeItem: {
         flexDirection: 'row',
@@ -630,20 +653,24 @@ const styles = StyleSheet.create({
     roleText: {
         marginLeft: 5
     },
+    availabilityText: {
+        width: '100%',
+        fontSize: 12,
+        color: '#555',
+        marginTop: 4,
+        marginLeft: 10
+    },
     gridContainer: {
         position: 'relative',
-        flex: 2,
+        width: '75%',
         flexDirection: 'column',
         alignSelf: 'stretch',
         overflow: 'hidden',
         zIndex: 1
-        // borderWidth: 2,
-        // borderColor: 'red'
     },
     gridHeader: {
         flex:1,
         flexDirection: 'row',
-        //width: '100%',
         maxWidth: '100%',
         maxHeight: 50,
         overflow: 'hidden',
@@ -682,7 +709,6 @@ const styles = StyleSheet.create({
     inputRow: { 
         width: '100%',
         flexDirection: 'row', 
-        //justifyContent: 'space-evenly',
         alignItems: 'center', 
         marginBottom: 10,
         borderWidth: 2,
@@ -695,20 +721,17 @@ const styles = StyleSheet.create({
         marginRight: 10, 
     },
     draggable: {
-        position: 'relative',
-        width: '100%',
-        height: 60,
-        justifyContent: 'center',
         marginBottom: 10,
-        zIndex: 10,
+        borderRadius: 8,
     },
     gradient: {
-        width: '100%',
-        height: 60,
-        justifyContent: 'center',
-        padding: 10,
-        borderRadius: 10,
-        //zIndex: 10,
+        padding: 15,
+        borderRadius: 8,
+        minHeight: 65, 
+    },
+    expandedGradient: {
+        // Increased height for gradient when availability is displayed
+        height: 80,
     },
     bottomShiftContainer: {
         flexDirection: 'row',
