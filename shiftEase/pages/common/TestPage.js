@@ -1,318 +1,81 @@
-// import React, { useState, useRef } from 'react';
-// import { View, Text, StyleSheet, Animated, PanResponder } from 'react-native';
-
-// const TestPage = () => {
-//     const [employees, setEmployees] = useState([
-//         { id: '1', name: 'Alonzo Carter', role: 'Manager' },
-//         { id: '2', name: 'Emily Song', role: 'Manager' },
-//         { id: '3', name: 'Jonathan Richardson', role: 'Employee' },
-//     ]);
-
-//     const gridCells = useRef({});
-//     const [gridAssignments, setGridAssignments] = useState({});
-
-//     const pan = useRef(new Animated.ValueXY()).current;
-
-//     const panResponder = useRef(
-//         PanResponder.create({
-//             onStartShouldSetPanResponder: () => true,
-//             onPanResponderMove: Animated.event(
-//                 [null, { dx: pan.x, dy: pan.y }],
-//                 { useNativeDriver: false }
-//             ),
-//             onPanResponderRelease: (e, gesture) => {
-//                 handleDrop(gesture);
-//                 Animated.spring(pan, {
-//                     toValue: { x: 0, y: 0 },
-//                     useNativeDriver: false,
-//                 }).start();
-//             },
-//         })
-//     ).current;
-
-//     const handleDrop = (gesture) => {
-//         const { moveX, moveY } = gesture;
-
-//         // Check if the gesture is within any of the grid cell boundaries
-//         Object.keys(gridCells.current).forEach((cellId) => {
-//             const { x, y, width, height } = gridCells.current[cellId];
-//             if (
-//                 moveX > x &&
-//                 moveX < x + width &&
-//                 moveY > y &&
-//                 moveY < y + height
-//             ) {
-//                 // Update the state to assign this employee to the cell
-//                 setGridAssignments((prev) => ({
-//                     ...prev,
-//                     [cellId]: 'Dropped Employee',
-//                 }));
-//             }
-//         });
-//     };
-
-//     // Measure each cell and save its coordinates
-//     const measureCell = (cellId, ref) => {
-//         ref.measureInWindow((x, y, width, height) => {
-//             gridCells.current[cellId] = { x, y, width, height };
-//         });
-//     };
-
-//     return (
-//         <View style={styles.container}>
-//             <View style={styles.employeeContainer}>
-//                 <Animated.View
-//                     {...panResponder.panHandlers}
-//                     style={[pan.getLayout(), styles.draggable]}
-//                 >
-//                     <Text style={styles.text}>Drag Me</Text>
-//                 </Animated.View>
-//             </View>
-
-//             <View style={styles.gridContainer}>
-//                 {[...Array(4)].map((_, rowIndex) => (
-//                     <View key={rowIndex} style={styles.gridRow}>
-//                         {[...Array(4)].map((_, colIndex) => {
-//                             const cellId = `${rowIndex}-${colIndex}`;
-//                             return (
-//                                 <View
-//                                     key={colIndex}
-//                                     style={styles.gridCell}
-//                                     ref={(ref) => {
-//                                         if (ref) {
-//                                             measureCell(cellId, ref);
-//                                         }
-//                                     }}
-//                                 >
-//                                     <Text style={styles.cellText}>
-//                                         {gridAssignments[cellId] || 'Drop Here'}
-//                                     </Text>
-//                                 </View>
-//                             );
-//                         })}
-//                     </View>
-//                 ))}
-//             </View>
-//         </View>
-//     );
-// };
-
-// const styles = StyleSheet.create({
-//     container: { flex: 1, backgroundColor: '#fff', padding: 20, userSelect: 'none' },
-//     employeeContainer: { marginBottom: 20 },
-//     draggable: {
-//         width: 100,
-//         height: 100,
-//         backgroundColor: 'skyblue',
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//     },
-//     text: { color: '#fff' },
-//     gridContainer: { flexDirection: 'column' },
-//     gridRow: { flexDirection: 'row' },
-//     gridCell: {
-//         width: 80,
-//         height: 80,
-//         margin: 5,
-//         backgroundColor: '#f0f0f0',
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//     },
-//     cellText: { fontSize: 14 },
-// });
-
-// export default TestPage;
-
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Image, Dimensions, View, Button, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, PanResponder, FlatList } from 'react-native';
 import NavBar from '../../components/NavBar';
-import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import DraggableFlatList from 'react-native-draggable-flatlist';
-import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { getDateRangeText, changeDate, getWeekDates, getDayView } from '../../components/useCalendar';
+import ScheduleGrid from '../../components/ScheduleGrid';
+import { useSelector } from 'react-redux';
+import { fetchEmployees } from '../../../backend/api/employeeApi';
 
 const { width, height } = Dimensions.get('window');
 
-const SchedulePage = () => {
-    const [selectedDay, setSelectedDay] = useState(null);
+const TestPage = () => {
+
+    // Get businessId from Redux store
+    const loggedInUser = useSelector((state) => state.business.businessInfo);
+    const businessId = loggedInUser?.business?.business_id;
+    console.log(loggedInUser);
+    console.log(businessId);
+
     const [view, setView] = useState('week');
     const [currentDate, setCurrentDate] = useState(new Date());
+    console.log("Current date:", currentDate);
+
+    const dates = view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
+
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     const [titleOption, setTitleOption] = useState('All');
     const filterOptions = ["All", "Managers", "Employees"];
+
+    const [shiftTimes, setShiftTimes] = useState([]);
+    const [newShiftStart, setNewShiftStart] = useState('');
+    const [newShiftEnd, setNewShiftEnd] = useState('');
+    const [employeeAssignments, setEmployeeAssignments] = useState({});
+    const [shiftAssignments, setShiftAssignments] = useState({});
+    const scheduleGridRef = useRef(null);
 
     const DEFAULT_ROW_COUNT = 6;
     const [rowCount, setRowCount] = useState(DEFAULT_ROW_COUNT);
     const [inputRowCount, setInputRowCount] = useState(String(rowCount));
 
-    const [employees, setEmployees] = useState([
-        { id: '1', name: 'Alonzo Carter', role: 'Manager' },
-        { id: '2', name: 'Emily Song', role: 'Manager' }, 
-        { id: '3', name: 'Jonathan Richardson', role: 'Employee' },
-        { id: '4', name: 'Kenneth Park', role: 'Employee' },
-        { id: '5', name: 'Riya Patel', role: 'Employee' },
-        { id: '6', name: 'Stephanie Sanchez', role: 'Employee' },
-    ]);
+    // Fetch employees from the backend API
+    const getEmployees = useCallback(async () => {
+        console.log("Trying to fetch employees");
+        setLoading(true);
+        setError(null);
+        try {
+        const data = await fetchEmployees(businessId); // Fetch employees based on the businessId
 
-    // const [gridAssignments, setGridAssignments] = useState({});
-    const gridAssignments = useRef({});
-    const cellRefs = useRef({});
-
-    const dragX = useSharedValue(0);
-    const dragY = useSharedValue(0);
-    const isDragging = useSharedValue(false);
-    const translateX = useSharedValue(0);
-    const translateY = useSharedValue(0);
-
-
-    const getDateRangeText = () => {
-        if (view === 'week') {
-            const startOfWeek = new Date(currentDate);
-            startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-            return `${format(startOfWeek, 'MMM d')} - ${format(endOfWeek, 'MMM d, yyyy')}`;
-        } else {
-            return format(currentDate, 'MMM d, yyyy');
-        }
-    };
-
-    // Function to change the current week or month
-    const changeDate = (direction) => {
-        const newDate = new Date(currentDate);
-        if (view === 'week') {
-            newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
-        } else if (view === 'day') {
-            newDate.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
-        }
-        setCurrentDate(newDate);
-    };
-
-    const getWeekDates = () => {
-        const dates = [];
-        const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-        
-        for (let i = 0; i < 7; i++) {
-            const day = new Date(startOfWeek);
-            day.setDate(startOfWeek.getDate() + i);
-            dates.push(day);
-        }
-        return dates;
-    };
-
-    const getDayView = () => {
-        return [currentDate];
-    };
-
-    const dates = view === 'week' ? getWeekDates() : getDayView();
-
-    // Handler to change day and fetch available employees
-    const onDayPress = (day) => {
-        setSelectedDay(day.dateString);
-        // You can implement logic to fetch available employees for this day
-    };
-
-    const onGestureEvent = (event) => {
-            // translateX.value = event.translationX;
-            // translateY.value = event.translationY;
-            dragX.value = event.absoluteX;
-            dragY.value = event.absoluteY;
-    };
-
-    const onHandlerStateChange = (event, employee) => {
-        if (event.nativeEvent.state === 5) { // End of gesture
-            handleDrop(employee);
-            dragX.value = withSpring(0);
-            dragY.value = withSpring(0);
-            // translateX.value = withSpring(0);
-            // translateY.value = withSpring(0);
-            // isDragging.value = false;
-        }
-        // } else if (event.nativeEvent.state === 2){
-        //     isDragging.value = true;
-        // }
-    };
-
-    const handleDrop = (employee) => {
-        // Check if the drop occurred within any of the grid cells
-        Object.keys(cellRefs.current).forEach((cellId) => {
-            cellRefs.current[cellId].measure((x, y, width, height, pageX, pageY) => {
-                if (
-                    // dragX.value >= pageX &&
-                    // dragX.value <= pageX + width &&
-                    // dragY.value >= pageY &&
-                    // dragY.value <= pageY + height
-                    dragX.value + width / 2 >= pageX &&
-                    dragX.value + width / 2 <= pageX + width &&
-                    dragY.value + height / 2 >= pageY &&
-                    dragY.value + height / 2 <= pageY + height
-                    // translateX.value >= pageX &&
-                    // translateX.value <= pageX + width &&
-                    // translateY.value >= pageY &&
-                    // translateY.value <= pageY + height
-                ) {
-                    runOnJS(assignEmployeeToCell)(employee, cellId);
-                }
-            });
-        });
-    };
-
-    // Placeholder function to handle when an employee is dropped in a shift slot
-    // const onDropEmployee = (employee, cellId) => {
-    //     setGridAssignments((prev) => ({
-    //         ...prev,
-    //         [cellId]: employee.name,
-    //     }));
-    // };
-
-    const assignEmployeeToCell = (employee, cellId) => {
-        gridAssignments.current[cellId] = employee.name;
-        setEmployees((prevEmployees) =>
-            prevEmployees.map((emp) =>
-                emp.id === employee.id ? { ...emp, assigned: true } : emp
-            )
-        );
-    };
-
-    const renderEmployee = ({ item }) => {
-        const animatedStyle = useAnimatedStyle(() => ({
-            transform: [{ translateX: dragX.value }, { translateY: dragY.value }],
-            position: 'absolute',
+        // Add `pan` property with Animated.ValueXY for drag functionality
+        const employeesWithPan = data.map((employee) => ({
+            ...employee,
+            pan: new Animated.ValueXY(),
         }));
 
-        return (
-            <PanGestureHandler onGestureEvent={onGestureEvent} onHandlerStateChange={(event) => onHandlerStateChange(event, item)}>
-                <Animated.View style={[styles.employeeItem, animatedStyle]}>
-                    <TouchableOpacity onPress={() => console.log(`Clicked on ${item.name}`)}>
-                        <View style={styles.topEmployeeItem}>
-                            <Text>{item.name}</Text>
-                            <Text>Hrs: 0</Text>
-                        </View>
-                        <Text style = {styles.roleText}>{item.role}</Text>
-                    </TouchableOpacity>   
-                </Animated.View>
-            </PanGestureHandler>
-        );
-    };
+        setEmployees(employeesWithPan);
+        console.log("Employees set in state:", employeesWithPan);
+        } catch (error) {
+        setError('Error fetching employees');
+        } finally {
+        setLoading(false);
+        }
+    }, [businessId]);
 
-    // Function to render each employee
-    // const renderEmployee = ({ item, drag }) => (
-    //     <TouchableOpacity
-    //     style={styles.employeeItem}
-    //     onLongPress={drag} // Long press to drag
-    //     >
-    //         <View style={styles.topEmployeeItem}>
-    //             <Text>{item.name}</Text>
-    //             <Text>Hrs: 0</Text>
-    //         </View>
-        
-    //         <Text style = {styles.roleText}>{item.role}</Text>
-    //     </TouchableOpacity>
-    // );
+    // Fetch employees when component mounts or when businessId changes
+    useEffect(() => {
+        if (businessId) {
+        getEmployees();
+        }
+    }, [businessId, getEmployees]);
+
+    // Loading or error handling can be added here as needed
+    if (loading) return <Text>Loading...</Text>;
+    if (error) return <Text>{error}</Text>;
 
     const handleSelectTitle = (selectedTitle) => {
         setTitleOption(selectedTitle);
@@ -331,44 +94,147 @@ const SchedulePage = () => {
             setInputRowCount(String(rowCount));  // Reset input to current rowCount if invalid
         }
     };
+    
+    // Handle adding a new shift
+    const handleAddShift = () => {
+        if (newShiftStart && newShiftEnd) {
+            const newShift = {
+                id: (shiftTimes.length + 1).toString(),
+                time: `${newShiftStart} - ${newShiftEnd}`,
+                assigned: false,
+                pan: new Animated.ValueXY(),
+            };
+            setShiftTimes((prev) => [...prev, newShift]);
+            setNewShiftStart('');
+            setNewShiftEnd('');
+        }
+    };
+
+    // Handle drop by setting employee assignment
+    const handleDrop = (gesture, employee, type) => {
+        const { moveX, moveY } = gesture;
+        console.log("Drop gesture:", { moveX, moveY });
+        if (scheduleGridRef.current && moveX && moveY) {
+            console.log("Calling handleDrop with:", moveX, moveY, employee, type);
+            scheduleGridRef.current.handleDrop(moveX, moveY, employee, type);
+        }
+    };
+
+    const onDrop = (cellId, item, type) => {
+        console.log("onDrop called with:", cellId, item, type);
+        if (type === 'employee') {
+            setEmployeeAssignments((prev) => ({
+                ...prev,
+                [cellId]: item,
+            }));
+        } else if (type === 'shift') {
+            setShiftAssignments((prev) => ({
+                ...prev,
+                [cellId]: item.time,
+            }));
+            setShiftTimes((prev) =>
+                prev.map((shift) =>
+                    shift.id === item.id ? { ...shift, assigned: true } : shift
+                )
+            );
+        }
+    };
+
+    const onRemove = (cellId, type) => {
+        if (type === 'employee') {
+            const employeeName = employeeAssignments[cellId];
+            setEmployeeAssignments((prev) => {
+                const newAssignments = { ...prev };
+                delete newAssignments[cellId];
+                return newAssignments;
+            });
+            setEmployees((prev) =>
+                prev.map((emp) =>
+                    emp.name === employeeName ? { ...emp, assigned: false, pan: new Animated.ValueXY() } : emp
+                )
+            );
+        } else if (type === 'shift') {
+            const shiftTime = shiftAssignments[cellId];
+            setShiftAssignments((prev) => {
+                const newAssignments = { ...prev };
+                delete newAssignments[cellId];
+                return newAssignments;
+            });
+            setShiftTimes((prev) =>
+                prev.map((shift) =>
+                    shift.time === shiftTime ? { ...shift, assigned: false, pan: new Animated.ValueXY() } : shift
+                )
+            );
+        }
+    };
 
     return (
-        <GestureHandlerRootView>
-            <ScrollView 
+        <ScrollView 
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false} 
                 showsHorizontalScrollIndicator={false}
-            >
-                <View style={styles.container}>
-                    <NavBar homeRoute={'Business'}/>
+        >
+            <View style={styles.container}>
+                <NavBar homeRoute={'Business'}/>
 
-                    <Text style={styles.dashboardText}> Manage Schedule</Text>
+                {isDropdownVisible && (
+                    <View style={styles.dropdownContainer}>
+                        <FlatList
+                            data={filterOptions}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity 
+                                    style={styles.dropdownItem} 
+                                    onPress={() => handleSelectTitle(item)}
+                                >
+                                    <Text style={styles.dropdownItemText}>{item}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>     
+                )}
 
+                <Text style={styles.dashboardText}> Manage Schedule</Text>
+
+                <View style={styles.dashboardContainer}>
                     <View style={styles.wholeScheduleContainer}>
                         <View style={styles.topContainer}>
-                            <View style = {styles.calendarButtonsContainer}>
-                                <TouchableOpacity style={[styles.calendarButton, , view === 'week' && styles.activeView]} onPress={() => setView('week')}>
+                            <View style={styles.calendarButtonsContainer}>
+                                <TouchableOpacity 
+                                    style={[styles.calendarButton, view === 'week' && styles.activeView]} 
+                                    onPress={() => setView('week')}
+                                >
                                     <Text style={styles.buttonText}>Week</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={[styles.calendarButton, , view === 'day' && styles.activeView]} onPress={() => setView('day')}>
+                                <TouchableOpacity 
+                                    style={[styles.calendarButton, view === 'day' && styles.activeView]} 
+                                    onPress={() => setView('day')}
+                                >
                                     <Text style={styles.buttonText}>Day</Text>
                                 </TouchableOpacity>
                             </View>
 
-                            <Text style={styles.dateText}>{getDateRangeText()}</Text>
+                            <Text style={styles.dateText}>
+                                {getDateRangeText(view, currentDate)}
+                            </Text>
 
-                            <View style = {styles.arrowButtons}>
-                                <TouchableOpacity style={styles.arrow} onPress={() => changeDate('prev')}>
+                            <View style={styles.arrowButtons}>
+                                <TouchableOpacity 
+                                    style={styles.arrow} 
+                                    onPress={() => setCurrentDate(changeDate(view, currentDate, 'prev'))}
+                                >
                                     <Ionicons name="arrow-back-outline" size={15} color="black" />
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.arrow} onPress={() => changeDate('next')}>
+                                <TouchableOpacity 
+                                    style={styles.arrow} 
+                                    onPress={() => setCurrentDate(changeDate(view, currentDate, 'next'))}
+                                >
                                     <Ionicons name="arrow-forward-outline" size={15} color="black" />
                                 </TouchableOpacity>
                             </View>
                         </View>
-
                         <View style={styles.scheduleContainer}>
-                            <View style={styles.employeeList}>
+                            <View style={styles.employeeContainer}>
                                 <View style={[styles.employeeTopContainer, { zIndex: isDropdownVisible ? 1 : 0 }]}>
                                     <Text style={styles.title}> {titleOption === "All" ? "All Team Members" : titleOption}</Text>
 
@@ -379,98 +245,159 @@ const SchedulePage = () => {
                                         <Text style={styles.dropdownText}>{titleOption}</Text>
                                     </TouchableOpacity>
 
-                                    {isDropdownVisible && (
-                                        <View style={styles.dropdownContainer}>
-                                            <FlatList
-                                                data={filterOptions}
-                                                keyExtractor={(item) => item}
-                                                renderItem={({ item }) => (
-                                                    <TouchableOpacity 
-                                                        style={styles.dropdownItem} 
-                                                        onPress={() => handleSelectTitle(item)}
-                                                    >
-                                                        <Text style={styles.dropdownItemText}>{item}</Text>
-                                                    </TouchableOpacity>
-                                                )}
-                                            />
-                                        </View>
-                                    )}
+                                    
                                 </View>
-                                
-                                <FlatList
-                                    data={employees}
-                                    renderItem={renderEmployee}
-                                    keyExtractor={(item) => item.id}
-                                />
+                                    {/*{employees.filter(emp => !emp.assigned).map((employee) => {*/}
+                                    {employees.map((employee) => (
+                                        <AnimatedEmployeeItem 
+                                            key={employee.emp_id} 
+                                            employee={employee}
+                                            handleDrop={handleDrop}
+                                        />
+                                    ))}
                             </View>
-
-                            {/* Placeholder for shifts */}
-                            <View style={styles.shiftsContainer}>
-                                
-                                {/* Grid for the shifts */}
-                                <View style={styles.gridContainer}>
-                                    {/* Render days of the week as headers */}
-                                    <View style={styles.gridHeader}>
-                                        {dates.map((date, index) => (
-                                            <TouchableOpacity key={index} style={styles.gridHeaderCell}>
-                                                <Text>{date.toDateString()}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-
-                                    {/* Render blank rows and cells for employee placement */}
-                                    {[...Array(rowCount)].map((_, rowIndex) => (  // Adjust the number of rows as needed
-                                        <View key={rowIndex} style={styles.gridRow}>
-                                            {dates.map((_, colIndex) => {
-                                                const cellId = `${rowIndex}-${colIndex}`; 
-
-                                                return (
-                                                    <View 
-                                                        key={colIndex} 
-                                                        style={styles.gridCell}
-                                                        ref={(ref) => (cellRefs.current[cellId] = ref)}
-                                                        // onLayout={() => {
-                                                        //     // Capture cell position, if necessary for drop detection
-                                                        // }}
-                                                    >
-                                                        <Text style={styles.gridCellText}>
-                                                            {gridAssignments[cellId] || 'Drop Here'}
-                                                        </Text>
-                                                    </View>
-                                                );
-                                            })}
-                                        </View>
+                            
+                            {/* Grid for the shifts */}
+                            <View style={styles.gridContainer}>
+                                {/* Render days of the week as headers */}
+                                <View style={styles.gridHeader}>
+                                    {dates.map((date, index) => (
+                                        <TouchableOpacity key={index} style={styles.gridHeaderCell}>
+                                            <Text>{date.toDateString()}</Text>
+                                        </TouchableOpacity>
                                     ))}
                                 </View>
 
-                                <View style={styles.bottomShiftContainer}>
-                                    <Text>Set Number of Rows:</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={inputRowCount}
-                                        //keyboardType="numeric"
-                                        onChangeText={handleRowCountChange}  // Update row count dynamically
-                                        onBlur={handleRowCountBlur}
-                                    />
-                                </View>
+
+                                <ScheduleGrid
+                                    ref={scheduleGridRef}
+                                    dates={dates}
+                                    employeeAssignments={employeeAssignments}
+                                    shiftAssignments={shiftAssignments}
+                                    rowCount = {rowCount}
+                                    onDrop={onDrop}
+                                    onRemove={onRemove}
+                                />
                             </View>
                         </View>
+
+                        <View style={styles.bottomShiftContainer}>
+                                <Text>Set Number of Rows:</Text>
+                                <TextInput
+                                    style={styles.rowInput}
+                                    value={inputRowCount}
+                                    //keyboardType="numeric"
+                                    onChangeText={handleRowCountChange}  // Update row count dynamically
+                                    onBlur={handleRowCountBlur}
+                                />
+                        </View>
+                    </View>
+
+                    <View style={styles.shiftContainer}>
+                        <Text style={styles.sectionTitle}>Add Shift Time</Text>
+                        <View style={styles.inputRow}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Start Time"
+                                value={newShiftStart}
+                                onChangeText={setNewShiftStart}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="End Time"
+                                value={newShiftEnd}
+                                onChangeText={setNewShiftEnd}
+                            />
+                            <Button title="Add Shift" onPress={handleAddShift} />
+                        </View>
+                        
+
+                        <Text style={styles.sectionTitle}>Shift Times</Text>
+                        {shiftTimes.filter(shift => !shift.assigned).map((shift) => {
+                            const panResponder = PanResponder.create({
+                                onStartShouldSetPanResponder: () => true,
+                                onPanResponderMove: Animated.event(
+                                    [null, { dx: shift.pan.x, dy: shift.pan.y }],
+                                    { useNativeDriver: false }
+                                ),
+                                onPanResponderRelease: (e, gesture) => {
+                                    handleDrop(gesture, shift, 'shift'); // Type is 'shift'
+                                    Animated.spring(shift.pan, {
+                                        toValue: { x: 0, y: 0 },
+                                        useNativeDriver: false,
+                                    }).start();
+                                },
+                            });
+
+                            return (
+                                <Animated.View
+                                    key={shift.id}
+                                    {...panResponder.panHandlers}
+                                    style={[shift.pan.getLayout(), styles.draggableShifts, { backgroundColor: 'lightgreen' }]}
+                                >
+                                    <Text style={styles.text}>{shift.time}</Text>
+                                </Animated.View>
+                            );
+                        })}
                     </View>
                 </View>
-            </ScrollView>
-        </GestureHandlerRootView>
+
+                {/* Bottom Bar with Logo */}
+                <LinearGradient colors={['#E7E7E7', '#9DCDCD']} style={styles.bottomBarContainer}>
+                            <Image resizeMode="contain" source={require('../../assets/images/logo1.png')} style={styles.desktopLogo} />
+                </LinearGradient>
+            </View>
+        </ScrollView>
+    );
+};
+
+// Subcomponent for each employee to handle dragging
+const AnimatedEmployeeItem = ({ employee, handleDrop }) => {
+    const panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: Animated.event(
+        [null, { dx: employee.pan.x, dy: employee.pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (e, gesture) => {
+        handleDrop(gesture, employee, 'employee');
+        Animated.spring(employee.pan, {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: false,
+        }).start();
+    },
+    });
+  
+    return (
+      <Animated.View {...panResponder.panHandlers} style={[employee.pan.getLayout(), styles.draggable]}>
+        <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.gradient}>
+            <View style={styles.topEmployeeItem}>
+                <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
+                <Text>Hrs: 0</Text>
+            </View>
+        </LinearGradient>
+      </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
     scrollContainer: {
-        flex: 1, 
+        flexGrow: 1, 
     },
     container: {
         flexGrow: 1,
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'red'
+        paddingBottom: 20,
+        minHeight: '100%',
+        height: 200,
+        minWidth: 950,
+        userSelect: 'none'
+    },
+    dashboardContainer: {
+        flexGrow: 1,
+        width: '100%',
+        alignItems: 'center',
+        marginBottom: 50,
     },
     dashboardText: {
         fontSize: 30,
@@ -479,30 +406,26 @@ const styles = StyleSheet.create({
         marginLeft: 30
     },
     wholeScheduleContainer: {
-        maxWidth: '100%',
+        //flex: 1,
+        width: '95%',
         minWidth: '60%',
-        minHeight: '50%',
+        minHeight: '60%',
+        borderWidth: 2,
+        borderColor: 'orange'
     },
     topContainer: {
         flexDirection: 'row',
         height: 80,
-        width: 'auto',
+        width: '100%',
         alignItems: 'center',
+        alignSelf: 'center',
         justifyContent: 'space-between',
-        marginTop: 20,
+        marginHorizontal: 30,
         backgroundColor: 'white',
         // borderBottomWidth: 1,
         // borderBottomColor: '#ccc',
-        borderWidth: 2,
-        borderColor: 'purple'
-      },
-      scheduleContainer: {
-        flexDirection: 'row',
-        flex: 1,
-        borderWidth: 2,
-        borderColor: 'green'
-      },
-      calendarButtonsContainer: {
+    },
+    calendarButtonsContainer: {
         flexDirection: 'row',
         marginLeft: 20,
         //borderWidth: 2,
@@ -534,11 +457,24 @@ const styles = StyleSheet.create({
     arrow: {
         backgroundColor: '#ffffff',
     },
+    scheduleContainer: {
+        flexDirection: 'row',
+        width: '100%',
+        minHeight: '70%',
+        alignSelf: 'center',
+        minHeight: '50%',
+        borderWidth: 2,
+        borderColor: 'green'
+    },
     employeeTopContainer: {
         flexDirection: 'row',
         width: '100%',
         justifyContent: 'space-between',
         marginBottom: 18,
+    },
+    title: {
+        fontSize: 18,
+        marginBottom: 10,
     },
     dropdownButton: {
         height: 30,
@@ -556,13 +492,14 @@ const styles = StyleSheet.create({
     },
     dropdownContainer: {
         position: 'absolute', 
+        width:'20%',
         borderColor: 'gray',
         borderWidth: 1,
         backgroundColor: '#fff',
         borderRadius: 5,
         zIndex: 9999,
-        top: 25, 
-        left: 0,
+        top: 339, 
+        left: 75,
         right: 0,
         maxHeight: 200,
     },
@@ -574,75 +511,101 @@ const styles = StyleSheet.create({
     dropdownItemText: {
         fontSize: 16,
     },
-    employeeList: {
-        width: '30%',
+    employeeContainer: { 
+        position: 'relative',
+        width: '25%',
+        height: '100%',
         padding: 10,
         backgroundColor: '#f7f7f7',
         borderRightWidth: 1,
         borderRightColor: '#ccc',
-    },
-    title: {
-        fontSize: 18,
-        marginBottom: 10,
-    },
-    employeeItem: {
-        padding: 15,
-        backgroundColor: '#fff',
-        marginBottom: 10,
-        borderRadius: 5,
-        elevation: 2,
+        marginBottom: 20,
+        // borderWidth: 2,
+        // borderColor: 'purple'
     },
     topEmployeeItem: {
         flexDirection: 'row',
         width: '100%',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        marginBottom: 5,
     },
     roleText: {
-        marginTop: 5,
         marginLeft: 5
     },
-    shiftsContainer: {
-        flex: 1,
-        backgroundColor: '#fafafa',
-        borderRadius: 5,
-        borderWidth: 2,
-        borderColor: 'orange'
-    },
     gridContainer: {
+        position: 'relative',
+        flex: 2,
         flexDirection: 'column',
-        width: '100%',
+        alignSelf: 'stretch',
+        overflow: 'hidden',
+        zIndex: 1
+        // borderWidth: 2,
+        // borderColor: 'red'
     },
     gridHeader: {
+        flex:1,
         flexDirection: 'row',
+        //width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
+        position: 'relative',
+        zIndex: 1
     },
     gridHeaderCell: {
-        flex: 1,
+        minWidth: '14.29%',
         padding: 10,
         alignItems: 'center',
         backgroundColor: '#e7e7e7',
         borderRightWidth: 1,
         borderRightColor: '#ccc',
+        zIndex: 1
     },
     gridHeaderText: {
         fontWeight: 'bold',
     },
-    gridRow: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+    shiftContainer: { 
+        width: '30%',
+        alignSelf: 'flex-start',
+        marginLeft: 30,
+        padding: 10, 
+        backgroundColor: '#e8f5e9' 
     },
-    gridCell: {
-        flex: 1,
-        minHeight: 70,
+    sectionTitle: { 
+        fontSize: 20, 
+        marginBottom: 10 
+    },
+    inputRow: { 
+        width: '100%',
+        flexDirection: 'row', 
+        //justifyContent: 'space-evenly',
+        alignItems: 'center', 
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: 'red'
+    },
+    input: { 
+        minWidth: '35%',
+        borderWidth: 1, 
+        padding: 5, 
+        marginRight: 10, 
+    },
+    draggable: {
+        position: 'relative',
+        width: '100%',
+        height: 60,
+        justifyContent: 'center',
+        marginBottom: 10,
+        zIndex: 10,
+    },
+    gradient: {
+        width: '100%',
+        height: 60,
+        justifyContent: 'center',
         padding: 10,
-        borderRightWidth: 1,
-        borderRightColor: '#ccc',
-        backgroundColor: '#fff',
-    },
-    gridCellText: {
-        textAlign: 'center',
+        borderRadius: 10,
+        //zIndex: 10,
     },
     bottomShiftContainer: {
         flexDirection: 'row',
@@ -651,7 +614,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
     },
-    input: {
+    draggableShifts: {  
+        width: '40%',
+        padding: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+    rowInput: {
         borderColor: 'gray',
         borderWidth: 1,
         borderRadius: 10,
@@ -660,6 +630,20 @@ const styles = StyleSheet.create({
         width: 50,
         textAlign: 'center',
     },
+    bottomBarContainer: {
+        width: '100%',
+        height: 100,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+    },
+    desktopLogo: {
+        position: 'relative',
+        left: 40,
+        width: 230,
+        height: 100,
+        alignSelf: 'flex-end',
+    },
 });
 
-export default SchedulePage;
+export default TestPage;

@@ -38,8 +38,10 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
                 <View key={rowIndex} style={styles.gridRow}>
                     {dates.map((date, colIndex) => {
                         const cellId = `${rowIndex}-${colIndex}`;
-                        const employeeName = employeeAssignments[cellId];
+                        const employee = employeeAssignments[cellId];
                         const shiftTime = shiftAssignments[cellId];
+
+                        console.log(employee);
 
                         return (
                             <TouchableOpacity
@@ -47,7 +49,7 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
                                 style={styles.gridCell}
                                 ref={(ref) => measureCell(cellId, ref)}
                                 onPress={() => {
-                                    if (employeeName) {
+                                    if (employee) {
                                         handleCellTap(cellId, 'employee');
                                     } else if (shiftTime) {
                                         handleCellTap(cellId, 'shift');
@@ -55,7 +57,7 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
                                 }}
                             >
                                 {/* Display both employee and shift time if they exist */}
-                                <Text style={styles.employeeText}>{employeeName || ''}</Text>
+                                <Text style={styles.employeeText}>{employee ? `${employee.f_name} ${employee.l_name}` : ''}</Text>
                                 <Text style={styles.shiftText}>{shiftTime || ''}</Text>
                             </TouchableOpacity>
                         );
