@@ -7,6 +7,7 @@ import { getDateRangeText, changeDate, getWeekDates, getDayView } from '../../co
 import ScheduleGrid from '../../components/ScheduleGrid';
 import { useSelector } from 'react-redux';
 import { fetchEmployeesWithRoles } from '../../../backend/api/employeeApi';
+import { fetchAvailableEmployees } from '../../../backend/api/employeeApi';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,6 +34,10 @@ const SchedulePage = () => {
     const [titleOption, setTitleOption] = useState('All');
     const filterOptions = ["All", "Managers", "Employees"];
 
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const [selectedDay, setSelectedDay] = useState(null); // Track selected day in header
+    const [availableEmployees, setAvailableEmployees] = useState([]);
+
     const [shiftTimes, setShiftTimes] = useState([]);
     const [newShiftStart, setNewShiftStart] = useState('');
     const [newShiftEnd, setNewShiftEnd] = useState('');
@@ -49,20 +54,23 @@ const SchedulePage = () => {
         console.log("Trying to fetch employees");
         setLoading(true);
         setError(null);
+        
         try {
-        const data = await fetchEmployeesWithRoles(businessId); // Fetch employees based on the businessId
+            const data = await fetchEmployeesWithRoles(businessId); // Fetch employees based on the businessId
 
-        // Add `pan` property with Animated.ValueXY for drag functionality
-        const employeesWithPan = data.map((employee) => ({
-            ...employee,
-            pan: new Animated.ValueXY(),
-        }));
+            // Add `pan` property with Animated.ValueXY for drag functionality
+            const employeesWithPan = data.map((employee) => ({
+                ...employee,
+                pan: new Animated.ValueXY(),
+            }));
 
-        setEmployees(employeesWithPan);
+            setEmployees(employeesWithPan);
+            console.log("Employees with roles: ", employeesWithPan)
+            setFilteredEmployees(employeesWithPan);
         } catch (error) {
-        setError('Error fetching employees');
+            setError('Error fetching employees');
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     }, [businessId]);
 
@@ -73,23 +81,71 @@ const SchedulePage = () => {
         }
     }, [businessId, getEmployees]);
 
-    useEffect(() => {
-        console.log('Employees set in state with roles:', employees); // Final check for role_name here
-    }, [employees]);
-    
-    // Filter employees whenever the filter option or employee list changes
-    useEffect(() => {
-        const applyFilter = () => {
-            if (titleOption === "All") {
-                setFilteredEmployees(employees);
-            } else if (titleOption === "Managers") {
-                setFilteredEmployees(employees.filter(emp => emp.role_name === "Manager"));
-            } else if (titleOption === "Employees") {
-                setFilteredEmployees(employees.filter(emp => emp.role_name === "Employee"));
-            }
-        };
-        applyFilter();
+    // Filter employees based on selected day and title option
+    const filterEmployees = useCallback(async (dayIndex, dateToSend) => {
+        // Ensure dayIndex is a valid number
+        if (dayIndex === undefined || dateToSend === undefined) {
+            console.error("Day index or date to send is undefined.");
+            return;
+        }
+
+        // Convert day index to day name
+        const dayName = dayNames[dayIndex];
+        console.log("Day to send:", dayName);
+        console.log("Date to send:", dateToSend);
+
+        try {
+            // Fetch employees available on the selected day and date
+            const result = await fetchAvailableEmployees(businessId, dayName, dateToSend);
+            const { employees: availableEmployees } = result;
+
+            // Add `pan` property for drag functionality if missing
+            const employeesWithPan = availableEmployees.map((employee) => ({
+                ...employee,
+                pan: employee.pan || new Animated.ValueXY(),
+            }));
+
+            // Apply role filter (All, Managers, Employees)
+            const roleFilteredEmployees = employeesWithPan.filter((emp) => {
+                if (titleOption === "Managers") return emp.role_name === "Manager";
+                if (titleOption === "Employees") return emp.role_name === "Employee";
+                return true;
+            });
+
+            console.log("Filtered Employees with Pan:", roleFilteredEmployees);
+
+            setFilteredEmployees(roleFilteredEmployees);
+        } catch (error) {
+            console.error("Error fetching available employees:", error);
+        }   
     }, [titleOption, employees]);
+
+    useEffect(() => {
+        if (selectedDay !== null) {
+            // Calculate day name and date to send based on selectedDay and currentDate
+            const dayIndex = selectedDay;
+            const selectedDate = dates[dayIndex];
+            const dateToSend = selectedDate.toISOString().split('T')[0];
+    
+            filterEmployees(dayIndex, dateToSend);
+        } else {
+            setFilteredEmployees(employees);  // Display all employees when no day is selected
+        }
+    }, [selectedDay, titleOption, employees, filterEmployees]);
+
+    // Filter employees whenever the filter option or employee list changes
+    // useEffect(() => {
+    //     const applyFilter = () => {
+    //         if (titleOption === "All") {
+    //             setFilteredEmployees(employees);
+    //         } else if (titleOption === "Managers") {
+    //             setFilteredEmployees(employees.filter(emp => emp.role_name === "Manager"));
+    //         } else if (titleOption === "Employees") {
+    //             setFilteredEmployees(employees.filter(emp => emp.role_name === "Employee"));
+    //         }
+    //     };
+    //     applyFilter();
+    // }, [titleOption, employees]);
 
     // Loading or error handling can be added here as needed
     if (loading) return <Text>Loading...</Text>;
@@ -98,7 +154,22 @@ const SchedulePage = () => {
     
     const handleSelectTitle = (selectedTitle) => {
         setTitleOption(selectedTitle);
+        setFilteredEmployees(employees);  // Reset filter initially
+        if (selectedDay !== null) {
+            handleDaySelection(selectedDay);  // Re-filter if a day is selected
+        }
         setIsDropdownVisible(false);
+    };
+
+    // Handle day selection from header
+    const handleDaySelection = (dayIndex) => {
+        setSelectedDay(dayIndex);
+
+        const selectedDate = dates[dayIndex];
+        const dateToSend = selectedDate.toISOString().split('T')[0];
+        console.log("Date to send:", dateToSend);
+
+        filterEmployees(dayIndex, dateToSend);
     };
 
     const handleRowCountChange = (newCount) => {
@@ -217,7 +288,7 @@ const SchedulePage = () => {
 
                 <View style={styles.dashboardContainer}>
                     <View style={styles.wholeScheduleContainer}>
-                        <View style={styles.topContainer}>
+                        <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.topContainer}>
                             <View style={styles.calendarButtonsContainer}>
                                 <TouchableOpacity 
                                     style={[styles.calendarButton, view === 'week' && styles.activeView]} 
@@ -251,7 +322,7 @@ const SchedulePage = () => {
                                     <Ionicons name="arrow-forward-outline" size={15} color="black" />
                                 </TouchableOpacity>
                             </View>
-                        </View>
+                        </LinearGradient>
                         <View style={styles.scheduleContainer}>
                             <View style={styles.employeeContainer}>
                                 <View style={[styles.employeeTopContainer, { zIndex: isDropdownVisible ? 1 : 0 }]}>
@@ -266,14 +337,15 @@ const SchedulePage = () => {
 
                                     
                                 </View>
-                                    {/*{employees.filter(emp => !emp.assigned).map((employee) => {*/}
-                                    {filteredEmployees.map((employee) => (
-                                        <AnimatedEmployeeItem 
-                                            key={employee.emp_id} 
-                                            employee={employee}
-                                            handleDrop={handleDrop}
-                                        />
-                                    ))}
+                                    <ScrollView>
+                                        {filteredEmployees.map((employee) => (
+                                            <AnimatedEmployeeItem 
+                                                key={employee.emp_id} 
+                                                employee={employee}
+                                                handleDrop={handleDrop}
+                                            />
+                                        ))}
+                                    </ScrollView>
                             </View>
                             
                             {/* Grid for the shifts */}
@@ -281,7 +353,11 @@ const SchedulePage = () => {
                                 {/* Render days of the week as headers */}
                                 <View style={styles.gridHeader}>
                                     {dates.map((date, index) => (
-                                        <TouchableOpacity key={index} style={styles.gridHeaderCell}>
+                                        <TouchableOpacity 
+                                            key={index} 
+                                            style={[styles.gridHeaderCell, selectedDay === date.getDay() && styles.selectedDay]}
+                                            onPress={() => handleDaySelection(date.getDay())}
+                                        >
                                             <Text>{date.toDateString()}</Text>
                                         </TouchableOpacity>
                                     ))}
@@ -411,13 +487,15 @@ const styles = StyleSheet.create({
         minHeight: '100%',
         height: 200,
         minWidth: 950,
-        userSelect: 'none'
+        userSelect: 'none',
+        backgroundColor: 'white'
     },
     dashboardContainer: {
         flexGrow: 1,
         width: '100%',
         alignItems: 'center',
         marginBottom: 50,
+        backgroundColor: 'white'
     },
     dashboardText: {
         fontSize: 30,
@@ -480,11 +558,11 @@ const styles = StyleSheet.create({
     scheduleContainer: {
         flexDirection: 'row',
         width: '100%',
-        minHeight: '70%',
+        minHeight: '50%',
         alignSelf: 'center',
         minHeight: '50%',
-        borderWidth: 2,
-        borderColor: 'green'
+        borderWidth: 1,
+        borderColor: 'black'
     },
     employeeTopContainer: {
         flexDirection: 'row',
@@ -567,13 +645,18 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         //width: '100%',
         maxWidth: '100%',
+        maxHeight: 50,
         overflow: 'hidden',
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
         position: 'relative',
         zIndex: 1
     },
+    selectedDay: {
+        backgroundColor: '#e8f5e9',
+    },
     gridHeaderCell: {
+        flex:1,
         minWidth: '14.29%',
         padding: 10,
         alignItems: 'center',

@@ -19,6 +19,8 @@ export async function getAvailableEmployees(businessId, day, date) {
             e.emp_id,
             e.f_name,
             e.l_name,
+            e.role_id,
+            r.role_name,
             a.day_of_week,
             a.start_time,
             a.end_time
@@ -27,14 +29,16 @@ export async function getAvailableEmployees(businessId, day, date) {
         JOIN
             availability a ON e.emp_id = a.emp_id
         LEFT JOIN
-            requests r ON e.emp_id = r.emp_id
-            AND r.status = 'Approved'
-            AND $3 BETWEEN r.start_date AND r.end_date
+            requests req ON e.emp_id = req.emp_id
+            AND req.status = 'Approved'
+            AND $3 BETWEEN req.start_date AND req.end_date
+        LEFT JOIN
+            roles r ON e.role_id = r.role_id
         WHERE
             e.business_id = $1
             AND a.day_of_week = $2
             AND $3 BETWEEN a.start_date AND a.end_date
-            AND r.request_id IS NULL;
+            AND req.request_id IS NULL;
     `;
 
     const client = await getClient();
