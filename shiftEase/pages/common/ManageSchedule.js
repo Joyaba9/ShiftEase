@@ -25,6 +25,7 @@ const SchedulePage = () => {
     const dates = view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
 
     const [employees, setEmployees] = useState([]);
+    const [filteredEmployees, setFilteredEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -75,11 +76,26 @@ const SchedulePage = () => {
     useEffect(() => {
         console.log('Employees set in state with roles:', employees); // Final check for role_name here
     }, [employees]);
+    
+    // Filter employees whenever the filter option or employee list changes
+    useEffect(() => {
+        const applyFilter = () => {
+            if (titleOption === "All") {
+                setFilteredEmployees(employees);
+            } else if (titleOption === "Managers") {
+                setFilteredEmployees(employees.filter(emp => emp.role_name === "Manager"));
+            } else if (titleOption === "Employees") {
+                setFilteredEmployees(employees.filter(emp => emp.role_name === "Employee"));
+            }
+        };
+        applyFilter();
+    }, [titleOption, employees]);
 
     // Loading or error handling can be added here as needed
     if (loading) return <Text>Loading...</Text>;
     if (error) return <Text>{error}</Text>;
 
+    
     const handleSelectTitle = (selectedTitle) => {
         setTitleOption(selectedTitle);
         setIsDropdownVisible(false);
@@ -251,7 +267,7 @@ const SchedulePage = () => {
                                     
                                 </View>
                                     {/*{employees.filter(emp => !emp.assigned).map((employee) => {*/}
-                                    {employees.map((employee) => (
+                                    {filteredEmployees.map((employee) => (
                                         <AnimatedEmployeeItem 
                                             key={employee.emp_id} 
                                             employee={employee}
