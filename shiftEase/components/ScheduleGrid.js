@@ -38,22 +38,25 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
                 <View key={rowIndex} style={styles.gridRow}>
                     {dates.map((date, colIndex) => {
                         const cellId = `${rowIndex}-${colIndex}`;
+                        const employeeName = employeeAssignments[cellId];
+                        const shiftTime = shiftAssignments[cellId];
+
                         return (
                             <TouchableOpacity
                                 key={cellId}
                                 style={styles.gridCell}
                                 ref={(ref) => measureCell(cellId, ref)}
                                 onPress={() => {
-                                    if (employeeAssignments[cellId]) {
+                                    if (employeeName) {
                                         handleCellTap(cellId, 'employee');
-                                    } else if (shiftAssignments[cellId]) {
+                                    } else if (shiftTime) {
                                         handleCellTap(cellId, 'shift');
                                     }
                                 }}
                             >
-                                <Text>
-                                    {employeeAssignments[cellId] || shiftAssignments[cellId] || 'Drop Here'}
-                                </Text>
+                                {/* Display both employee and shift time if they exist */}
+                                <Text style={styles.employeeText}>{employeeName || ''}</Text>
+                                <Text style={styles.shiftText}>{shiftTime || ''}</Text>
                             </TouchableOpacity>
                         );
                     })}
@@ -66,11 +69,13 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
 const styles = StyleSheet.create({
     gridContainer: { 
         flexDirection: 'column',
-        width: '100%'
+        width: '100%',
+        zIndex: 1
     },
     gridRow: { 
         flexDirection: 'row',
-        width: '100%' 
+        width: '100%',
+        zIndex: 1
     },
     gridCell: {
         flex: 1,
@@ -80,6 +85,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: '#ccc',
+        zIndex: 1
+    },
+    employeeText: {
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    shiftText: {
+        color: '#666',
+        fontSize: 12,
     },
 });
 

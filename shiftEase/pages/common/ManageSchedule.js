@@ -16,9 +16,9 @@ const SchedulePage = () => {
     const dates = view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
 
     const [employees, setEmployees] = useState([
-        { id: '1', name: 'Alonzo Carter', role: 'Manager', assigned: false, pan: new Animated.ValueXY() },
-        { id: '2', name: 'Emily Song', role: 'Manager', assigned: false, pan: new Animated.ValueXY() },
-        { id: '3', name: 'Jonathan Richardson', role: 'Employee', assigned: false, pan: new Animated.ValueXY() },
+        { id: '1', name: 'Alonzo Carter', role: 'Manager', pan: new Animated.ValueXY() },
+        { id: '2', name: 'Emily Song', role: 'Manager', pan: new Animated.ValueXY() },
+        { id: '3', name: 'Jonathan Richardson', role: 'Employee', pan: new Animated.ValueXY() },
     ]);
 
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -70,10 +70,10 @@ const SchedulePage = () => {
     };
 
     // Handle drop by setting employee assignment
-    const handleDrop = (gesture, item, type) => {
+    const handleDrop = (gesture, employee, type) => {
         const { moveX, moveY } = gesture;
         if (scheduleGridRef.current) {
-            scheduleGridRef.current.handleDrop(moveX, moveY, item, type);
+            scheduleGridRef.current.handleDrop(moveX, moveY, employee, type);
         }
     };
 
@@ -81,13 +81,8 @@ const SchedulePage = () => {
         if (type === 'employee') {
             setEmployeeAssignments((prev) => ({
                 ...prev,
-                [cellId]: item.name,
+                [cellId]: [...(prev[cellId] || []), item.name],
             }));
-            setEmployees((prev) =>
-                prev.map((emp) =>
-                    emp.id === item.id ? { ...emp, assigned: true } : emp
-                )
-            );
         } else if (type === 'shift') {
             setShiftAssignments((prev) => ({
                 ...prev,
@@ -137,6 +132,23 @@ const SchedulePage = () => {
         >
             <View style={styles.container}>
                 <NavBar homeRoute={'Business'}/>
+
+                {isDropdownVisible && (
+                    <View style={styles.dropdownContainer}>
+                        <FlatList
+                            data={filterOptions}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity 
+                                    style={styles.dropdownItem} 
+                                    onPress={() => handleSelectTitle(item)}
+                                >
+                                    <Text style={styles.dropdownItemText}>{item}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>     
+                )}
 
                 <Text style={styles.dashboardText}> Manage Schedule</Text>
 
@@ -189,24 +201,10 @@ const SchedulePage = () => {
                                         <Text style={styles.dropdownText}>{titleOption}</Text>
                                     </TouchableOpacity>
 
-                                    {isDropdownVisible && (
-                                        <View style={styles.dropdownContainer}>
-                                            <FlatList
-                                                data={filterOptions}
-                                                keyExtractor={(item) => item}
-                                                renderItem={({ item }) => (
-                                                    <TouchableOpacity 
-                                                        style={styles.dropdownItem} 
-                                                        onPress={() => handleSelectTitle(item)}
-                                                    >
-                                                        <Text style={styles.dropdownItemText}>{item}</Text>
-                                                    </TouchableOpacity>
-                                                )}
-                                            />
-                                        </View>
-                                    )}
+                                    
                                 </View>
-                                    {employees.filter(emp => !emp.assigned).map((employee) => {
+                                    {/*{employees.filter(emp => !emp.assigned).map((employee) => {*/}
+                                    {employees.map((employee) => {
                                         const panResponder = PanResponder.create({
                                             onStartShouldSetPanResponder: () => true,
                                             onPanResponderMove: Animated.event(
@@ -226,7 +224,7 @@ const SchedulePage = () => {
                                             <Animated.View
                                                 key={employee.id}
                                                 {...panResponder.panHandlers}
-                                                style={[employee.pan.getLayout(), styles.draggable]}
+                                                style={[employee.pan.getLayout(), styles.draggable, { zIndex: 1000},]}
                                             >
                                                 <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style = {styles.gradient}>
                                                     <View style={styles.topEmployeeItem}>
@@ -447,13 +445,14 @@ const styles = StyleSheet.create({
     },
     dropdownContainer: {
         position: 'absolute', 
+        width:'20%',
         borderColor: 'gray',
         borderWidth: 1,
         backgroundColor: '#fff',
         borderRadius: 5,
         zIndex: 9999,
-        top: 25, 
-        left: 0,
+        top: 339, 
+        left: 75,
         right: 0,
         maxHeight: 200,
     },
@@ -466,6 +465,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     employeeContainer: { 
+        position: 'relative',
         width: '25%',
         height: '100%',
         padding: 10,
@@ -486,10 +486,12 @@ const styles = StyleSheet.create({
         marginLeft: 5
     },
     gridContainer: {
+        position: 'relative',
         flex: 2,
         flexDirection: 'column',
         alignSelf: 'stretch',
         overflow: 'hidden',
+        zIndex: 1
         // borderWidth: 2,
         // borderColor: 'red'
     },
@@ -501,6 +503,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
+        position: 'relative',
+        zIndex: 1
     },
     gridHeaderCell: {
         minWidth: '14.29%',
@@ -509,6 +513,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#e7e7e7',
         borderRightWidth: 1,
         borderRightColor: '#ccc',
+        zIndex: 1
     },
     gridHeaderText: {
         fontWeight: 'bold',
@@ -540,17 +545,20 @@ const styles = StyleSheet.create({
         marginRight: 10, 
     },
     draggable: {
+        position: 'relative',
         width: '100%',
         height: 60,
         justifyContent: 'center',
         marginBottom: 10,
+        zIndex: 10,
     },
     gradient: {
         width: '100%',
         height: 60,
         justifyContent: 'center',
         padding: 10,
-        borderRadius: 10
+        borderRadius: 10,
+        //zIndex: 10,
     },
     bottomShiftContainer: {
         flexDirection: 'row',
