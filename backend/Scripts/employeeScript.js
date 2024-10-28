@@ -92,7 +92,7 @@ export async function UpdateEmployee(employeeId, newEmployeeInfo) {
 /**
  * Adds a new employee to both PostgreSQL and Firebase. If successful, stores employee data in Firestore.
  *
- * @param {string} role - Role of the employee (e.g., "Employee", "Manager").
+ * @param {string} role - RoleID of the employee
  * @param {string} fName - First name of the employee.
  * @param {string} lName - Last name of the employee.
  * @param {string} email - Employee's email address.
@@ -101,22 +101,9 @@ export async function UpdateEmployee(employeeId, newEmployeeInfo) {
  * @param {number} businessId - The unique identifier of the business.
  * @returns {Promise<Object>} - Object containing employee ID, email, role, and other relevant details.
  */
-export async function AddEmployee(role, fName, lName, email, ssn, dob, businessId) {
-    let roleID;
+export async function AddEmployee(roleID, fName, lName, email, ssn, dob, businessId) {
     let createdAt = new Date();
     let updatedAt = new Date();
-    //businessId = 598984; // Temporary business ID for testings
-    // TODO: Implement business ID retrieval from the user's session or other source
-
-    // Determine role ID based on the provided role
-    // TODO: GET THE INFORMATION FROM DATABASE
-    if (role === 'Employee') {
-        roleID = 2;
-    } else if (role === 'Manager') {
-        roleID = 1;
-    } else {
-        throw new Error('Invalid role specified'); // Throw error if role is not valid
-    }
 
     const client = await getClient(); // Initialize the database client
     console.log('Database Client Obtained');
