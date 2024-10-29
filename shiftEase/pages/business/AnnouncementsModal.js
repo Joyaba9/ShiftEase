@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal} from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -11,64 +11,107 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
     const [addAnnouncementTitle, setAddAnnouncementTitle] = useState(''); // State for the title
     const [addAnnouncementText, setAddAnnouncementText] = useState(''); // State for the textbox content
 
-    //Hard-coded Test Content
-    pulledBusinessAnnouncement = [];
-    pulledGeneralAnnouncement = [
-        { id: 1, Title: 'Test Announcement', Content: 'This announcement is used to test if the annoucements display' },
-        { id: 2, Title: 'Test Announcement #2', Content: 'This one is just to make sure it can handle the multiple lines of text. This one is just to make sure it can handle the multiple lines of text.This one is just to make sure it can handle the multiple lines of text.This one is just to make sure it can handle the multiple lines of text.This one is just to make sure it can handle the multiple lines of text.This one is just to make sure it can handle the multiple lines of text. This one is just to make sure it can handle the multiple lines of text. This one is just to make sure it can handle the multiple lines of text. This one is just to make sure it can handle the multiple lines of text.This one is just to make sure it can handle the multiple lines of text. This one is just to make sure it can handle the multiple lines of text.' },
-        { id: 3, Title: 'Test Announcement #3 | Scrolling', Content: 'This announcement is used to make sure that the window scrolls and has the intended format' },
-        { id: 4, Title: 'Test Announcement #3 | Scrolling', Content: 'This announcement is used to make sure that the window scrolls and has the intended format' },
-        { id: 5, Title: 'Test Announcement #3 | Scrolling', Content: 'This announcement is used to make sure that the window scrolls and has the intended format' },
-        { id: 6, Title: 'Test Announcement #3 | Scrolling', Content: 'This announcement is used to make sure that the window scrolls and has the intended format' },
-        { id: 7, Title: 'Test Announcement #3 | Scrolling', Content: 'This announcement is used to make sure that the window scrolls and has the intended format' },
-    ];
-      
-    const renderTabContent = () => {
-        switch (activeTab) {
-            case 'General':
-                return (
-                    <>
-                        <View>
-                            {pulledGeneralAnnouncement.length === 0 ? (
-                                <View>
-                                    <Text style={styles.tabContent}>No notifications in the "General" box</Text>
-                                </View>
-                            ) : (
-                                pulledGeneralAnnouncement.map((announcement) => (
-                                    <View key={announcement.id} style={styles.announcementBox}>
-                                        <Text style={styles.announcementTitle}>{announcement.Title}</Text>
-                                        <View style={styles.HDivider}/>
-                                        <Text style={styles.announcementContent}>{announcement.Content}</Text>
-                                    </View>
-                                ))
-                            )}
-                        </View>
-                    </>
-                );
-            case 'Business':
-                return (
-                    <>
-                        <View>
-                            {pulledBusinessAnnouncement.length === 0 ? (
-                                <View>
-                                    <Text style={styles.tabContent}>No notifications in the "Business" box</Text>
-                                </View>
-                            ) : (
-                                pulledBusinessAnnouncement.map((announcement) => (
-                                    <View key={announcement.id} style={styles.announcementBox}>
-                                        <Text style={styles.announcementTitle}>{announcement.Title}</Text>
-                                        <View style={styles.HDivider}/>
-                                        <Text style={styles.announcementContent}>{announcement.Content}</Text>
-                                    </View>
-                                ))
-                            )}
-                        </View>
-                    </>
-                );
-            default:
-                return null;
+
+    const [pulledGeneralAnnouncement, setPulledGeneralAnnouncement] = useState([]);
+    const [pulledBusinessAnnouncement, setPulledBusinessAnnouncement] = useState([]);
+
+    // send an announcement to a specific business or general broadcast
+
+    const sendAnnouncementToBusiness = async (businessId, messageContent, isBroadcast = false) => {
+        try {
+            const response = await fetch('http://localhost:5050/api/announcements/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    businessId,
+                    messageContent,
+                    isBroadcast
+                })
+            });
+            if (response.ok) {
+                console.log('Announcement sent successfully');
+                fetchGeneralAnnouncements(); // Refresh the general announcements
+                fetchBusinessAnnouncements(); // Refresh the business announcements
+            } else {
+                console.error('Failed to send announcement');
+            }
+        } catch (error) {
+            console.error('Error sending announcement:', error);
         }
     };
+
+    const fetchGeneralAnnouncements = async () => {
+        try {
+            const response = await fetch('http://localhost:5050/api/announcements/general');
+            if (response.ok) {
+                const data = await response.json();
+                console.log("General Announcements Data:", data);
+                
+                // Transform data to expected format
+                const announcementsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    Title: data[key].content || 'No Title',
+                    Content: data[key].content || 'No Content'
+                }));
+                
+                setPulledGeneralAnnouncement(announcementsArray);
+            } else {
+                console.error('Failed to fetch general announcements');
+                setPulledGeneralAnnouncement([]);
+            }
+        } catch (error) {
+            console.error('Error fetching general announcements:', error);
+            setPulledGeneralAnnouncement([]);
+        }
+    };
+    
+    // Fetch business-specific announcements from the backend
+    const fetchBusinessAnnouncements = async () => {
+        try {
+            const response = await fetch(`http://localhost:5050/api/announcements/business/${businessId}`);
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Transform data to expected format
+                const announcementsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    Title: data[key].content || 'No Title',
+                    Content: data[key].content || 'No Content'
+                }));
+                
+                setPulledBusinessAnnouncement(announcementsArray);
+            } else {
+                console.error('Failed to fetch business announcements');
+                setPulledBusinessAnnouncement([]);
+            }
+        } catch (error) {
+            console.error('Error fetching business announcements:', error);
+            setPulledBusinessAnnouncement([]);
+        }
+    };
+    
+    const renderTabContent = () => {
+        const announcements = activeTab === 'General' ? pulledGeneralAnnouncement : pulledBusinessAnnouncement;
+    
+        return (
+            <View>
+                {announcements.length === 0 ? (
+                    <View>
+                        <Text style={styles.tabContent}>No notifications in this tab</Text>
+                    </View>
+                ) : (
+                    announcements.map((announcement) => (
+                        <View key={announcement.id} style={styles.announcementBox}>
+                            <Text style={styles.announcementTitle}>{announcement.Title}</Text>
+                            <View style={styles.HDivider}/>
+                            <Text style={styles.announcementContent}>{announcement.Content}</Text>
+                        </View>
+                    ))
+                )}
+            </View>
+        );
+    };
+
 
     const handleAddAnnouncementForm = () => {
         setShowAddForm(true);
@@ -83,6 +126,10 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
     const handleAdd = () => {
         console.log('Announcement Title:', addAnnouncementTitle);
         console.log('Announcement Text:', addAnnouncementText);
+        const isBroadcast = activeTab === 'General';
+
+        sendAnnouncementToBusiness(businessId, addAnnouncementText, isBroadcast);
+
         setShowAddForm(false);
         setAddAnnouncementTitle('');
         setAddAnnouncementText('');
