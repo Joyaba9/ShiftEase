@@ -84,17 +84,17 @@ router.post('/logout', async (req, res) => {
     });*/
 
     // The client object here controls the connection to the database
-    const client = await getClient();
-    if (client) {
-        try {
-            // Close the database connection and confirm closure
-            await client.end();
-            console.log('Database client connection closed');
-        } catch (err) {
-            // Log any errors if there is an issue closing the connection
-            console.error('Error closing database client connection:', err);
-        }
-    }
+    // const client = await getClient();
+    // if (client) {
+    //     try {
+    //         // Close the database connection and confirm closure
+    //         await client.end();
+    //         console.log('Database client connection closed');
+    //     } catch (err) {
+    //         // Log any errors if there is an issue closing the connection
+    //         console.error('Error closing database client connection:', err);
+    //     }
+    // }
 
     // Send a success message confirming logout
     return res.status(200).json({ message: 'Logged out successfully' });

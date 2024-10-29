@@ -62,6 +62,7 @@ const SchedulePage = () => {
             const employeesWithPan = data.map((employee) => ({
                 ...employee,
                 pan: new Animated.ValueXY(),
+                shiftHours: 0
             }));
 
             setEmployees(employeesWithPan);
@@ -133,19 +134,9 @@ const SchedulePage = () => {
         }
     }, [selectedDay, titleOption, employees, filterEmployees]);
 
-    // Filter employees whenever the filter option or employee list changes
-    // useEffect(() => {
-    //     const applyFilter = () => {
-    //         if (titleOption === "All") {
-    //             setFilteredEmployees(employees);
-    //         } else if (titleOption === "Managers") {
-    //             setFilteredEmployees(employees.filter(emp => emp.role_name === "Manager"));
-    //         } else if (titleOption === "Employees") {
-    //             setFilteredEmployees(employees.filter(emp => emp.role_name === "Employee"));
-    //         }
-    //     };
-    //     applyFilter();
-    // }, [titleOption, employees]);
+    useEffect(() => {
+        console.log("Updated Employees:", employees);
+    }, [employees]); 
 
     // Loading or error handling can be added here as needed
     if (loading) return <Text>Loading...</Text>;
@@ -212,22 +203,80 @@ const SchedulePage = () => {
 
     const onDrop = (cellId, item, type) => {
         console.log("onDrop called with:", cellId, item, type);
-        if (type === 'employee') {
-            setEmployeeAssignments((prev) => ({
-                ...prev,
-                [cellId]: item,
-            }));
-        } else if (type === 'shift') {
-            setShiftAssignments((prev) => ({
-                ...prev,
-                [cellId]: item.time,
-            }));
-            setShiftTimes((prev) =>
-                prev.map((shift) =>
-                    shift.id === item.id ? { ...shift, assigned: true } : shift
-                )
-            );
+    
+        if (type === 'shift') {
+            console.log("Type is 'shift'");
+    
+            // Update shiftAssignments with the shift time for the specific cellId
+            setShiftAssignments((prev) => {
+                const updatedAssignments = { ...prev, [cellId]: item.time };
+                console.log("Updated shiftAssignments:", updatedAssignments);
+                
+                // Check if an employee is already assigned to this cell
+                const assignedEmployee = employeeAssignments[cellId];
+                if (assignedEmployee) {
+                    // Calculate hours if both shift and employee are present
+                    const [start, end] = item.time.split(' - ');
+                    const hours = calculateHoursDifference(start, end);
+    
+                    console.log(`Calculated hours for employee ${assignedEmployee.emp_id}:`, hours);
+    
+                    // Update employee's hours
+                    setEmployees((prev) =>
+                        prev.map((emp) =>
+                            emp.emp_id === assignedEmployee.emp_id ? { ...emp, shiftHours: hours } : emp
+                        )
+                    );
+                }
+                return updatedAssignments;
+            });
+    
+        } else if (type === 'employee') {
+            console.log("Type is 'employee'");
+    
+            // Update employeeAssignments with the employee for the specific cellId
+            setEmployeeAssignments((prev) => {
+                const updatedAssignments = { ...prev, [cellId]: item };
+                console.log("Updated employeeAssignments:", updatedAssignments);
+    
+                // Check if a shift is already assigned to this cell
+                const assignedShift = shiftAssignments[cellId];
+                if (assignedShift) {
+                    // Calculate hours if both shift and employee are present
+                    const [start, end] = assignedShift.split(' - ');
+                    const hours = calculateHoursDifference(start, end);
+    
+                    console.log(`Calculated hours for employee ${item.emp_id}:`, hours);
+    
+                    // Update employee's hours
+                    setEmployees((prev) =>
+                        prev.map((emp) =>
+                            emp.emp_id === item.emp_id ? { ...emp, shiftHours: hours } : emp
+                        )
+                    );
+                }
+                return updatedAssignments;
+            });
         }
+    };
+
+    const calculateHoursDifference = (startTime, endTime) => {
+        console.log("Calculating hours between:", startTime, endTime);
+
+        const [startHour, startMinutes] = startTime.split(/[: ]/).map((val, index) => index === 0 ? parseInt(val) % 12 : parseInt(val));
+        const [endHour, endMinutes] = endTime.split(/[: ]/).map((val, index) => index === 0 ? parseInt(val) % 12 : parseInt(val));
+    
+        const startDate = new Date();
+        startDate.setHours(startHour, startMinutes, 0);
+    
+        const endDate = new Date();
+        endDate.setHours(endHour + (endTime.includes('PM') ? 12 : 0), endMinutes, 0);
+    
+        // Calculate difference in hours
+        const hours = Math.abs((endDate - startDate) / (1000 * 60 * 60));
+        console.log("Calculated hours difference:", hours);
+
+        return hours;
     };
 
     const onRemove = (cellId, type) => {
@@ -486,7 +535,7 @@ const AnimatedEmployeeItem = ({ employee, handleDrop }) => {
         >
             <View style={styles.topEmployeeItem}>
                 <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
-                <Text>Hrs: 0</Text>
+                <Text>Hrs: {employee.shiftHours}</Text>
             </View>
             <Text style={styles.roleText}>{employee.role_name}</Text>
 
