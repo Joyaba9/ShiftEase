@@ -1,7 +1,8 @@
 import express from 'express';
 //import { getAuth, signOut } from "firebase/auth";
-import getClient from '../db/dbClient.js';
+//import { getClient } from '../Scripts/db.js';
 import { changeUserPassword, LoginBusiness, LoginEmployee } from '../Scripts/authScript.js';
+
 
 const router = express.Router();
 
@@ -84,7 +85,7 @@ router.post('/logout', async (req, res) => {
     });*/
 
     // The client object here controls the connection to the database
-    const client = await getClient();
+
     if (client) {
         try {
             // Close the database connection and confirm closure

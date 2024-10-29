@@ -2,6 +2,7 @@ import { updatePassword } from 'firebase/auth';
 import 'firebase/compat/firestore';
 import getClient from '../db/dbClient.js';
 import { auth, signInWithEmailAndPassword } from '../firebase.js';
+import CurrentUser from '../CurrentUser.js';
 
 //#region Generate Default Password
 
@@ -104,6 +105,16 @@ export async function LoginEmployee(employeeString, password) {
             // Perform Firebase authentication
             const firebaseUser = await signInWithEmailAndPassword(auth, email, password);
             console.log(`Firebase authentication successful for user: ${firebaseUser.user.uid}`);
+
+             // Store user data in CurrentUser
+             CurrentUser.setUserInfo({
+                uid: firebaseUser.user.uid,
+                email: firebaseUser.user.email,
+                employeeData: employee
+            });
+
+            console.log('Current user after login:', CurrentUser.getUserInfo()); // Add this log
+
 
             // Generate default password for comparison
             const defaultPassword = generateDefaultPassword(employee.birthday, employee.last4ssn);
