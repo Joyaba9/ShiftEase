@@ -15,6 +15,7 @@ import LandingPage from './common/LandingPage.js';
 import WelcomePageMobile from './common/WelcomePageMobile.js';
 import EmployeePage from './employee/EmployeePage.js';
 import MessagesPage from './common/MessagesPage.js';
+import AddPTORequest from './employee/AddPTORequest.js';
 
 
 const Stack = createStackNavigator();
@@ -77,6 +78,7 @@ const NavigationManager = () => {
             <Stack.Screen name="AddEmp" component={AddEmpModal} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageEmployee" component={ManageEmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="Messages" component={MessagesPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="AddPTORequest" component={AddPTORequest} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>
