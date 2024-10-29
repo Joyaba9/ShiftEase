@@ -211,20 +211,19 @@ const SchedulePage = () => {
             setShiftAssignments((prev) => {
                 const updatedAssignments = { ...prev, [cellId]: item.time };
                 console.log("Updated shiftAssignments:", updatedAssignments);
-                
+    
                 // Check if an employee is already assigned to this cell
                 const assignedEmployee = employeeAssignments[cellId];
                 if (assignedEmployee) {
-                    // Calculate hours if both shift and employee are present
                     const [start, end] = item.time.split(' - ');
                     const hours = calculateHoursDifference(start, end);
     
                     console.log(`Calculated hours for employee ${assignedEmployee.emp_id}:`, hours);
     
-                    // Update employee's hours
+                    // Accumulate hours for this employee
                     setEmployees((prev) =>
                         prev.map((emp) =>
-                            emp.emp_id === assignedEmployee.emp_id ? { ...emp, shiftHours: hours } : emp
+                            emp.emp_id === assignedEmployee.emp_id ? { ...emp, shiftHours: emp.shiftHours + hours } : emp
                         )
                     );
                 }
@@ -242,16 +241,15 @@ const SchedulePage = () => {
                 // Check if a shift is already assigned to this cell
                 const assignedShift = shiftAssignments[cellId];
                 if (assignedShift) {
-                    // Calculate hours if both shift and employee are present
                     const [start, end] = assignedShift.split(' - ');
                     const hours = calculateHoursDifference(start, end);
     
                     console.log(`Calculated hours for employee ${item.emp_id}:`, hours);
     
-                    // Update employee's hours
+                    // Accumulate hours for this employee
                     setEmployees((prev) =>
                         prev.map((emp) =>
-                            emp.emp_id === item.emp_id ? { ...emp, shiftHours: hours } : emp
+                            emp.emp_id === item.emp_id ? { ...emp, shiftHours: emp.shiftHours + hours } : emp
                         )
                     );
                 }
