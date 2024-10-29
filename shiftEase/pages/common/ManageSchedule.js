@@ -19,7 +19,7 @@ const SchedulePage = () => {
     console.log(loggedInUser);
     console.log(businessId);
 
-    const [maxHours, setMaxHours] = useState(3000);  // Set initial max hours
+    const [maxHours, setMaxHours] = useState(500);  // Set initial max hours
     const [totalHours, setTotalHours] = useState(0);
 
     const [view, setView] = useState('week');
