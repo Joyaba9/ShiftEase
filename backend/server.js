@@ -8,6 +8,7 @@ import businessRouter from './Routers/businessRouter.js';
 import employeeRouter from './Routers/employeeRouter.js';
 import roleRouter from './Routers/roleRouter.js';
 import messageRouter from './Routers/messageRouter.js';
+import announcementRouter from './Routers/announcementRouter.js';
 
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api', authRouter);
 app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
 app.use('/api/message', messageRouter);
+app.use ('/api/announcement', announcementRouter);
 
 
 
@@ -31,5 +33,4 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`); // Log a message when the server starts
 });
 
-
-//can you write a test to test writing a message, retrieving a message and retreiving sent messages on curl, the uid is "vETosJMqkpgyYxnqJs1qUdEMIY32" and  "E3vJZVs2oRctC1l4n3yJrSqnubE3". Additionally 
+// Export the app for testing
