@@ -19,13 +19,17 @@ const app = express();
 app.use(cors()); // Enables CORS for all routes
 app.use(express.json()); // Allows parsing JSON requests
 
+
+
+
+
 // Routes
 app.use('/api/employee', employeeRouter);
 app.use('/api', authRouter);
 app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
 app.use('/api/message', messageRouter);
-app.use ('/api/announcement', announcementRouter);
+app.use ('/api/announcements', announcementRouter);
 app.use('/api/schedule', scheduleRouter);
 
 
