@@ -299,28 +299,88 @@ const SchedulePage = () => {
     const onRemove = (cellId, type) => {
         if (type === 'employee') {
             const employeeName = employeeAssignments[cellId];
+
+            if (employeeName) {
+                // Check if there's an assigned shift for this cell
+                const assignedShift = shiftAssignments[cellId];
+                if (assignedShift) {
+                    // Calculate the hours for the assigned shift
+                    const [start, end] = assignedShift.split(' - ');
+                    const hours = calculateHoursDifference(start, end);
+
+                    // Subtract the hours from the employee's shiftHours
+                    setEmployees((prev) =>
+                        prev.map((emp) =>
+                            emp.emp_id === employeeName.emp_id
+                                ? { ...emp, shiftHours: Math.max(0, emp.shiftHours - hours) } // Ensure shiftHours doesn't go below 0
+                                : emp
+                        )
+                    );
+                }
+            }
+
+            // Remove the employee from the cell
             setEmployeeAssignments((prev) => {
                 const newAssignments = { ...prev };
                 delete newAssignments[cellId];
                 return newAssignments;
             });
-            setEmployees((prev) =>
-                prev.map((emp) =>
-                    emp.name === employeeName ? { ...emp, assigned: false, pan: new Animated.ValueXY() } : emp
-                )
-            );
+            // setEmployeeAssignments((prev) => {
+            //     const newAssignments = { ...prev };
+            //     delete newAssignments[cellId];
+            //     return newAssignments;
+            // });
+            // setEmployees((prev) =>
+            //     prev.map((emp) =>
+            //         emp.name === employeeName ? { ...emp, assigned: false, pan: new Animated.ValueXY() } : emp
+            //     )
+            // );
         } else if (type === 'shift') {
             const shiftTime = shiftAssignments[cellId];
+
+            if (shiftTime) {
+                // Check if an employee is assigned to this shift cell
+                const assignedEmployee = employeeAssignments[cellId];
+                if (assignedEmployee) {
+                    // Calculate the hours for the assigned shift
+                    const [start, end] = shiftTime.split(' - ');
+                    const hours = calculateHoursDifference(start, end);
+    
+                    // Subtract the hours from the employee's shiftHours
+                    setEmployees((prev) =>
+                        prev.map((emp) =>
+                            emp.emp_id === assignedEmployee.emp_id
+                                ? { ...emp, shiftHours: Math.max(0, emp.shiftHours - hours) } // Ensure shiftHours doesn't go below 0
+                                : emp
+                        )
+                    );
+                }
+            }
+
+            // Remove the shift from the cell
             setShiftAssignments((prev) => {
                 const newAssignments = { ...prev };
                 delete newAssignments[cellId];
                 return newAssignments;
             });
+
+            // Update shiftTimes to reflect the removed shift as unassigned
             setShiftTimes((prev) =>
                 prev.map((shift) =>
                     shift.time === shiftTime ? { ...shift, assigned: false, pan: new Animated.ValueXY() } : shift
                 )
             );
+
+            // setShiftAssignments((prev) => {
+            //     const newAssignments = { ...prev };
+            //     delete newAssignments[cellId];
+            //     return newAssignments;
+            // });
+            // setShiftTimes((prev) =>
+            //     prev.map((shift) =>
+            //         shift.time === shiftTime ? { ...shift, assigned: false, pan: new Animated.ValueXY() } : shift
+            //     )
+            // );
         }
     };
 
