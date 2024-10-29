@@ -177,13 +177,19 @@ const SchedulePage = () => {
 
     // Handle day selection from header
     const handleDaySelection = (dayIndex) => {
-        setSelectedDay(dayIndex);
+        // Toggle the selected day - if the same day is clicked, clear the selection
+        if (selectedDay === dayIndex) {
+            setSelectedDay(null);  // Clear the day selection
+        } else {
+            setSelectedDay(dayIndex);  // Set the selected day
+        }
+        // setSelectedDay(dayIndex);
 
-        const selectedDate = dates[dayIndex];
-        const dateToSend = selectedDate.toISOString().split('T')[0];
-        console.log("Date to send:", dateToSend);
+        // const selectedDate = dates[dayIndex];
+        // const dateToSend = selectedDate.toISOString().split('T')[0];
+        // console.log("Date to send:", dateToSend);
 
-        filterEmployees(dayIndex, dateToSend);
+        // filterEmployees(dayIndex, dateToSend);
     };
 
     const handleRowCountChange = (newCount) => {
