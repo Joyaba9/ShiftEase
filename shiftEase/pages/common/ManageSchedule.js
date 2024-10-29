@@ -19,6 +19,9 @@ const SchedulePage = () => {
     console.log(loggedInUser);
     console.log(businessId);
 
+    const [maxHours, setMaxHours] = useState(3000);  // Set initial max hours
+    const [totalHours, setTotalHours] = useState(0);
+
     const [view, setView] = useState('week');
     const [currentDate, setCurrentDate] = useState(new Date());
     console.log("Current date:", currentDate);
@@ -121,6 +124,12 @@ const SchedulePage = () => {
         }   
     }, [titleOption, employees]);
 
+    // Function to calculate the total shift hours for all employees
+    useEffect(() => {
+        const calculatedHours = employees.reduce((acc, emp) => acc + emp.shiftHours, 0);
+        setTotalHours(calculatedHours);
+    }, [employees]);
+
     useEffect(() => {
         if (selectedDay !== null) {
             // Calculate day name and date to send based on selectedDay and currentDate
@@ -142,6 +151,16 @@ const SchedulePage = () => {
     if (loading) return <Text>Loading...</Text>;
     if (error) return <Text>{error}</Text>;
 
+    // Function to determine the color based on how close `totalHours` is to `maxHours`
+    const getTotalHoursColor = () => {
+        if (totalHours >= maxHours) {
+            return 'red';
+        } else if (totalHours >= maxHours * 0.8) {  // If within 80% of max
+            return 'yellow';
+        } else {
+            return 'green';
+        }
+    };
     
     const handleSelectTitle = (selectedTitle) => {
         setTitleOption(selectedTitle);
@@ -332,6 +351,18 @@ const SchedulePage = () => {
                 )}
 
                 <Text style={styles.dashboardText}> Manage Schedule</Text>
+
+                <View style={styles.mainHoursContainer}>
+                    <Text style={styles.hrTitle}>Max Desired Hours:</Text>
+                    <TextInput
+                        style={styles.maxHoursInput}
+                        value={String(maxHours)}
+                        //keyboardType="numeric"
+                        onChangeText={(value) => setMaxHours(parseInt(value) || 0)}
+                    />
+
+                    <Text style={[styles.hrTitle, { color: getTotalHoursColor() }]}>Total Hours: {totalHours}</Text>
+                </View>
 
                 <View style={styles.dashboardContainer}>
                     <View style={styles.wholeScheduleContainer}>
@@ -574,6 +605,29 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         marginVertical: 40,
         marginLeft: 30
+    },
+    mainHoursContainer: {
+        flexDirection: 'row',
+        width: '95%',
+        minHeight: '5%',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingRight: 10,
+        borderWidth: 2,
+        borderColor: 'red'
+    },
+    hrTitle: {
+        fontSize: 18
+    },
+    maxHoursInput: {
+        borderColor: 'gray',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 5,
+        marginLeft: 10,
+        marginRight: 30,
+        width: 55,
+        textAlign: 'center',
     },
     wholeScheduleContainer: {
         //flex: 1,
