@@ -14,9 +14,31 @@ import AccountPage from './common/AccountPage.js';
 import LandingPage from './common/LandingPage.js';
 import WelcomePageMobile from './common/WelcomePageMobile.js';
 import EmployeePage from './employee/EmployeePage.js';
+import MessagesPage from './common/MessagesPage.js';
 
 
 const Stack = createStackNavigator();
+
+const linking = {
+    prefixes: ['http://localhost:5050'],  
+    config: {
+      screens: {
+        // Welcome: 'welcome',
+        Login: 'login',
+        // ChangePass: 'changepass',
+        // ForgotPass: 'forgotpass',
+        // Registration: 'registration',
+        // Landing: 'landing',
+        // Account: 'account',
+        // Business: 'business',
+        // Employee: 'employee',
+        // AddEmp: 'add-employee',
+        // ManageEmployee: 'manage-employee',
+        Messages: 'messages',
+        // LogOut: 'logout',
+      },
+    },
+  };
 
 const NavigationManager = () => {
     const [initialRoute, setInitialRoute] = useState(null);
@@ -41,7 +63,7 @@ const NavigationManager = () => {
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer linking={linking}>
             <Stack.Navigator initialRouteName={initialRoute}>
             <Stack.Screen name="Welcome" component={WelcomePageMobile} options={{ headerShown: false }}/>
             <Stack.Screen name="Login" component={LoginPage} options={{ headerShown: false }}/>
@@ -54,6 +76,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="AddEmp" component={AddEmpModal} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageEmployee" component={ManageEmployeePage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Messages" component={MessagesPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>

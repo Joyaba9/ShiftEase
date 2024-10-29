@@ -32,8 +32,32 @@ export async function registerBusiness(businessName, businessEmail, password, co
   
       // Check the response status
       if (response.status === 201) {
-        alert('Business registered successfully');
-         navigation.navigate('Business');
+        // If registration is successful, make a second request to fetch the business ID
+        try{
+            const response = await fetch(baseURL + "getBusinessIDFromEmail", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                business_email: businessEmail,
+              })
+            });
+          
+            // Parse the response to extract the business_id
+            const data = await response.json();
+  
+            // If the business_id is returned successfully, store it in state
+            if (data && data.business_id) {
+                // Return the business_id to the registration page
+                return data.business_id; 
+            } else {
+              alert('Business ID not found in response');
+            }
+          } catch (err) {
+            console.error('Error receiving business_id:', err);
+            alert('Error receiving business_id');
+          }
       } else {
         alert('Error registering business');
       }
@@ -120,9 +144,15 @@ export async function fetchBusinessDetailsAndLocation(business_email) {
         const businessObject = await getBusinessDetails(business_email);
         // Check if business details are found
         if (businessObject && businessObject.business_id) {
-            // Fetch business location details using the business ID
-            const businessLocation = await getBusinessLocation(businessObject.business_id);
+            let businessLocation = null;
 
+            // Fetch business location details using the business ID
+            try {
+                businessLocation = await getBusinessLocation(businessObject.business_id);
+            } catch (error) {
+                console.warn('Business location not found or not set:', error);  // Warn if location isn't found
+            }
+            
             return {
                 businessDetails: businessObject,
                 businessLocation: businessLocation || null,  // Return null if no location found

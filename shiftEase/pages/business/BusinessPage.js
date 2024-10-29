@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import NavBar from '../../components/NavBar.js';
@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import SidebarButton from '../../components/SidebarButton.js';
 import BusinessPageMobile from './BusinessPageMobile.js';
 import AddEmpModal from './AddEmpModal.js';
+import AnnouncementsModal from './AnnouncementsModal.js';
 
 const { width } = Dimensions.get('window');
 
@@ -20,10 +21,12 @@ const BusinessPage = () => {
   const loggedInBusiness = useSelector((state) => state.business.businessInfo);
 
   // Check if the data exists
-  if (!loggedInBusiness) {
-      console.error('No business is logged in');
-      return null;
-  }
+  useEffect(() => {
+    if (!loggedInBusiness) {
+        console.error('No business is logged in');
+        navigation.replace('Login');
+    }
+  }, [loggedInBusiness, navigation]);
 
   // Function to switch between dashboards
   const switchDashboard = () => {
@@ -31,15 +34,35 @@ const BusinessPage = () => {
   };
 
   const [addEmpVisible, setAddEmpVisible] = useState(false);
+  const [announcementsVisible, setAnnouncementsVisible] = useState(false);
 
   const goToManageEmployeePage = () => {
     navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
   };
 
+  // Early loading check (non-hook related) to avoid return early
+  if (!loggedInBusiness) {
+    return (
+      <div>
+        <p>Loading...</p> {/* Fallback UI */}
+      </div>
+    );
+  }
+
   // Render the mobile layout if it's a mobile screen
   if (isMobile) {
     return <BusinessPageMobile />;
   }
+
+  const handleOpenWindow = () => {
+    if (Platform.OS === 'web') {
+      // This will open MessagesPage in a new browser tab
+      window.open('/messages', '_blank', 'width=800,height=600,resizable,scrollbars');
+    } else {
+      // Fallback for mobile to navigate within the app
+      navigation.navigate('Messages');
+    }
+  };
 
   return (
     <ScrollView 
@@ -90,7 +113,7 @@ const BusinessPage = () => {
             <SidebarButton
               icon={require('../../assets/images/email_icon.png')}
               label="Messages"
-              onPress={() => {}}
+              onPress={handleOpenWindow}
               customContainerStyle={{ right: 20 }}
               customIconStyle={{ width: 100, height: 100 }}
             />
@@ -116,7 +139,7 @@ const BusinessPage = () => {
                 </View>
                 <View style={styles.textBox}></View>
                 <TouchableOpacity style={styles.addIconContainer}>
-                  <Ionicons name="add-circle" size={50} color="black" />
+                  <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
                 </TouchableOpacity>
               </View>
             </LinearGradient>
@@ -155,6 +178,12 @@ const BusinessPage = () => {
         <AddEmpModal 
           addEmpVisible={addEmpVisible} 
           setAddEmpVisible={setAddEmpVisible}
+          businessId={loggedInBusiness.business.business_id}
+        />
+
+        <AnnouncementsModal
+          announcementsVisible={announcementsVisible}
+          setAnnouncementsVisible={setAnnouncementsVisible}
           businessId={loggedInBusiness.business.business_id}
         />
       </View>

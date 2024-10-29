@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 import NavigationManager from './shiftEase/pages/NavigationManager';
-import { store } from './shiftEase/redux/store';
+import { store, persistor } from './shiftEase/redux/store';
 
 
 
@@ -11,10 +12,12 @@ export default function App() {
   return (
     // Wrap the app in the Provider and pass the store
     <Provider store={store}>
-      <View style={styles.container}>
-        <NavigationManager />
-        <StatusBar style="auto" />
-      </View>
+      <PersistGate loading={null} persistor={persistor}>
+        <View style={styles.container}>
+          <NavigationManager />
+          <StatusBar style="auto" />
+        </View>
+      </PersistGate>  
     </Provider>
   );
 }

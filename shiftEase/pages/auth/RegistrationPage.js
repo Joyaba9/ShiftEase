@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CommonLayout from '../common/CommonLayout';
 import { registerBusiness } from '../../../backend/api/api';
@@ -11,22 +11,41 @@ const RegistrationPage = () => {
   const navigation = useNavigation();
 
   // State variables to store the form data
+  let [businessId, setBusinessId] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessEmail, setBusinessEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // State to track whether the success message should be shown after saving
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
   const handleRegister = async () => {
     // Call the registerBusiness function and pass the necessary arguments
-    const result = await registerBusiness(businessName, businessEmail, password, confirmPassword, navigation);
+    businessId = await registerBusiness(businessName, businessEmail, password, confirmPassword, navigation);
   
-    if (result) {
-      console.log("Business successfully registered", result);
+    if (businessId) {
+      console.log("Business successfully registered");
+      setBusinessId(businessId);
+      setShowSuccessMessage(true);
+
     } else {
       console.log("Business registration failed");
     }
   };
+
+  // useEffect to navigate to Login page after showing success message for 7 seconds
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        navigation.navigate('Login'); // Navigate to Login after success
+      }, 7000); // 7000 ms = 7 seconds
+
+      // Clear the timer if the component unmounts before 7 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage, navigation]);
 
 
   return (
@@ -131,6 +150,11 @@ const RegistrationPage = () => {
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.loginText}>Back to Login!</Text>
         </TouchableOpacity>
+
+        {/* Render success message if showSuccessMessage is true */}
+        {showSuccessMessage && (
+          <Text style={styles.successMessage}>Business registered successfully! Business ID: {businessId}</Text>
+        )}
 
       </CommonLayout>
     </KeyboardAvoidingView>

@@ -9,6 +9,8 @@ import employeeRouter from './Routers/employeeRouter.js';
 import roleRouter from './Routers/roleRouter.js';
 import messageRouter from './Routers/messageRouter.js';
 import announcementRouter from './Routers/announcementRouter.js';
+import scheduleRouter from './Routers/scheduleRouter.js';
+
 
 
 const app = express();
@@ -24,7 +26,7 @@ app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
 app.use('/api/message', messageRouter);
 app.use ('/api/announcement', announcementRouter);
-
+app.use('/api/schedule', scheduleRouter);
 
 
 // Start the server
