@@ -103,20 +103,24 @@ const SchedulePage = () => {
             const result = await fetchAvailableEmployees(businessId, dayName, dateToSend);
             const { employees: availableEmployees } = result;
 
-            // Add `pan` property for drag functionality if missing
-            const employeesWithPan = availableEmployees.map((employee) => ({
-                ...employee,
-                pan: employee.pan || new Animated.ValueXY(),
-            }));
+            // Retain existing shiftHours data
+            const employeesWithHours = availableEmployees.map((employee) => {
+                const existingEmployee = employees.find(emp => emp.emp_id === employee.emp_id);
+                return {
+                    ...employee,
+                    shiftHours: existingEmployee ? existingEmployee.shiftHours : 0,  // Keep existing shiftHours if available
+                    pan: employee.pan || new Animated.ValueXY(),
+                };
+            });
 
             // Apply role filter (All, Managers, Employees)
-            const roleFilteredEmployees = employeesWithPan.filter((emp) => {
+            const roleFilteredEmployees = employeesWithHours.filter((emp) => {
                 if (titleOption === "Managers") return emp.role_name === "Manager";
                 if (titleOption === "Employees") return emp.role_name === "Employee";
                 return true;
             });
 
-            console.log("Filtered Employees with Pan:", roleFilteredEmployees);
+            console.log("Filtered Employees with Pan and Hours:", roleFilteredEmployees);
 
             setFilteredEmployees(roleFilteredEmployees);
         } catch (error) {
@@ -226,6 +230,8 @@ const SchedulePage = () => {
         if (type === 'shift') {
             console.log("Type is 'shift'");
     
+            if (shiftAssignments[cellId] === item.time) return;
+
             // Update shiftAssignments with the shift time for the specific cellId
             setShiftAssignments((prev) => {
                 const updatedAssignments = { ...prev, [cellId]: item.time };
@@ -325,16 +331,6 @@ const SchedulePage = () => {
                 delete newAssignments[cellId];
                 return newAssignments;
             });
-            // setEmployeeAssignments((prev) => {
-            //     const newAssignments = { ...prev };
-            //     delete newAssignments[cellId];
-            //     return newAssignments;
-            // });
-            // setEmployees((prev) =>
-            //     prev.map((emp) =>
-            //         emp.name === employeeName ? { ...emp, assigned: false, pan: new Animated.ValueXY() } : emp
-            //     )
-            // );
         } else if (type === 'shift') {
             const shiftTime = shiftAssignments[cellId];
 
@@ -624,7 +620,7 @@ const AnimatedEmployeeItem = ({ employee, handleDrop }) => {
         >
             <View style={styles.topEmployeeItem}>
                 <Text>{`${employee.f_name} ${employee.l_name}`}</Text>
-                <Text>Hrs: {employee.shiftHours}</Text>
+                <Text>Hrs: {employee.shiftHours || 0}</Text>
             </View>
             <Text style={styles.roleText}>{employee.role_name}</Text>
 
