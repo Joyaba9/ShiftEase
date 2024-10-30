@@ -173,6 +173,18 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
     }
 }
 
+//#endregion
+
+//#region Soft Delete Employee
+
+/**
+ * "Deletes" an employee by setting them inactive and removing future requests,
+ * only if the employee is associated with the specified business ID.
+ *
+ * @param {number} businessId - The ID of the business.
+ * @param {number} employeeId - The ID of the employee to be "deleted".
+ * @returns {Promise<Object>} - Result indicating the employee's status update and deleted requests.
+ */
 export async function SoftDeleteEmployee(businessId, employeeId) {
     const client = await getClient();
     await client.connect();
@@ -228,6 +240,10 @@ export async function SoftDeleteEmployee(businessId, employeeId) {
     }
 }
 
+//#endregion
+
+//#region Add Employee Availability
+
 // Add Employee Availability API
 export async function AddEmployeeAvailability(emp_id, availability) {
     const client = await getClient();
@@ -277,6 +293,10 @@ export async function AddEmployeeAvailability(emp_id, availability) {
     }
 }
 
+//#endregion
+
+//#region Fetch Employee Availability
+
 export async function fetchEmployeeAvailability(emp_id) {
     const client = await getClient();
     await client.connect();
@@ -301,8 +321,142 @@ export async function fetchEmployeeAvailability(emp_id) {
     }
 }
 
+//#endregion
 
+//#region Get Future/Past/All Requests By Employee
 
+/**
+ * Fetches all future requests for an employee, sorted by start date,
+ * ensuring the employee belongs to the specified business.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @param {number} business_id - The ID of the business.
+ * @returns {Promise<Array>} - An array of future request records, including day type and times.
+ */
+export async function getFutureRequestsByEmployee(emp_id, business_id) {
+    const client = await getClient();
+    await client.connect();
 
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch future requests with the new columns
+    const futureRequestsQuery = `
+        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
+        FROM requests
+        WHERE emp_id = $1
+          AND start_date > CURRENT_DATE
+        ORDER BY start_date ASC;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        // Fetch future requests if the association is confirmed
+        const result = await client.query(futureRequestsQuery, [emp_id]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching future requests:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+/**
+ * Fetches all past requests for an employee sorted by start date,
+ * ensuring the employee belongs to the specified business.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @param {number} business_id - The ID of the business.
+ * @returns {Promise<Array>} - An array of past request records.
+ */
+export async function getPastRequestsByEmployee(emp_id, business_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch past requests
+    const pastRequestsQuery = `
+        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
+        FROM requests
+        WHERE emp_id = $1
+          AND end_date < CURRENT_DATE
+        ORDER BY start_date DESC;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        // Fetch past requests if the association is confirmed
+        const result = await client.query(pastRequestsQuery, [emp_id]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching past requests:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+/**
+ * Fetches all requests for an employee, sorted by the latest start date first,
+ * ensuring the employee belongs to the specified business.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @param {number} business_id - The ID of the business.
+ * @returns {Promise<Array>} - An array of all request records, including day type and times.
+ */
+export async function getAllRequestsByEmployee(emp_id, business_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch all requests sorted by the latest start date first
+    const allRequestsQuery = `
+        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
+        FROM requests
+        WHERE emp_id = $1
+        ORDER BY start_date DESC;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        // Fetch all requests if the association is confirmed
+        const result = await client.query(allRequestsQuery, [emp_id]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching all requests:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
 
 //#endregion
