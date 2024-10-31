@@ -120,7 +120,7 @@ const BusinessPage = () => {
             <SidebarButton
               icon={require('../../assets/images/edit_roles_icon_trans.png')}
               label="Edit Roles"
-              onPress={() => {}}
+              onPress={() => navigation.navigate('EditRoles')}
               customContainerStyle={{ right: 10 }}
             />
           </View>
