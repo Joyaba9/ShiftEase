@@ -22,8 +22,9 @@ const NavBar = ({ homeRoute }) => {
 // Define the handleLogout function is here temnporarily
 const handleLogout = async () => {
     try {
-        // Set a local state variable to track the logout process
+        // local state variable to track the logout process
         setIsLoggingOut(true);
+
         // Ensure that Firebase does not automatically restore the session
         await setPersistence(auth, browserSessionPersistence);
 
