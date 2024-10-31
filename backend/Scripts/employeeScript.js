@@ -121,7 +121,7 @@ export async function UpdateEmployee(employeeId, newEmployeeInfo) {
 /**
  * Adds a new employee to both PostgreSQL and Firebase. If successful, stores employee data in Firestore.
  *
- * @param {string} role - Role of the employee (e.g., "Employee", "Manager").
+ * @param {string} role - RoleID of the employee
  * @param {string} fName - First name of the employee.
  * @param {string} lName - Last name of the employee.
  * @param {string} email - Employee's email address.
@@ -130,22 +130,9 @@ export async function UpdateEmployee(employeeId, newEmployeeInfo) {
  * @param {number} businessId - The unique identifier of the business.
  * @returns {Promise<Object>} - Object containing employee ID, email, role, and other relevant details.
  */
-export async function AddEmployee(role, fName, lName, email, ssn, dob, businessId) {
-    let roleID;
+export async function AddEmployee(roleID, fName, lName, email, ssn, dob, businessId) {
     let createdAt = new Date();
     let updatedAt = new Date();
-    //businessId = 598984; // Temporary business ID for testings
-    // TODO: Implement business ID retrieval from the user's session or other source
-
-    // Determine role ID based on the provided role
-    // TODO: GET THE INFORMATION FROM DATABASE
-    if (role === 'Employee') {
-        roleID = 2;
-    } else if (role === 'Manager') {
-        roleID = 1;
-    } else {
-        throw new Error('Invalid role specified'); // Throw error if role is not valid
-    }
 
     const client = await getClient(); // Initialize the database client
     console.log('Database Client Obtained');
@@ -214,5 +201,137 @@ export async function AddEmployee(role, fName, lName, email, ssn, dob, businessI
         console.log('Database connection closed');
     }
 }
+
+export async function SoftDeleteEmployee(businessId, employeeId) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Check if the employee is associated with the specified business ID
+        const employeeCheckQuery = `
+            SELECT emp_id FROM employees
+            WHERE emp_id = $1 AND business_id = $2 AND is_active = true;
+        `;
+        const employeeCheckRes = await client.query(employeeCheckQuery, [employeeId, businessId]);
+
+        if (employeeCheckRes.rows.length === 0) {
+            throw new Error('Employee not found or not associated with the specified business ID.');
+        }
+
+        // Begin transaction
+        await client.query('BEGIN');
+
+        // Set the employee as inactive
+        const updateEmployeeQuery = `
+            UPDATE employees
+            SET is_active = false,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE emp_id = $1;
+        `;
+        await client.query(updateEmployeeQuery, [employeeId]);
+
+        // Delete future requests for the employee
+        const deleteFutureRequestsQuery = `
+            DELETE FROM requests
+            WHERE emp_id = $1
+            AND start_date > CURRENT_DATE;
+        `;
+        const deleteResult = await client.query(deleteFutureRequestsQuery, [employeeId]);
+        const deletedRequestCount = deleteResult.rowCount;
+
+        // Commit transaction
+        await client.query('COMMIT');
+
+        return {
+            success: true,
+            message: 'Employee set as inactive and future requests deleted.',
+            deletedRequests: deletedRequestCount
+        };
+    } catch (err) {
+        // Rollback transaction in case of error
+        await client.query('ROLLBACK');
+        console.error('Error soft deleting employee:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+// Add Employee Availability API
+export async function AddEmployeeAvailability(emp_id, availability) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Begin transaction
+        await client.query('BEGIN');
+
+        // Insert availability records
+        const insertQuery = `
+            INSERT INTO availability (emp_id, day_of_week, start_time, end_time, start_date, end_date)
+            VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+
+        // Execute the insertion for each day in the availability array
+        let insertedCount = 0; // Track successful inserts
+        for (const day of availability) {
+            if (!day.start_time || !day.end_time) {
+                console.warn(`Skipping entry for ${day.day_of_week} due to missing start or end time`);
+                continue;
+            }
+        
+            await client.query(insertQuery, [
+                emp_id,
+                day.day_of_week.toLowerCase(),
+                day.start_time,
+                day.end_time,
+                day.start_date || null,
+                day.end_date || null,
+            ]);
+        
+            insertedCount++; // Increment on successful insert
+        }
+        console.log(`Inserted ${insertedCount} entries into the database`);
+
+        // Commit the transaction
+        await client.query('COMMIT');
+
+        return { success: true, message: 'Availability data added successfully' };
+    } catch (error) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error adding availability:', error);
+        throw error;
+    } finally {
+        await client.end(); // Close database connection
+    }
+}
+
+export async function fetchEmployeeAvailability(emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        const query = `
+            SELECT day_of_week, start_time, end_time, start_date, end_date 
+            FROM availability 
+            WHERE emp_id = $1;
+        `;
+        console.log(`Executing query for emp_id: ${emp_id}`);
+        const result = await client.query(query, [emp_id]);
+
+        console.log(`Query result for emp_id ${emp_id}:`, result.rows);
+        return result.rows; // Return fetched availability data
+    } catch (error) {
+        console.error('Error fetching availability data:', error);
+        throw error;
+    } finally {
+        await client.end(); // Close the database connection
+        console.log("Database client closed.");
+    }
+}
+
+
+
+
 
 //#endregion

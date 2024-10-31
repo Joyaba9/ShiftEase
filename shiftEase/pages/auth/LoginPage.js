@@ -62,7 +62,7 @@ const LoginPage = ({ isLoggingOut }) => {
       dispatch(loginBusiness(businessId, password));
     } else {
       // If it's an employee login, dispatch the loginUser action
-      const employeeString = `${businessId}U${employeeId}`; // You might want to ensure correct formatting
+      const employeeString = `${employeeId}`;   // You might want to ensure correct formatting
       dispatch(loginUser(employeeString, password));
     }
   };
