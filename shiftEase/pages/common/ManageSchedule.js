@@ -228,15 +228,20 @@ const SchedulePage = () => {
                                 setNewShiftEnd={setNewShiftEnd} 
                                 handleDrop={handleDrop} 
                             />
-
-                            <View style={styles.rowInputContainer}>
-                                <Text>Set Number of Rows:</Text>
-                                <TextInput
-                                    style={styles.rowInput}
-                                    value={inputRowCount}
-                                    onChangeText={handleRowCountChange} 
-                                    onBlur={handleRowCountBlur}
-                                />
+        
+                            <View style={styles.bottomInputContainer}>
+                                <View style={styles.rowInputContainer}>
+                                    <Text>Set Number of Rows:</Text>
+                                    <TextInput
+                                        style={styles.rowInput}
+                                        value={inputRowCount}
+                                        onChangeText={handleRowCountChange} 
+                                        onBlur={handleRowCountBlur}
+                                    />
+                                </View>
+                                <TouchableOpacity style={styles.createBtn} > {/*onPress={handleAddShift}*/}
+                                    <Text style = {{ color: '#fff' }}>Create Schedule</Text>
+                                </TouchableOpacity>
                             </View>  
                         </View>
                     </View>
@@ -364,13 +369,27 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    rowInputContainer: {
+    bottomInputContainer: {
         flexDirection: 'row',
         alignSelf: 'baseline',
         alignItems: 'center',
-        justifyContent: 'flex-end',
-        width: '20%',
+        justifyContent: 'space-between',
+        width: '60%',
+        height: '40%',
         paddingRight: 5,
+    },
+    rowInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'baseline'
+
+    },
+    createBtn: {
+        alignSelf: 'baseline',
+        backgroundColor: '#4CAF50',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 10,
     },
     rowInput: {
         borderColor: 'gray',
