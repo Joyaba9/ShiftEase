@@ -8,6 +8,7 @@ import businessRouter from './Routers/businessRouter.js';
 import employeeRouter from './Routers/employeeRouter.js';
 import roleRouter from './Routers/roleRouter.js';
 import scheduleRouter from './Routers/scheduleRouter.js';
+import preferencesRouter from './Routers/preferencesRouter.js';
 
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api', authRouter);
 app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
 app.use('/api/schedule', scheduleRouter);
+app.use('/api/preferences', preferencesRouter);
 
 
 // Start the server
