@@ -15,6 +15,7 @@ import LandingPage from './common/LandingPage.js';
 import WelcomePageMobile from './common/WelcomePageMobile.js';
 import EmployeePage from './employee/EmployeePage.js';
 import MessagesPage from './common/MessagesPage.js';
+import SettingsPage from './business/SettingsPage.js';
 
 
 const Stack = createStackNavigator();
@@ -72,6 +73,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Account" component={AccountPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Settings" component={SettingsPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="AddEmp" component={AddEmpModal} options={{ headerShown: false }}/>
