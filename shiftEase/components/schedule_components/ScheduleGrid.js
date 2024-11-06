@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 // ScheduleGrid component that represents the grid for displaying employee assignments and shift times
 // forwardRef is used to expose internal methods to the parent component via ref
 const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, rowCount, onDrop, onRemove }, ref) => {
+    console.log("Rendering Schedule Grid");
     // References to all individual grid cells
     const cellRefs = useRef({});
 

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
+import { createWeeklyScheduleAPI, createShiftAPI } from '../../../backend/api/scheduleApi';
 import { getTotalHoursColor } from '../../components/schedule_components/scheduleUtils';
-import { getWeekDates, getDayView } from '../../components/schedule_components/useCalendar';
+import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
 import EmployeeList from '../../components/schedule_components/EmployeeList';
 import useEmployeeData from '../../components/schedule_components/useEmployeeData';
@@ -12,11 +14,12 @@ import ScheduleGrid from '../../components/ScheduleGrid';
 import ShiftControls from '../../components/schedule_components/ShiftControls';
 
 const SchedulePage = () => {
+    
     // Get businessId from Redux store
     const loggedInUser = useSelector((state) => state.business.businessInfo);
     const businessId = loggedInUser?.business?.business_id;
-    console.log(loggedInUser);
-    console.log(businessId);
+    //console.log(loggedInUser);
+    //console.log(businessId);
 
     const [maxHours, setMaxHours] = useState(500);  // Set initial max hours
     const [totalHours, setTotalHours] = useState(0);
@@ -32,10 +35,16 @@ const SchedulePage = () => {
     const [selectedDay, setSelectedDay] = useState(null);
     console.log("Current date:", currentDate);
 
+    console.log("Today's date:", new Date().toISOString().slice(0, 10));
+    console.log("Current date state:", currentDate);
+    console.log("Start of the week:", getStartOfWeek(currentDate));
+
     // Reference for the schedule grid (used for handling drag-and-drop)
     const scheduleGridRef = useRef(null);
-    // Get dates based on the selected view mode (week or day)
-    const dates = view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
+
+    const dates = useMemo(() => {
+        return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
+    }, [view, currentDate]);
 
     // Default number of rows in the schedule grid
     const DEFAULT_ROW_COUNT = 8;
@@ -45,6 +54,34 @@ const SchedulePage = () => {
     // States to manage the start and end times for new shifts
     const [newShiftStart, setNewShiftStart] = useState('');
     const [newShiftEnd, setNewShiftEnd] = useState('');
+
+    const [scheduleId, setScheduleId] = useState(null);  // Store the schedule ID after creation
+    const [shiftsData, setShiftsData] = useState([]);
+    const [buttonText, setButtonText] = useState("Create Schedule");
+    const [isLoading, setIsLoading] = useState(true);
+    const [dataReady, setDataReady] = useState(false);
+
+    // const sampleEmployeeAssignments = {
+    //     "0-0": { f_name: "Jim", l_name: "Halpert" },
+    //     "0-1": { f_name: "Jim", l_name: "Halpert" },
+    //     "1-0": { f_name: "Pam", l_name: "Beesly" },
+    //     "2-1": { f_name: "Dwight", l_name: "Schrute" },
+    //     // Add more as needed for other cells
+    // };
+    
+    // const sampleShiftAssignments = {
+    //     "0-0": "09:00 - 17:00",
+    //     "0-1": "09:00 - 17:00",
+    //     "1-0": "10:00 - 18:00",
+    //     "2-1": "12:00 - 20:00",
+    //     // Add more as needed for other cells
+    // };
+
+    // const handleLoadSchedule = () => {
+    //     // Simulate loading data by setting sample data as state
+    //     setEmployeeAssignments(sampleEmployeeAssignments);
+    //     setShiftAssignments(sampleShiftAssignments);
+    // };
 
     // Custom hook to handle employee and schedule-related data
     const { 
@@ -58,8 +95,99 @@ const SchedulePage = () => {
         filterEmployees,  
         onDrop,        
         onRemove,
-        setShiftTimes
+        setShiftTimes,
+        setEmployeeAssignments,
+        setShiftAssignments
     } = useEmployeeData(businessId);
+
+    // Load the existing schedule and shifts when the component mounts
+    useEffect(() => {
+        const loadSchedule = async () => {
+            setIsLoading(true);
+            try {
+                console.log("Trying to loadSchedule");
+                const weekStartDate = getStartOfWeek(currentDate);
+                console.log(currentDate);
+                console.log("Business ID:", businessId, "Week Start Date:", weekStartDate);
+    
+                const existingSchedule = await fetchScheduleAPI(businessId, weekStartDate);
+                console.log("Existing Schedule: ", existingSchedule);
+    
+                if (existingSchedule && existingSchedule.schedule) {
+                    setScheduleId(existingSchedule.schedule.schedule_id);
+                    console.log("Schedule ID: ", existingSchedule.schedule.schedule_id);
+
+                    setShiftsData(existingSchedule.shifts);
+                    console.log("Loaded Shifts Data: ", existingSchedule.shifts);
+
+                    setButtonText("Update Schedule");
+                } else {
+                    setScheduleId(null);
+                    setShiftsData([]);  // Clear shiftsData to allow new schedule creation
+                    setButtonText("Create Schedule");
+                }
+            } catch (error) {
+                console.error("Error loading schedule:", error);
+                alert("Failed to load schedule. Please try again.");
+            } finally {
+                console.log("Schedule loaded, setting isLoading to false");
+                setIsLoading(false); // End loading after setting data
+            }
+        };
+        loadSchedule();
+    }, [businessId, currentDate]);
+
+    // Verify that dates are consistent and not changing unexpectedly
+    useEffect(() => {
+        console.log("Dates in useMemo:", dates);
+    }, [dates]);
+
+    //Trigger the mapping function whenever `shiftsData` changes
+    useEffect(() => {
+        if (shiftsData.length > 0 && dates.length > 0) {
+            setDataReady(false);
+            mapShiftsToAssignments(shiftsData);
+        } else {
+            setEmployeeAssignments({});
+            setShiftAssignments({});
+            setDataReady(true);
+        }
+    }, [shiftsData]);
+
+    const mapShiftsToAssignments = (shifts) => {
+        const loadedEmployeeAssignments = {};
+        const loadedShiftAssignments = {};
+    
+        // Iterate over each shift object in `existingSchedule.shifts`
+        shifts.forEach((shift) => {
+            // Find the column index based on the date
+            const colIndex = dates.findIndex(date => date.toISOString().split('T')[0] === shift.date);
+    
+            if (colIndex !== -1) {
+                // Generate the cell ID based on employeeId and column index
+                const cellId = `${shift.employeeId}-${colIndex}`;
+    
+                // Split the employeeName to get first and last name
+                const [f_name, l_name] = shift.employeeName.split(' ');
+    
+                // Assign employee details to the corresponding cell
+                loadedEmployeeAssignments[cellId] = { f_name, l_name };
+    
+                // Assign shift timing to the corresponding cell
+                loadedShiftAssignments[cellId] = `${shift.startTime} - ${shift.endTime}`;
+    
+                console.log(`Mapped cell ${cellId}:`, loadedEmployeeAssignments[cellId], loadedShiftAssignments[cellId]);
+            }
+        });
+    
+        // Log the final assignments to ensure they are correctly formatted
+        console.log("Employee Assignments mapped:", loadedEmployeeAssignments);
+        console.log("Shift Assignments mapped:", loadedShiftAssignments);
+    
+        // Update state with mapped data
+        setEmployeeAssignments(loadedEmployeeAssignments);
+        setShiftAssignments(loadedShiftAssignments);
+    };
 
     // Function to handle the selection of a role filter option
     const handleSelectTitle = (selectedTitle) => {
@@ -92,9 +220,9 @@ const SchedulePage = () => {
     // Function to handle drop events for assigning shifts
     const handleDrop = (gesture, employee, type) => {
         const { moveX, moveY } = gesture;
-        console.log("Drop gesture:", { moveX, moveY });
+        //console.log("Drop gesture:", { moveX, moveY });
         if (scheduleGridRef.current && moveX && moveY) {
-            console.log("Calling handleDrop with:", moveX, moveY, employee, type);
+            //console.log("Calling handleDrop with:", moveX, moveY, employee, type);
             scheduleGridRef.current.handleDrop(moveX, moveY, employee, type);
         }
     };
@@ -126,6 +254,55 @@ const SchedulePage = () => {
 
     // Color calculation for total hours display based on current values
     const totalHoursColor = getTotalHoursColor(totalHours, maxHours);
+
+    const handleCreateSchedule = async () => {
+        console.log("Starting schedule creation...");
+        if (!businessId) {
+            console.error("Business ID is missing");
+            return;
+        }
+    
+        try {
+            //const weekStartDate = currentDate.toISOString().slice(0, 10);
+            const weekStartDate = getStartOfWeek(currentDate);
+    
+            // Create the weekly schedule
+            const createdSchedule = await createWeeklyScheduleAPI(businessId, weekStartDate);
+    
+            // Loop through grid cells and save each shift
+            for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
+                const employee = employeeAssignments[cellId];
+                if (employee) {
+                    const [startTime, endTime] = shiftTime.split(' - ');
+                    
+                    // Extract rowIndex and colIndex from cellId to get the date for this shift
+                    const [, colIndex] = cellId.split('-');
+                    
+                    // Calculate the date for the shift based on the week start date and column index (day of the week)
+                    const shiftDate = new Date(weekStartDate);
+                    shiftDate.setDate(shiftDate.getDate() + parseInt(colIndex));
+                    const formattedDate = shiftDate.toISOString().slice(0, 10); // Format to 'YYYY-MM-DD'
+    
+                    console.log("Creating shift for:", employee.emp_id, formattedDate, startTime.trim(), endTime.trim());  // Log before calling API
+
+                    // Save shift for this employee on the specific date and time
+                    await createShiftAPI(
+                        employee.emp_id,
+                        createdSchedule.scheduleId,
+                        formattedDate,
+                        startTime.trim(),
+                        endTime.trim()
+                    );
+                }
+            }
+    
+            alert("Schedule and shifts created successfully!");
+    
+        } catch (error) {
+            console.error("Error creating schedule:", error);
+            alert("Failed to create schedule. Please try again.");
+        }
+    };
 
     return (
         <ScrollView 
@@ -239,8 +416,8 @@ const SchedulePage = () => {
                                         onBlur={handleRowCountBlur}
                                     />
                                 </View>
-                                <TouchableOpacity style={styles.createBtn} > {/*onPress={handleAddShift}*/}
-                                    <Text style = {{ color: '#fff' }}>Create Schedule</Text>
+                                <TouchableOpacity style={styles.createBtn} onPress={handleCreateSchedule}>
+                                    <Text style = {{ color: '#fff' }}>{buttonText}</Text>
                                 </TouchableOpacity>
                             </View>  
                         </View>

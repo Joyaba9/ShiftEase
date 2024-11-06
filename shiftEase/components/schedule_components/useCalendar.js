@@ -55,3 +55,21 @@ export const getDayView = (currentDate) => {
     // Return an array with only the current date for the 'day' view
     return [currentDate];
 };
+
+// export const getStartOfWeek = (date) => {
+//     const currentDate = new Date(date);
+//     const day = currentDate.getDay(); // Get the day of the week (0 = Sunday)
+//     const diff = currentDate.getDate() - day; // Adjust to the previous Sunday
+//     const startOfWeek = new Date(currentDate.setDate(diff));
+//     return startOfWeek.toISOString().slice(0, 10); // Format to YYYY-MM-DD
+// };
+export const getStartOfWeek = (currentDate) => {
+    const startOfWeek = new Date(currentDate);
+    const day = startOfWeek.getDay(); // 0 (Sunday) to 6 (Saturday)
+    startOfWeek.setDate(currentDate.getDate() - day);
+    // Set the time to midnight for consistency
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    
+    return startOfWeek.toISOString().slice(0, 10);  // Format as 'YYYY-MM-DD' for API usage
+};

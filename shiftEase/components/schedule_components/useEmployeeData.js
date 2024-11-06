@@ -196,7 +196,9 @@ const useEmployeeData = (businessId) => {
       removeAssignment,
       onDrop,         
       onRemove,
-      setShiftTimes
+      setShiftTimes,
+      setEmployeeAssignments,
+      setShiftAssignments
     };
   };
   

@@ -70,22 +70,40 @@ export async function getAvailableEmployees(businessId, day, date) {
 export async function createWeeklySchedule(businessId, weekStartDate) {
     const client = await getClient();
     await client.connect();
+    console.log("Week Start Date: ", weekStartDate);
 
     // Convert week start date to a Date object
-    const startDate = new Date(weekStartDate);
+    const startDate = new Date(`${weekStartDate}T00:00:00.000Z`);
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 6);  // End of the week (Saturday)
+    endDate.setUTCDate(endDate.getUTCDate() + 6);  // End of the week (Saturday)
+
+    console.log("Creating weekly schedule with:", {
+        businessId,
+        startDate: startDate.toISOString().slice(0, 10),
+        endDate: endDate.toISOString().slice(0, 10)
+    });
 
     // Begin transaction
     await client.query('BEGIN');
     try {
+        const scheduleTitle = `Weekly Schedule ${startDate.toISOString().slice(0, 10)}`;
+        const scheduleDescription = `Weekly schedule from ${startDate.toISOString().slice(0, 10)} to ${endDate.toISOString().slice(0, 10)}`;
+
         // Insert new schedule into the schedules table
         const scheduleInsertQuery = `
             INSERT INTO schedules (business_id, title, description, date, start_time, end_time)
             VALUES ($1, $2, $3, $4, $5, $6) RETURNING schedule_id;
         `;
-        const scheduleTitle = `Weekly Schedule ${weekStartDate}`;
-        const scheduleDescription = `Weekly schedule from ${weekStartDate} to ${endDate.toISOString().slice(0, 10)}`;
+        
+        console.log("Executing query:", scheduleInsertQuery);
+        console.log("With values:", [
+            businessId,
+            scheduleTitle,
+            scheduleDescription,
+            startDate.toISOString().slice(0, 10),  // Explicitly using start date here
+            '00:00:00',
+            '23:59:59'
+        ]);
 
         // Insert the schedule and get the schedule ID
         const scheduleResult = await client.query(scheduleInsertQuery, [
@@ -101,7 +119,13 @@ export async function createWeeklySchedule(businessId, weekStartDate) {
         // Commit transaction
         await client.query('COMMIT');
 
-        return { scheduleId, title: scheduleTitle, description: scheduleDescription, weekStartDate, weekEndDate: endDate.toISOString().slice(0, 10) };
+        return { 
+            scheduleId, 
+            title: scheduleTitle, 
+            description: scheduleDescription, 
+            weekStartDate: startDate.toISOString().slice(0, 10),
+            weekEndDate: endDate.toISOString().slice(0, 10) 
+        };
 
     } catch (err) {
         // Rollback transaction in case of error
@@ -131,16 +155,38 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
     const client = await getClient();
     await client.connect();
 
+    // Debug: Log parameters to verify date is correct
+    console.log("Creating shift with parameters:", {
+        employeeId,
+        scheduleId,
+        date,
+        startTime,
+        endTime
+    });
+
     // Begin transaction
     await client.query('BEGIN');
     try {
         // Insert new shift into the shifts table
         const shiftInsertQuery = `
-            INSERT INTO shifts (schedule_id, emp_id, title, description, start_time, end_time, shift_status, is_open)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING shift_id;
+            INSERT INTO shifts (schedule_id, emp_id, title, description, start_time, end_time, shift_status, is_open, date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING shift_id;
         `;
         const shiftTitle = `Shift for Employee ${employeeId} on ${date}`;
         const shiftDescription = `Shift on ${date} from ${startTime} to ${endTime} for Employee ${employeeId}`;
+
+        console.log("Executing query:", shiftInsertQuery);
+        console.log("With values:", [
+            scheduleId,
+            employeeId,
+            shiftTitle,
+            shiftDescription,
+            startTime,
+            endTime,
+            'assigned',
+            false,
+            date
+        ]);
 
         // Execute shift insertion
         const shiftResult = await client.query(shiftInsertQuery, [
@@ -151,22 +197,24 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             startTime,
             endTime,
             'assigned',  // Default status
-            false        // Default: not open
+            false,        // Default: not open
+            date
         ]);
 
         // Commit transaction
         await client.query('COMMIT');
+        console.log("Shift created with ID:", shiftResult.rows[0].shift_id);
 
         return {
             shiftId: shiftResult.rows[0].shift_id,
             scheduleId,
             employeeId,
-            date,
             startTime,
             endTime,
             title: shiftTitle,
             description: shiftDescription,
-            status: 'assigned'
+            status: 'assigned',
+            date,
         };
 
     } catch (err) {
@@ -205,7 +253,7 @@ export async function getShiftsByScheduleId(scheduleId) {
                 s.end_time,
                 s.shift_status,
                 s.is_open,
-                TO_CHAR(sc.date, 'YYYY-MM-DD') AS schedule_date
+                s.date AS shift_date
             FROM
                 shifts s
             JOIN
@@ -224,7 +272,7 @@ export async function getShiftsByScheduleId(scheduleId) {
             shiftId: row.shift_id,
             employeeId: row.emp_id,
             employeeName: `${row.f_name} ${row.l_name}`,
-            date: row.schedule_date,  // Date in 'YYYY-MM-DD' format
+            date: row.shift_date,  // Date in 'YYYY-MM-DD' format
             startTime: row.start_time,
             endTime: row.end_time,
             status: row.shift_status,
@@ -233,6 +281,32 @@ export async function getShiftsByScheduleId(scheduleId) {
 
     } catch (err) {
         console.error('Error fetching shifts:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+export async function getScheduleByBusinessIdAndDate(businessId, weekStartDate) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        const query =` 
+            SELECT schedule_id, title, description, date
+            FROM schedules
+            WHERE business_id = $1 AND date = $2;`
+        ;
+        const result = await client.query(query, [businessId, weekStartDate]);
+
+        if (result.rows.length > 0) {
+            return result.rows[0];  // Return the schedule if it exists
+        } else {
+            return null;  // No schedule found
+        }
+
+    } catch (err) {
+        console.error('Error fetching schedule:', err);
         throw err;
     } finally {
         await client.end();
