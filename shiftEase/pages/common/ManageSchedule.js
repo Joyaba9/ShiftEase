@@ -5,7 +5,7 @@ import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
 import { createWeeklyScheduleAPI, createShiftAPI } from '../../../backend/api/scheduleApi';
-import { getTotalHoursColor } from '../../components/schedule_components/scheduleUtils';
+import { getTotalHoursColor, formatTime } from '../../components/schedule_components/scheduleUtils';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
 import EmployeeList from '../../components/schedule_components/EmployeeList';
@@ -210,7 +210,7 @@ const SchedulePage = () => {
                 loadedEmployeeAssignments[cellId] = { f_name, l_name };
     
                 // Assign shift timing to the corresponding cell
-                loadedShiftAssignments[cellId] = `${shift.startTime} - ${shift.endTime}`;
+                loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
     
                 console.log(`Mapped cell ${cellId}:`, loadedEmployeeAssignments[cellId], loadedShiftAssignments[cellId]);
             }
@@ -227,12 +227,6 @@ const SchedulePage = () => {
         setEmployeeAssignments(normalizedEmployeeAssignments);
         setShiftAssignments(normalizedShiftAssignments);
     };
-
-    // useEffect(() => {
-    //     if (Object.keys(employeeAssignments).length && Object.keys(shiftAssignments).length) {
-    //         setRowCount(DEFAULT_ROW_COUNT);  // Force a re-render after assignments load
-    //     }
-    // }, [employeeAssignments, shiftAssignments]);
 
     // Function to handle the selection of a role filter option
     const handleSelectTitle = (selectedTitle) => {
