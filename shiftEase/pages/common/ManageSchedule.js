@@ -45,6 +45,7 @@ const SchedulePage = () => {
     const dates = useMemo(() => {
         return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
     }, [view, currentDate]);
+    const previousDatesRef = useRef(dates);
 
     // Default number of rows in the schedule grid
     const DEFAULT_ROW_COUNT = 8;
@@ -100,16 +101,38 @@ const SchedulePage = () => {
         setShiftAssignments
     } = useEmployeeData(businessId);
 
+    const normalizeAssignments = (assignments) => {
+        const rowIndices = Object.keys(assignments).map(key => parseInt(key.split('-')[0], 10));
+        const minRow = Math.min(...rowIndices);
+    
+        if (minRow > 0) {
+            const normalized = {};
+            Object.keys(assignments).forEach((key) => {
+                const [row, col] = key.split('-').map(Number);
+                const normalizedRow = row - minRow;
+                const newKey = `${normalizedRow}-${col}`;
+                normalized[newKey] = assignments[key];
+            });
+            return normalized;
+        }
+        return assignments; // Return as-is if it already starts from row 0
+    };
+
     // Load the existing schedule and shifts when the component mounts
     useEffect(() => {
         const loadSchedule = async () => {
             setIsLoading(true);
+
             try {
                 console.log("Trying to loadSchedule");
+
+                // Get the start of the week based on currentDate
                 const weekStartDate = getStartOfWeek(currentDate);
                 console.log(currentDate);
+
                 console.log("Business ID:", businessId, "Week Start Date:", weekStartDate);
     
+                // Fetch schedule and shifts from the API
                 const existingSchedule = await fetchScheduleAPI(businessId, weekStartDate);
                 console.log("Existing Schedule: ", existingSchedule);
     
@@ -121,6 +144,9 @@ const SchedulePage = () => {
                     console.log("Loaded Shifts Data: ", existingSchedule.shifts);
 
                     setButtonText("Update Schedule");
+
+                    // Wait until mapping is complete before setting isLoading to false
+                    mapShiftsToAssignments(existingSchedule.shifts);
                 } else {
                     setScheduleId(null);
                     setShiftsData([]);  // Clear shiftsData to allow new schedule creation
@@ -147,10 +173,18 @@ const SchedulePage = () => {
         if (shiftsData.length > 0 && dates.length > 0) {
             setDataReady(false);
             mapShiftsToAssignments(shiftsData);
+            
         } else {
             setEmployeeAssignments({});
             setShiftAssignments({});
             setDataReady(true);
+        }
+    }, [shiftsData]);
+
+    //Map shifts to assignments when shiftsData changes
+    useEffect(() => {
+        if (shiftsData.length > 0 && dates.length > 0) {
+            mapShiftsToAssignments(shiftsData);
         }
     }, [shiftsData]);
 
@@ -161,9 +195,11 @@ const SchedulePage = () => {
         // Iterate over each shift object in `existingSchedule.shifts`
         shifts.forEach((shift) => {
             // Find the column index based on the date
-            const colIndex = dates.findIndex(date => date.toISOString().split('T')[0] === shift.date);
+            const colIndex = dates.findIndex(date => date.toISOString().split('T')[0] === shift.date.split('T')[0]);
     
             if (colIndex !== -1) {
+
+                console.log("Comparing shift date:", shift.date.split('T')[0], "with dates array:", dates.map(date => date.toISOString().split('T')[0]));
                 // Generate the cell ID based on employeeId and column index
                 const cellId = `${shift.employeeId}-${colIndex}`;
     
@@ -179,15 +215,24 @@ const SchedulePage = () => {
                 console.log(`Mapped cell ${cellId}:`, loadedEmployeeAssignments[cellId], loadedShiftAssignments[cellId]);
             }
         });
+
+        // Normalize the assignments to start from row 0
+        const normalizedEmployeeAssignments = normalizeAssignments(loadedEmployeeAssignments);
+        const normalizedShiftAssignments = normalizeAssignments(loadedShiftAssignments);
     
         // Log the final assignments to ensure they are correctly formatted
-        console.log("Employee Assignments mapped:", loadedEmployeeAssignments);
-        console.log("Shift Assignments mapped:", loadedShiftAssignments);
-    
-        // Update state with mapped data
-        setEmployeeAssignments(loadedEmployeeAssignments);
-        setShiftAssignments(loadedShiftAssignments);
+        console.log("Employee Assignments mapped (normalized):", normalizedEmployeeAssignments);
+        console.log("Shift Assignments mapped (normalized):", normalizedShiftAssignments);
+
+        setEmployeeAssignments(normalizedEmployeeAssignments);
+        setShiftAssignments(normalizedShiftAssignments);
     };
+
+    // useEffect(() => {
+    //     if (Object.keys(employeeAssignments).length && Object.keys(shiftAssignments).length) {
+    //         setRowCount(DEFAULT_ROW_COUNT);  // Force a re-render after assignments load
+    //     }
+    // }, [employeeAssignments, shiftAssignments]);
 
     // Function to handle the selection of a role filter option
     const handleSelectTitle = (selectedTitle) => {
@@ -381,16 +426,20 @@ const SchedulePage = () => {
                                         </TouchableOpacity>
                                     ))}
                                 </View>
-
-                                <ScheduleGrid
-                                    ref={scheduleGridRef}
-                                    dates={dates}
-                                    employeeAssignments={employeeAssignments}
-                                    shiftAssignments={shiftAssignments}
-                                    rowCount = {rowCount}
-                                    onDrop={onDrop}
-                                    onRemove={onRemove}
-                                />
+                                
+                                {/* {isLoading ? (
+                                    <p>Loading schedule...</p>
+                                ) : ( */}
+                                    <ScheduleGrid
+                                        ref={scheduleGridRef}
+                                        dates={dates}
+                                        employeeAssignments={employeeAssignments}
+                                        shiftAssignments={shiftAssignments}
+                                        rowCount = {rowCount}
+                                        onDrop={onDrop}
+                                        onRemove={onRemove}
+                                    />
+                                {/* )}    */}
                             </View>
                         </View>
                         

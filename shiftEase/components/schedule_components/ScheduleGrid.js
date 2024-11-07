@@ -30,6 +30,7 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
     const measureCell = (cellId, ref) => {
         if (ref) {
             cellRefs.current[cellId] = ref;
+            console.log(`Cell reference set for ${cellId}:`, ref);
         }
     };
 
@@ -57,7 +58,7 @@ const ScheduleGrid = forwardRef(({dates, employeeAssignments, shiftAssignments, 
                         // Assigned shift time (if any) for the cell
                         const shiftTime = shiftAssignments[cellId];
 
-                        console.log(employee);
+                        console.log(`Rendering cell ${cellId}:`, { employee, shiftTime });
 
                         return (
                             <TouchableOpacity
