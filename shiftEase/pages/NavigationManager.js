@@ -19,7 +19,7 @@ import SettingsPage from './business/SettingsPage.js';
 import SchedulePage from './common/ManageSchedule.js';
 import ManageBusinessPage from './business/ManageBusinessPage.js';
 import EditRolesPage from './business/EditRolesPage.js';
-import ManagePTORequestPage from './common/ManagePTORequestPage.js';
+//import ManagePTORequestPage from './common/ManagePTORequestPage.js';
 import PTORequestPage from './common/PTORequestPage.js';
 
 
@@ -87,7 +87,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Messages" component={MessagesPage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageSchedule" component={SchedulePage} options={{ headerShown: false }}/>
             <Stack.Screen name="EditRoles" component={EditRolesPage} options={{ headerShown: false }}/>
-            <Stack.Screen name="ManagePTORequest" component={ManagePTORequestPage} options={{ headerShown: false }}/>
+            {/* <Stack.Screen name="ManagePTORequest" component={ManagePTORequestPage} options={{ headerShown: false }}/> */}
             <Stack.Screen name="PTORequest" component={PTORequestPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
