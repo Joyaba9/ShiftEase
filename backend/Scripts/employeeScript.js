@@ -34,6 +34,35 @@ export async function fetchEmployees(businessId) {
     }
 }
 
+export async function fetchEmployeesWithRoles(businessId) {
+    const client = await getClient(); // Initialize the database client
+    console.log('Database Client Obtained');
+
+    await client.connect(); // Establish connection with the database
+    console.log('Connected to Database');
+
+    // SQL query to fetch employees along with their role names
+    const query = `
+        SELECT e.*, r.role_name 
+        FROM employees e
+        JOIN roles r ON e.role_id = r.role_id
+        WHERE e.business_id = $1
+    `;
+
+    try {
+        const res = await client.query(query, [businessId]); // Execute query
+        console.log('Query Executed');
+        
+        return res.rows; // Return list of employees with role names
+    } catch (err) {
+        console.error('Error executing query:', err); // Log any errors
+        throw err; // Rethrow for higher-level error handling
+    } finally {
+        await client.end(); // Ensure database connection is closed
+        console.log('Database connection closed');
+    }
+}
+
 //#endregion
 
 //#region Update Employee

@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ router.get('/fetchAll/:businessId', async (req, res) => {
 
     try {
         // Call fetchEmployees to retrieve a list of employees for the given business ID
-        const employees = await fetchEmployees(businessId);
+        const employees = await fetchEmployeesWithRoles(businessId);
         
         // Return the list of employees in JSON format on success
         res.status(200).json(employees);

@@ -15,6 +15,9 @@ import LandingPage from './common/LandingPage.js';
 import WelcomePageMobile from './common/WelcomePageMobile.js';
 import EmployeePage from './employee/EmployeePage.js';
 import MessagesPage from './common/MessagesPage.js';
+import SchedulePage from './common/ManageSchedule.js';
+import ManageBusinessPage from './business/ManageBusinessPage.js';
+import EditRolesPage from './business/EditRolesPage.js';
 
 
 const Stack = createStackNavigator();
@@ -74,9 +77,12 @@ const NavigationManager = () => {
             <Stack.Screen name="Account" component={AccountPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
+            <Stack.Screen name="ManageBusiness" component={ManageBusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="AddEmp" component={AddEmpModal} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageEmployee" component={ManageEmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="Messages" component={MessagesPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="ManageSchedule" component={SchedulePage} options={{ headerShown: false }}/>
+            <Stack.Screen name="EditRoles" component={EditRolesPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>
