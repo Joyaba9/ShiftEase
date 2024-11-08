@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -14,47 +14,88 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
     const [email, setEmail] = useState('');
     const [ssn, setSSN] = useState('');
     const [role, setRole] = useState('Select Role');
-    const roles = ["Manager", "Employee"];
+    const [roles, setRoles] = useState([]); // Store roles fetched from the backend
+    const [selectedRoleId, setSelectedRoleId] = useState(null); // Store selected role ID
+
 
     const handleAddEmp = async () => {
-        if (!fName || !lName || !dob || !email || !ssn || role === "Select Role") {
-          alert('Please make sure all fields are filled in.');
-          return;
+        if (!fName || !lName || !dob || !email || !ssn || !selectedRoleId) {
+            alert('Please make sure all fields are filled in.');
+            return;
         }
-    
+
         try {
-          const response = await fetch('http://localhost:5050/api/employee/add', {
+            console.log('Payload being sent:', {
+                role: selectedRoleId,
+                fName,
+                lName,
+                email,
+                ssn,
+                dob,
+                businessId,
+            });
+        
+            const response = await fetch('http://localhost:5050/api/employee/add', {
                 method: 'POST',
-                    headers: {
-                    'Content-Type': 'application/json'
+                headers: {
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    role,
+                    role: selectedRoleId, // This should be the role ID
                     fName,
                     lName,
                     email,
                     ssn,
                     dob,
-                    businessId
-                })
+                    businessId,
+                }),
             });
-    
-            if (response.status === 200) {
+        
+            const data = await response.json();
+        
+            if (response.ok) {
                 alert('Added employee successfully');
-                setFName(''); // Clear the first name field
+                // Clear input fields
+                setFName('');
                 setLName('');
                 setDOB('');
                 setEmail('');
                 setSSN('');
-                setRole('Select Role'); // Reset role selection
+                setRole('Select Role');
+                setSelectedRoleId(null); 
             } else {
-                alert('Invalid credentials');
+                console.error('Failed to add employee:', data);
+                alert(data.message || 'Failed to add employee');
             }
         } catch (err) {
             console.error('Error during adding emp:', err);
-            alert('Add employee error');
+            alert('Error adding employee');
         }
     };
+
+    // Fetch roles from the backend
+    const fetchRoles = async () => {
+        try {
+        const response = await fetch(`http://localhost:5050/api/role/getRoles?businessId=${businessId}&roleType=all`);
+        const data = await response.json();
+    
+        if (response.ok && data.roles) {
+            setRoles(data.roles); // Set roles in state
+        } else {
+            alert('Failed to fetch roles.');
+        }
+        } catch (error) {
+        console.error('Error fetching roles:', error);
+        alert('Error fetching roles.');
+        }
+    };
+    
+    // Call fetchRoles when the modal is opened
+    useEffect(() => {
+        if (addEmpVisible) {
+        fetchRoles();
+        }
+    }, [addEmpVisible]);
     
     const handleSelectRole = (selectedRole) => {
         setRole(selectedRole);
@@ -97,140 +138,137 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
             >
             {isMobile ? (
             <KeyboardAvoidingView
-                style={styles.keyboardAvoidingView}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={20} // Adjust this value if needed
+            style={styles.keyboardAvoidingView}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={20}
             >
-                
                 <View style={styles.mobileAddEmpContainer}>
-                    <ScrollView contentContainerStyle={styles.scrollContainer}>
-                        <Image 
-                            style={styles.mobileUserImage} 
-                            source={require('../../assets/images/add_employee_icon.png')} 
-                            resizeMode="contain" 
-                        />
-                                
-                        <Text style={styles.mobileAddEmpHeader}>Add Employee</Text>
-                        <View style={styles.addEmpHDivider} />
-
-                                
-                        {/* Input fields */}
-                            <View style={styles.mobileAddEmpRowContainer}>
-                                <View style={styles.addEmpInputContainer}>
-                                    {/* First Name and Last Name */}
-                                     <View style={styles.mobileInputRow}>
-                                        <View style={styles.mobileInputGroup}>
-                                            <Text style={styles.label}>First Name</Text>
-                                                <TextInput 
-                                                    style={styles.mobileInput} 
-                                                    placeholder="Ex: 'John'" 
-                                                    placeholderTextColor= 'grey'
-                                                    value={fName} 
-                                                    onChangeText={setFName} 
-                                                />
-                                        </View>
-
-                                        <View style={styles.mobileInputGroup}>
-                                            <Text style={styles.label}>Last Name</Text>
-                                            <TextInput 
-                                                style={styles.mobileInput} 
-                                                placeholder="Ex: 'Smith'" 
-                                                placeholderTextColor= 'grey'
-                                                value={lName} 
-                                                onChangeText={setLName} 
-                                            />
-                                        </View>
-                                    </View>
-
-                                    {/* Date of Birth and Email */}
-                                    <View style={styles.mobileInputRow}>
-                                        <View style={styles.mobileInputGroup}>
-                                            <Text style={styles.label}>Date of Birth</Text>
-                                            <TextInput 
-                                                style={styles.mobileInput} 
-                                                placeholder="yyyy-mm-dd" 
-                                                placeholderTextColor= 'grey'
-                                                value={dob} 
-                                                onChangeText={setDOB} 
-                                            />
-                                        </View>
-
-                                        <View style={styles.mobileInputGroup}>
-                                            <Text style={styles.label}>Email</Text>
-                                            <TextInput 
-                                                style={styles.mobileInput} 
-                                                placeholder="example@email.com" 
-                                                placeholderTextColor= 'grey'
-                                                keyboardType="email-address" 
-                                                value={email} 
-                                                onChangeText={setEmail} 
-                                            />
-                                        </View>
-                                    </View>
-
-                                    {/* Role and SSN */}
-                                    <View style={styles.mobileInputRow}>
-                                        <View style={styles.mobileInputGroup}>
-                                            <Text style={styles.label}>Role</Text>
-                                            <TouchableOpacity 
-                                                style={styles.mobileDropdownButton} 
-                                                onPress={() => setIsDropdownVisible((prev) => !prev)}
-                                            >
-                                                <Text style={styles.dropdownText}>{role}</Text>
-                                            </TouchableOpacity>
-
-                                            {isDropdownVisible && (
-                                                <View style={styles.dropdownContainer}>
-                                                    <FlatList
-                                                        data={roles}
-                                                        keyExtractor={(item) => item}
-                                                        renderItem={({ item }) => (
-                                                            <TouchableOpacity 
-                                                                style={styles.dropdownItem} 
-                                                                onPress={() => handleSelectRole(item)}
-                                                            >
-                                                                <Text style={styles.dropdownItemText}>{item}</Text>
-                                                            </TouchableOpacity>
-                                                        )}
-                                                    />
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        <View style={styles.mobileInputGroup}>
-                                            <Text style={styles.label}>Last Four of SSN</Text>
-                                            <TextInput 
-                                                style={styles.mobileInput} 
-                                                placeholder="Enter SSN" 
-                                                placeholderTextColor= 'grey'
-                                                value={ssn} 
-                                                onChangeText={setSSN} 
-                                            />
-                                        </View>
-                                    </View>
-                                </View>
-
-                                {/* Buttons */}
-                                <View style={styles.mobileButtonRowContainer}>
-                                    <TouchableOpacity 
-                                        style={styles.mobileBubbleButton} 
-                                        onPress={handleCancel}
-                                    >
-                                        <Text style={styles.buttonText}>Cancel</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity 
-                                        style={styles.mobileBubbleButton} 
-                                        onPress={handleAddEmp}
-                                    >
-                                        <Text style={styles.buttonText}>Add User</Text>
-                                    </TouchableOpacity>
-                                </View>
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    <Image
+                    style={styles.mobileUserImage}
+                    source={require('../../assets/images/add_employee_icon.png')}
+                    resizeMode="contain"
+                    />
+            
+                    <Text style={styles.mobileAddEmpHeader}>Add Employee</Text>
+                    <View style={styles.addEmpHDivider} />
+            
+                    {/* Input fields */}
+                    <View style={styles.mobileAddEmpRowContainer}>
+                    <View style={styles.addEmpInputContainer}>
+                        {/* First Name and Last Name */}
+                        <View style={styles.mobileInputRow}>
+                        <View style={styles.mobileInputGroup}>
+                            <Text style={styles.label}>First Name</Text>
+                            <TextInput
+                            style={styles.mobileInput}
+                            placeholder="Ex: 'John'"
+                            placeholderTextColor="grey"
+                            value={fName}
+                            onChangeText={setFName}
+                            />
+                        </View>
+            
+                        <View style={styles.mobileInputGroup}>
+                            <Text style={styles.label}>Last Name</Text>
+                            <TextInput
+                            style={styles.mobileInput}
+                            placeholder="Ex: 'Smith'"
+                            placeholderTextColor="grey"
+                            value={lName}
+                            onChangeText={setLName}
+                            />
+                        </View>
+                        </View>
+            
+                        {/* Date of Birth and Email */}
+                        <View style={styles.mobileInputRow}>
+                        <View style={styles.mobileInputGroup}>
+                            <Text style={styles.label}>Date of Birth</Text>
+                            <TextInput
+                            style={styles.mobileInput}
+                            placeholder="yyyy-mm-dd"
+                            placeholderTextColor="grey"
+                            value={dob}
+                            onChangeText={setDOB}
+                            />
+                        </View>
+            
+                        <View style={styles.mobileInputGroup}>
+                            <Text style={styles.label}>Email</Text>
+                            <TextInput
+                            style={styles.mobileInput}
+                            placeholder="example@email.com"
+                            placeholderTextColor="grey"
+                            keyboardType="email-address"
+                            value={email}
+                            onChangeText={setEmail}
+                            />
+                        </View>
+                        </View>
+            
+                        {/* Role Dropdown */}
+                        <View style={styles.mobileInputGroup}>
+                        <Text style={styles.label}>Role</Text>
+                        <TouchableOpacity
+                            style={styles.mobileDropdownButton}
+                            onPress={() => setIsDropdownVisible((prev) => !prev)}
+                        >
+                            <Text style={styles.dropdownText}>
+                                {role !== 'Select Role' ? role : 'Select Role'}
+                            </Text>
+                        </TouchableOpacity>
+            
+                        {isDropdownVisible && (
+                            <View style={styles.dropdownContainer}>
+                            <FlatList
+                                data={roles}
+                                keyExtractor={(item) => item.role_id.toString()}
+                                renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.dropdownItem}
+                                    onPress={() => {
+                                    setRole(item.role_name);
+                                    setSelectedRoleId(item.role_id);
+                                    setIsDropdownVisible(false);
+                                    }}
+                                >
+                                    <Text style={styles.dropdownItemText}>{item.role_name}</Text>
+                                </TouchableOpacity>
+                                )}
+                            />
                             </View>
-                           
-                    </ScrollView>
-                </View> 
+                        )}
+                        </View>
+            
+                        {/* SSN Input */}
+                        <View style={styles.mobileInputGroup}>
+                        <Text style={styles.label}>Last Four of SSN</Text>
+                        <TextInput
+                            style={styles.mobileInput}
+                            placeholder="Enter SSN"
+                            placeholderTextColor="grey"
+                            value={ssn}
+                            onChangeText={setSSN}
+                        />
+                        </View>
+                    </View>
+            
+                    {/* Buttons */}
+                    <View style={styles.mobileButtonRowContainer}>
+                        <TouchableOpacity style={styles.mobileBubbleButton} onPress={handleCancel}>
+                        <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+            
+                        <TouchableOpacity style={styles.mobileBubbleButton} onPress={handleAddEmp}>
+                        <Text style={styles.buttonText}>Add User</Text>
+                        </TouchableOpacity>
+                    </View>
+                    </View>
+                </ScrollView>
+                </View>
             </KeyboardAvoidingView>
+            
         ) : (
             <View style={styles.addEmpGray}>
                 <View style={styles.addEmpContainer}> 
@@ -299,10 +337,18 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                                         <View style={styles.dropdownContainer}>
                                             <FlatList
                                                 data={roles}
-                                                keyExtractor={(item) => item}
+                                                keyExtractor={(item) => item.role_id.toString()}
                                                 renderItem={({ item }) => (
-                                                    <TouchableOpacity style={styles.dropdownItem} onPress={() => handleSelectRole(item)}>
-                                                        <Text style={styles.dropdownItemText}>{item}</Text>
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownItem}
+                                                        onPress={() => {
+                                                            console.log('Selected role ID:', item.role_id); // Log the role ID for debugging
+                                                            setRole(item.role_name); 
+                                                            setSelectedRoleId(item.role_id); 
+                                                            setIsDropdownVisible(false); 
+                                                        }}
+                                                    >
+                                                        <Text style={styles.dropdownItemText}>{item.role_name}</Text>
                                                     </TouchableOpacity>
                                                 )}
                                             />
@@ -339,9 +385,9 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
         
        {/* Confirmation Modal */}
         <Modal
-          transparent={true}
-          visible={isModalVisible} // Show the confirmation modal
-          onRequestClose={() => setIsModalVisible(false)}
+            transparent={true}
+            visible={isModalVisible} // Show the confirmation modal
+            onRequestClose={() => setIsModalVisible(false)}
         >
             <View style={!isMobile ? styles.modalOverlay : styles.mobileModalOverlay}>
                 <View style={styles.modalContainer}>

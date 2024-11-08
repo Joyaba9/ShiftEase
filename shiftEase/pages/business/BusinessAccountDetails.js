@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import BusinessHours from './BusinessHours';
 import { useSelector } from 'react-redux';
-import { getBusinessDetails, saveBusinessLocation, fetchBusinessDetailsAndLocation } from '../../../backend/api/api';
+import { saveBusinessLocation, fetchBusinessDetailsAndLocation } from '../../../backend/api/api';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +21,9 @@ const BusinessAccountDetails = () => {
     const [businessName, setBusinessName] = useState('');
     const [businessEmail, setBusinessEmail] = useState('');
     const [businessAddress, setBusinessAddress] = useState('');
+    const [businessCity, setBusinessCity] = useState('');
+    const [businessState, setBusinessState] = useState('');
+    const [businessZipcode, setBusinessZipcode] = useState('');
     const [businessPhoneNum, setBusinessPhoneNum] = useState('');
 
     // State variable to store business hours for each day of the week
@@ -54,10 +57,12 @@ const BusinessAccountDetails = () => {
     
                     // Update state with fetched business location details (if any) 
                     if (businessLocation) {
-                        // Construct the full address from individual components
-                        const fullAddress = `${businessLocation.street_address}, ${businessLocation.city}, ${businessLocation.state} ${businessLocation.zipcode}`;
-
-                        setBusinessAddress(fullAddress);
+                        
+                        //setBusinessAddress(fullAddress);
+                        setBusinessAddress(businessLocation.street_address);
+                        setBusinessCity(businessLocation.city);
+                        setBusinessState(businessLocation.state);
+                        setBusinessZipcode(businessLocation.zipcode);
                         setBusinessPhoneNum(businessLocation.phone_number);
     
                         const hours = businessLocation.business_hours || {}; // Default to empty object if null
@@ -89,27 +94,6 @@ const BusinessAccountDetails = () => {
         setIsEditing(!isEditing); // Toggle the value of isEditing
     };
 
-    // Function to parse the business address into street, city, state, and zip code
-    function splitAddress(businessAddress) {
-        // Ensure the address is in a correct format, splitting by commas
-        const [streetAddress, city, stateZip] = businessAddress.split(',');
-    
-        // Trim extra spaces from streetAddress and city
-        const trimmedStreetAddress = streetAddress.trim();
-        const trimmedCity = city.trim();
-    
-        // Split the state and zip code, assuming they are separated by spaces
-        const [state, zipcode] = stateZip.trim().split(/\s+/);
-        
-        // Return the parsed values
-        return {
-            streetAddress: trimmedStreetAddress,
-            city: trimmedCity,
-            state: state,
-            zipcode: zipcode
-        };
-    }
-
     // Function to save the business location
     async function handleSaveProfile() {
         // Basic validation: Check if required fields are provided
@@ -134,16 +118,14 @@ const BusinessAccountDetails = () => {
         }
 
         try {
-            // Parse the address into individual components
-            const parsedAddress = splitAddress(businessAddress);
 
             // Create an object to send to the backend with all the required business data
             const businessLocationData = {
                 business_id: businessId,
-                street_address: parsedAddress.streetAddress,
-                city: parsedAddress.city,
-                state: parsedAddress.state,
-                zipcode: parsedAddress.zipcode,
+                street_address: businessAddress,
+                city: businessCity,
+                state: businessState,
+                zipcode: businessZipcode,
                 phone_number: businessPhoneNum,
                 Monday: businessHours.Monday,
                 Tuesday: businessHours.Tuesday,
@@ -172,6 +154,28 @@ const BusinessAccountDetails = () => {
             console.error("Error saving business profile:", error);
             alert("Failed to save business profile");
         }
+    };
+
+    // Function to format the phone number with dashes
+    const formatPhoneNumber = (phoneNumber) => {
+        // Remove all non-numeric characters
+        const cleaned = ('' + phoneNumber).replace(/\D/g, '');
+        
+        // Format according to (XXX) XXX-XXXX pattern
+        const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+
+        if (match) {
+            // Build formatted string from matched groups
+            return [match[1], match[2], match[3]]
+                .filter(part => part) // Filter out empty parts
+                .join('-'); // Join with dashes
+        }
+        return phoneNumber;
+    };
+
+    const handlePhoneChange = (text) => {
+        const formattedPhone = formatPhoneNumber(text);
+        setBusinessPhoneNum(formattedPhone);
     };
 
     return (
@@ -240,15 +244,51 @@ const BusinessAccountDetails = () => {
                             readOnly={isEditing} // Not sure if this should be editable
                         />
                     </View>
-                    {/* Editable address */}
+                    {/* Editable street address */}
                     <View style={styles.informationContainer}>
-                        <Text>Address:</Text>
+                        <Text>Street Address:</Text>
                         <TextInput
                             style={[styles.input, isEditing && styles.editableInput]}
-                            placeholder='Enter business address'
+                            placeholder='Enter street address'
                             placeholderTextColor= 'grey'
                             value={businessAddress}
-                            onChangeText={setBusinessAddress} // Update address state on change
+                            onChangeText={setBusinessAddress} // Update street address state on change
+                            readOnly={!isEditing} // Only editable if in edit mode
+                        />
+                    </View>
+                    {/* Editable city */}
+                    <View style={styles.informationContainer}>
+                        <Text>City:</Text>
+                        <TextInput
+                            style={[styles.input, isEditing && styles.editableInput]}
+                            placeholder='Enter city'
+                            placeholderTextColor= 'grey'
+                            value={businessCity}
+                            onChangeText={setBusinessCity} // Update city state on change
+                            readOnly={!isEditing} // Only editable if in edit mode
+                        />
+                    </View>
+                    {/* Editable business state */}
+                    <View style={styles.informationContainer}>
+                        <Text>State:</Text>
+                        <TextInput
+                            style={[styles.input, isEditing && styles.editableInput]}
+                            placeholder='Enter state (e.g. NY)'
+                            placeholderTextColor= 'grey'
+                            value={businessState}
+                            onChangeText={setBusinessState} // Update city state on change
+                            readOnly={!isEditing} // Only editable if in edit mode
+                        />
+                    </View>
+                    {/* Editable business zipcode */}
+                    <View style={styles.informationContainer}>
+                        <Text>Zipcode:</Text>
+                        <TextInput
+                            style={[styles.input, isEditing && styles.editableInput]}
+                            placeholder='Enter zipcode'
+                            placeholderTextColor= 'grey'
+                            value={businessZipcode}
+                            onChangeText={setBusinessZipcode} // Update zipcode state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>
@@ -260,7 +300,7 @@ const BusinessAccountDetails = () => {
                             placeholder='Enter business phone number'
                             placeholderTextColor= 'grey'
                             value={businessPhoneNum}
-                            onChangeText={setBusinessPhoneNum} // Update phone number state on change
+                            onChangeText={handlePhoneChange} // Update phone number state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>

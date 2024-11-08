@@ -95,7 +95,7 @@ const BusinessPage = () => {
             <SidebarButton
               icon={isManagerDashboard ? require('../../assets/images/calendar_with_gear.png') : require('../../assets/images/manage_business.png')}
               label={isManagerDashboard ? 'Manage Schedule' : 'Manage Business'}
-              onPress={() => {}}
+              onPress={() => isManagerDashboard ? navigation.navigate('ManageSchedule') : navigation.navigate('ManageBusiness')}
               customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
@@ -120,7 +120,7 @@ const BusinessPage = () => {
             <SidebarButton
               icon={require('../../assets/images/edit_roles_icon_trans.png')}
               label="Edit Roles"
-              onPress={() => {}}
+              onPress={() => navigation.navigate('EditRoles')}
               customContainerStyle={{ right: 10 }}
             />
           </View>

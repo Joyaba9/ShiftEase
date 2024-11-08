@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
+import AnnouncementsModal from '../business/AnnouncementsModal';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +17,10 @@ const EmployeePage = () => {
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
+
+    // State to control the visibility of the announcements modal
+    const [announcementsVisible, setAnnouncementsVisible] = useState(false);
+
     console.log('Logged in user:', loggedInUser);
 
     // Render the mobile layout if it's a mobile screen
@@ -83,23 +88,19 @@ const EmployeePage = () => {
                     {/* Right Column */}
                     <View style={styles.rightColumn}>
                         {/* Announcements Section */}
-                        <LinearGradient 
-                            colors={['#E7E7E7', '#A7CAD8']} 
-                            style={styles.gradient}
-                        >
-                            <View style={styles.announcements}>
-                                <View style={styles.topBar}>
-                                    <Text style={styles.sectionTitle}>Announcements</Text>
-
-                                    <View style={styles.spacer} />
-
-                                    <Ionicons name="megaphone-outline" size={30} color="black" />
-                                </View>
-                                <View style={styles.textBox}>
-                                    {/* Display Announcements Logic? */}
-                                </View>
-                            </View>
-                        </LinearGradient>
+            <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradientAnnounce}>
+              <View style={styles.announcements}>
+                <View style={styles.topBar}>
+                  <Text style={styles.sectionTitle}>Announcements</Text>
+                  <View style={styles.spacer} />
+                  <Ionicons name="megaphone-outline" size={30} color="black" />
+                </View>
+                <View style={styles.textBox}></View>
+                <TouchableOpacity style={styles.addIconContainer}>
+                  <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
 
                         {/* Upcoming Shifts Section */}
                         <LinearGradient 
@@ -147,7 +148,12 @@ const EmployeePage = () => {
                                 </View>
                                 
                             </View>
-                        </LinearGradient>    
+                        </LinearGradient> 
+                        <AnnouncementsModal
+                        announcementsVisible={announcementsVisible}
+                        setAnnouncementsVisible={setAnnouncementsVisible}
+                        businessId={loggedInBusiness.business.business_id}
+                             />   
                     </View>
                 </View>
 
@@ -243,6 +249,18 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 4,
     },
+    gradientAnnounce: {
+        width: '100%',
+        height: 200,
+        borderRadius: 10,
+        marginTop: 20, 
+        marginBottom: 40,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 4,
+      },
     announcements: {
         borderRadius: 10,
         padding: 20,

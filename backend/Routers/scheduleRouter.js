@@ -6,8 +6,13 @@ const router = express.Router();
 
 
 // Route to fetch available employees for a specific day and date
-router.get('/availableEmployees', async (req, res) => {
+router.post('/availableEmployees', async (req, res) => {
     const { businessId, day, date } = req.body;
+
+    // Log the received day value to check its format
+    console.log('Received businessId:', businessId);
+    console.log('Received day:', day);
+    console.log('Received date:', date);
 
     // Input validation
     if (!businessId || !day || !date) {
