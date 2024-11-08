@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, fetchEmployeesWithRoles, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -118,5 +118,112 @@ router.get('/availability/fetch/:emp_id', async (req, res) => {
     }
 });
 
+// Route to fetch all future requests for a specific employee and business
+router.get('/getFutureRequests', async (req, res) => {
+    const { emp_id, business_id } = req.query; // Extract emp_id and business_id from query parameters
+
+    // Validate input
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ success: false, message: 'Employee ID and Business ID are required' });
+    }
+
+    try {
+        // Fetch future requests for the given employee and business
+        const futureRequests = await getFutureRequestsByEmployee(emp_id, business_id);
+
+        // Return the list of future requests in JSON format
+        res.status(200).json({ success: true, futureRequests });
+    } catch (err) {
+        console.error('Error fetching future requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to fetch all past requests for a specific employee and business
+router.get('/getPastRequests', async (req, res) => {
+    const { emp_id, business_id } = req.query; // Extract emp_id and business_id from query parameters
+
+    // Validate input
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ success: false, message: 'Employee ID and Business ID are required' });
+    }
+
+    try {
+        // Fetch past requests for the given employee and business
+        const pastRequests = await getPastRequestsByEmployee(emp_id, business_id);
+
+        // Return the list of past requests in JSON format
+        res.status(200).json({ success: true, pastRequests });
+    } catch (err) {
+        console.error('Error fetching past requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to fetch all requests for a specific employee, sorted by the latest start date first
+router.get('/getAllRequests', async (req, res) => {
+    const { emp_id, business_id } = req.query; // Extract emp_id and business_id from query parameters
+
+    // Validate input
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ success: false, message: 'Employee ID and Business ID are required' });
+    }
+
+    try {
+        // Fetch all requests for the given employee and business
+        const allRequests = await getAllRequestsByEmployee(emp_id, business_id);
+
+        // Return the list of all requests in JSON format
+        res.status(200).json({ success: true, allRequests });
+    } catch (err) {
+        console.error('Error fetching all requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to add a new request for a specific employee
+router.post('/addRequest', async (req, res) => {
+    const requestData = req.body;
+
+    // Validate required fields in the request data
+    const requiredFields = ['emp_id', 'business_id', 'request_type', 'day_type', 'start_date', 'end_date', 'reason'];
+    for (const field of requiredFields) {
+        if (!requestData[field]) {
+            return res.status(400).json({ success: false, message: `Field ${field} is required.` });
+        }
+    }
+
+    try {
+        // Add a new request for the given employee and business
+        const newRequest = await addRequestForEmployee(requestData);
+
+        // Return the new request data in JSON format
+        res.status(201).json({ success: true, newRequest });
+    } catch (err) {
+        console.error('Error adding new request:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to update the status of a request (Approve or Reject)
+router.put('/updateRequestStatus', async (req, res) => {
+    const { request_id, business_id, status } = req.body;
+
+    // Validate input
+    if (!request_id || !business_id || !status) {
+        return res.status(400).json({ success: false, message: 'Request ID, Business ID, and status are required' });
+    }
+
+    try {
+        // Update the request status
+        const updatedRequest = await updateRequestStatus(request_id, business_id, status);
+
+        // Return the updated request data in JSON format
+        res.status(200).json({ success: true, updatedRequest });
+    } catch (err) {
+        console.error('Error updating request status:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 export default router; // Export the router to be used in server.js
