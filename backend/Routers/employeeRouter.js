@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -177,6 +177,51 @@ router.get('/getAllRequests', async (req, res) => {
         res.status(200).json({ success: true, allRequests });
     } catch (err) {
         console.error('Error fetching all requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to add a new request for a specific employee
+router.post('/addRequest', async (req, res) => {
+    const requestData = req.body;
+
+    // Validate required fields in the request data
+    const requiredFields = ['emp_id', 'business_id', 'request_type', 'day_type', 'start_date', 'end_date', 'reason'];
+    for (const field of requiredFields) {
+        if (!requestData[field]) {
+            return res.status(400).json({ success: false, message: `Field ${field} is required.` });
+        }
+    }
+
+    try {
+        // Add a new request for the given employee and business
+        const newRequest = await addRequestForEmployee(requestData);
+
+        // Return the new request data in JSON format
+        res.status(201).json({ success: true, newRequest });
+    } catch (err) {
+        console.error('Error adding new request:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to update the status of a request (Approve or Reject)
+router.put('/updateRequestStatus', async (req, res) => {
+    const { request_id, business_id, status } = req.body;
+
+    // Validate input
+    if (!request_id || !business_id || !status) {
+        return res.status(400).json({ success: false, message: 'Request ID, Business ID, and status are required' });
+    }
+
+    try {
+        // Update the request status
+        const updatedRequest = await updateRequestStatus(request_id, business_id, status);
+
+        // Return the updated request data in JSON format
+        res.status(200).json({ success: true, updatedRequest });
+    } catch (err) {
+        console.error('Error updating request status:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });

@@ -460,3 +460,106 @@ export async function getAllRequestsByEmployee(emp_id, business_id) {
 }
 
 //#endregion
+
+//#region Add Request For Employee
+
+/**
+ * Adds a new request for an employee with a default status of 'Pending'.
+ * 
+ * Had to use an object, max parameters is 7.
+ * @param {Object} requestData - The request data, including emp_id, business_id, request_type, day_type, start_date, end_date, start_time, end_time, and reason.
+ * @returns {Promise<Object>} - The created request record.
+ */
+export async function addRequestForEmployee(requestData) {
+    const client = await getClient();
+    await client.connect();
+
+    const { emp_id, business_id, request_type, day_type, start_date, end_date, start_time, end_time, reason } = requestData;
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to insert the new request with a default status of 'Pending'
+    const addRequestQuery = `
+        INSERT INTO requests (emp_id, request_type, day_type, start_date, end_date, start_time, end_time, status, reason, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'Pending', $8, CURRENT_TIMESTAMP)
+        RETURNING request_id, request_type, day_type, start_date, end_date, start_time, end_time, status, reason;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        // Insert the new request
+        const result = await client.query(addRequestQuery, [emp_id, request_type, day_type, start_date, end_date, start_time, end_time, reason]);
+        return result.rows[0]; // Return the created request record
+    } catch (err) {
+        console.error('Error adding request:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+//#endregion
+
+//#region Update Request Status
+
+/**
+ * Updates the status of a request for an employee.
+ * 
+ * @param {number} request_id - The ID of the request to update.
+ * @param {number} business_id - The ID of the business associated with the request.
+ * @param {string} status - The new status of the request ('Approved' or 'Rejected').
+ * @returns {Promise<Object>} - The updated request record.
+ */
+export async function updateRequestStatus(request_id, business_id, status) {
+    const client = await getClient();
+    await client.connect();
+
+    // Only allow 'Approved' or 'Rejected' status
+    const validStatuses = ['Approved', 'Rejected'];
+    if (!validStatuses.includes(status)) {
+        throw new Error('Invalid status. Status must be either "Approved" or "Rejected".');
+    }
+
+    // Query to confirm the request exists and belongs to the business
+    const checkRequestQuery = `
+        SELECT emp_id, request_type, day_type, start_date, end_date, start_time, end_time, reason, status
+        FROM requests
+        WHERE request_id = $1 AND emp_id IN (SELECT emp_id FROM employees WHERE business_id = $2);
+    `;
+
+    // Query to update the request status
+    const updateStatusQuery = `
+        UPDATE requests
+        SET status = $1, updated_at = CURRENT_TIMESTAMP
+        WHERE request_id = $2
+        RETURNING request_id, emp_id, request_type, day_type, start_date, end_date, start_time, end_time, status, reason;
+    `;
+
+    try {
+        // Check if the request belongs to an employee in the business
+        const checkRes = await client.query(checkRequestQuery, [request_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Request not found or does not belong to the specified business.');
+        }
+
+        // Update the status of the request
+        const result = await client.query(updateStatusQuery, [status, request_id]);
+        return result.rows[0]; // Return the updated request record
+    } catch (err) {
+        console.error('Error updating request status:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+//#endregion
