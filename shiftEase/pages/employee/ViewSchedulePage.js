@@ -20,13 +20,17 @@ const ViewSchedulePage = () => {
     // State for managing schedule and view mode
     const [scheduleId, setScheduleId] = useState(null);
     const [scheduledEmployees, setScheduledEmployees] = useState([]);
+    const [shiftsData, setShiftsData] = useState([]);
     const [scheduleLoaded, setScheduleLoaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     // State for calendar view (week or day)s
     const [view, setView] = useState('week');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [isLoading, setIsLoading] = useState(false);
 
+    // Calculate week start date from the current date
+    const weekStartDate = useMemo(() => getStartOfWeek(currentDate), [currentDate]);
+    
     const dates = useMemo(() => {
         return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
     }, [view, currentDate]);
@@ -38,21 +42,31 @@ const ViewSchedulePage = () => {
     console.log('Shift Assignments: ', shiftAssignments);
 
     // Track if employees have been loaded
-    const employeesLoadedRef = useRef(false);
+    //const employeesLoadedRef = useRef(false);
+
+    // Clear previous schedule data whenever `weekStartDate` changes
+    useEffect(() => {
+        setScheduleId(null);
+        setScheduledEmployees([]);
+        setShiftsData([]);
+        setEmployeeAssignments({});
+        setShiftAssignments({});
+        setScheduleLoaded(false);
+    }, [weekStartDate]);
 
     // Fetch and load schedule and shifts for the selected week
     useEffect(() => {
         const loadSchedule = async () => {
             // Check if employees are loaded before running the function
-            if (!employees || employees.length === 0 || employeesLoadedRef.current) {
+            if (!employees || employees.length === 0) {
                 console.log("Employees not yet loaded, skipping schedule load.");
                 return;
             }
 
             setIsLoading(true);
-            employeesLoadedRef.current = true;
+            //employeesLoadedRef.current = true;
 
-            const weekStartDate = getStartOfWeek(currentDate);
+            //const weekStartDate = getStartOfWeek(currentDate);
             console.log("Business ID:", businessId, "Week Start Date:", weekStartDate);
 
             try {
@@ -95,6 +109,8 @@ const ViewSchedulePage = () => {
                     console.log('Shift Assignments: ', loadedShiftAssignments);
                     
                     setScheduleLoaded(true);
+                } else {
+                    setScheduleId(null); // Clear schedule ID if no schedule found
                 }
             } catch (error) {
                 console.error("Error loading schedule:", error);
@@ -103,7 +119,7 @@ const ViewSchedulePage = () => {
             }
         };
         loadSchedule();
-    }, [businessId, currentDate, dates, employees, setEmployeeAssignments, setShiftAssignments, ]);
+    }, [businessId, weekStartDate, dates, employees, setEmployeeAssignments, setShiftAssignments, ]);
     
     return (
         <ScrollView
@@ -115,6 +131,9 @@ const ViewSchedulePage = () => {
                 <NavBar homeRoute={'Employee'}/>
 
                 <Text style={styles.dashboardText}> View Schedule</Text>
+                <View style={styles.topContainer}>
+                        <Text style={styles.topText}>Scheduled Hours: 0</Text>
+                </View>
 
                 <View style={styles.dashboardContainer}>
                     <View style={styles.wholeScheduleContainer}>
@@ -192,6 +211,19 @@ const styles = StyleSheet.create({
         marginVertical: 40,
         marginLeft: 30
     },
+    topContainer: {
+        flexDirection: 'row',
+        width: '95%',
+        height: 50,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingRight: 10,
+        //borderWidth: 1,
+        //borderColor: 'red'
+    },
+    topText: {
+        fontSize: 18
+    },
     dashboardContainer: {
         flexGrow: 1,
         width: '100%',
@@ -253,7 +285,7 @@ const styles = StyleSheet.create({
     },
     highlightRow: { 
         backgroundColor: '#e0f7fa' 
-    }
+    },
 });
 
 export default ViewSchedulePage;  
