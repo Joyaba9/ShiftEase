@@ -128,8 +128,16 @@ const SchedulePage = () => {
                         console.warn(`Row mapping not found for schedule ID: ${scheduleId}`);
                     }
 
-                    setButtonText("Update Schedule");
                     mapShiftsToAssignments(existingSchedule.shifts, scheduleId, loadedRowMapping);
+                    
+                    // Load saved shift hours for employees
+                    const savedEmployeeHours = JSON.parse(localStorage.getItem(`employeeHours_${scheduleId}`) || "{}");
+                    employees.forEach((emp) => {
+                        emp.shiftHours = savedEmployeeHours[emp.emp_id] || 0;
+                    });
+                    setEmployeeAssignments(employees);
+                    
+                    setButtonText("Update Schedule");
                 } else {
                     setScheduleId(null);
                     setShiftsData([]);  
@@ -283,6 +291,7 @@ const SchedulePage = () => {
             const createdSchedule = await createWeeklyScheduleAPI(businessId, weekStartDate);
             
             const newMapping = {};
+            const employeeHours = {};
 
             // Loop through grid cells and save each shift
             for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
@@ -312,8 +321,14 @@ const SchedulePage = () => {
                         startTime.trim(),
                         endTime.trim(),
                     );
+
+                    // Store employee shift hours
+                    employeeHours[employee.emp_id] = employee.shiftHours;
                 }
             }
+            // Save the employee hours mapping to localStorage
+            localStorage.setItem(`employeeHours_${createdSchedule.scheduleId}`, JSON.stringify(employeeHours));
+
             // Store the new mapping for this specific schedule ID
             setRowMappingBySchedule((prev) => {
                 const updatedMapping = { ...prev, [createdSchedule.scheduleId]: newMapping };

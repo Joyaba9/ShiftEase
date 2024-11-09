@@ -18,6 +18,7 @@ import MessagesPage from './common/MessagesPage.js';
 import SchedulePage from './common/ManageSchedule.js';
 import ManageBusinessPage from './business/ManageBusinessPage.js';
 import EditRolesPage from './business/EditRolesPage.js';
+import ViewSchedulePage from './employee/ViewSchedulePage.js';
 
 
 const Stack = createStackNavigator();
@@ -83,6 +84,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Messages" component={MessagesPage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageSchedule" component={SchedulePage} options={{ headerShown: false }}/>
             <Stack.Screen name="EditRoles" component={EditRolesPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="ViewSchedule" component={ViewSchedulePage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>

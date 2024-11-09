@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
@@ -12,16 +13,16 @@ import AnnouncementsModal from '../business/AnnouncementsModal';
 const { width } = Dimensions.get('window');
 
 const EmployeePage = () => {
-
+    const navigation = useNavigation();
     const isMobile = width < 768; 
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
+    console.log('Logged in user:', loggedInUser);
 
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
 
-    console.log('Logged in user:', loggedInUser);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -56,7 +57,7 @@ const EmployeePage = () => {
                         <SidebarButton
                             icon = {require('../../assets/images/view_calendar_icon.png')}
                             label = "View Schedule"
-                            onPress={ () => {{/* View Schedule Page logic */}}}
+                            onPress={ () => navigation.navigate('ViewSchedule')}
                         />
                         <SidebarButton
                             icon = {require('../../assets/images/clipboard_with_checkmark.png')}
@@ -149,11 +150,11 @@ const EmployeePage = () => {
                                 
                             </View>
                         </LinearGradient> 
-                        <AnnouncementsModal
+                        {/* <AnnouncementsModal
                         announcementsVisible={announcementsVisible}
                         setAnnouncementsVisible={setAnnouncementsVisible}
                         businessId={loggedInBusiness.business.business_id}
-                             />   
+                             />    */}
                     </View>
                 </View>
 
