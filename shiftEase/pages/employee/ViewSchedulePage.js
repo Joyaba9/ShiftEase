@@ -19,7 +19,8 @@ const ViewSchedulePage = () => {
 
     // State for managing schedule and view mode
     const [scheduleId, setScheduleId] = useState(null);
-    const [shiftsData, setShiftsData] = useState([]);
+    const [scheduledEmployees, setScheduledEmployees] = useState([]);
+    const [scheduleLoaded, setScheduleLoaded] = useState(false);
 
     // State for calendar view (week or day)s
     const [view, setView] = useState('week');
@@ -31,15 +32,26 @@ const ViewSchedulePage = () => {
     }, [view, currentDate]);
 
     // Get employees and shifts using useEmployeeData hook
-    const { employees, setEmployeeAssignments, shiftAssignments, setShiftAssignments } = useEmployeeData(businessId);
+    const { employees, setEmployees, setEmployeeAssignments, shiftAssignments, setShiftAssignments } = useEmployeeData(businessId);
     console.log('Data from useEmployeeData: ');
     console.log('Employees: ', employees);
     console.log('Shift Assignments: ', shiftAssignments);
 
+    // Track if employees have been loaded
+    const employeesLoadedRef = useRef(false);
+
     // Fetch and load schedule and shifts for the selected week
     useEffect(() => {
         const loadSchedule = async () => {
+            // Check if employees are loaded before running the function
+            if (!employees || employees.length === 0 || employeesLoadedRef.current) {
+                console.log("Employees not yet loaded, skipping schedule load.");
+                return;
+            }
+
             setIsLoading(true);
+            employeesLoadedRef.current = true;
+
             const weekStartDate = getStartOfWeek(currentDate);
             console.log("Business ID:", businessId, "Week Start Date:", weekStartDate);
 
@@ -51,14 +63,18 @@ const ViewSchedulePage = () => {
 
                 if (existingSchedule && existingSchedule.schedule) {
                     setScheduleId(existingSchedule.schedule.schedule_id);
-                    setShiftsData(existingSchedule.shifts);
+
+                    // Filter employees who have shifts in the schedule
+                    const scheduledEmployeeIds = new Set(existingSchedule.shifts.map(shift => shift.employeeId));
+                    const filteredScheduledEmployees = employees.filter(employee => scheduledEmployeeIds.has(employee.emp_id));
+                    setScheduledEmployees(filteredScheduledEmployees);
 
                     // Set assignments to display in grid
                     const loadedEmployeeAssignments = {};
                     const loadedShiftAssignments = {};
 
                     existingSchedule.shifts.forEach(shift => {
-                        // Format both dates to YYYY-MM-DD for consistency
+                        // Format both dates to YYYY-MM-DD 
                         const shiftDate = shift.date.slice(0, 10); // Extract YYYY-MM-DD
                         const dateIndex = dates.findIndex(date => date.toISOString().slice(0, 10) === shiftDate);
 
@@ -77,6 +93,8 @@ const ViewSchedulePage = () => {
 
                     console.log('Employee Assignments: ', loadedEmployeeAssignments);
                     console.log('Shift Assignments: ', loadedShiftAssignments);
+                    
+                    setScheduleLoaded(true);
                 }
             } catch (error) {
                 console.error("Error loading schedule:", error);
@@ -85,7 +103,7 @@ const ViewSchedulePage = () => {
             }
         };
         loadSchedule();
-    }, [businessId, currentDate, dates, setEmployeeAssignments, setShiftAssignments]);
+    }, [businessId, currentDate, dates, employees, setEmployeeAssignments, setShiftAssignments, ]);
     
     return (
         <ScrollView
@@ -107,47 +125,48 @@ const ViewSchedulePage = () => {
                             setView={setView} 
                             setCurrentDate={setCurrentDate} 
                         />
+                        {scheduleLoaded && !isLoading && (
+                            <View style={styles.scheduleContainer}> 
+                                <View style={styles.gridHeader}>
+                                    {/* Header row for dates */}
+                                    <View style={styles.employeeCell}><Text>Employee</Text></View>
+                                    {dates.map((date, index) => (
+                                        <View key={index} style={styles.headerCell}>
+                                            <Text>{date.toDateString()}</Text>
+                                        </View>
+                                    ))}
+                                </View>
 
-                        <View style={styles.scheduleContainer}> 
-                            <View style={styles.gridHeader}>
-                                {/* Header row for dates */}
-                                <View style={styles.employeeCell}><Text>Employee</Text></View>
-                                {dates.map((date, index) => (
-                                    <View key={index} style={styles.headerCell}>
-                                        <Text>{date.toDateString()}</Text>
+                                {/* Rows for each employee */}
+                                {scheduledEmployees.map((employee) => (
+                                    <View 
+                                        key={employee.emp_id} 
+                                        style={[
+                                            styles.gridRow, 
+                                            employee.emp_id === loggedInEmployeeId && styles.highlightRow
+                                        ]}>
+                                        {/* Employee name cell */}
+                                        <View style={styles.employeeCell}>
+                                            <Text>{employee.f_name} {employee.l_name}</Text>
+                                        </View>
+                                        
+                                        {/* Schedule cells for each day */}
+                                        {dates.map((date, colIndex) => {
+                                            const cellId = `${employee.emp_id}-${colIndex}`;
+                                            const shiftTime = shiftAssignments[cellId];
+
+                                            return (
+                                                <View key={colIndex} style={styles.scheduleCell}>
+                                                    <Text>
+                                                        {shiftTime ? shiftTime : 'Off'}
+                                                    </Text>
+                                                </View>
+                                            );
+                                        })}
                                     </View>
                                 ))}
                             </View>
-
-                            {/* Rows for each employee */}
-                            {employees.map((employee) => (
-                                <View 
-                                    key={employee.emp_id} 
-                                    style={[
-                                        styles.gridRow, 
-                                        employee.emp_id === loggedInEmployeeId && styles.highlightRow
-                                    ]}>
-                                    {/* Employee name cell */}
-                                    <View style={styles.employeeCell}>
-                                        <Text>{employee.f_name} {employee.l_name}</Text>
-                                    </View>
-                                    
-                                    {/* Schedule cells for each day */}
-                                    {dates.map((date, colIndex) => {
-                                        const cellId = `${employee.emp_id}-${colIndex}`;
-                                        const shiftTime = shiftAssignments[cellId];
-
-                                        return (
-                                            <View key={colIndex} style={styles.scheduleCell}>
-                                                <Text>
-                                                    {shiftTime ? shiftTime : 'Off'}
-                                                </Text>
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                            ))}
-                        </View>
+                        )}   
                     </View>
                 </View>
             </View>
