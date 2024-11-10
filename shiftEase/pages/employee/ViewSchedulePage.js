@@ -23,6 +23,7 @@ const ViewSchedulePage = () => {
     const [shiftsData, setShiftsData] = useState([]);
     const [scheduleLoaded, setScheduleLoaded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [totalScheduledHours, setTotalScheduledHours] = useState(0);
 
     // State for calendar view (week or day)s
     const [view, setView] = useState('week');
@@ -52,6 +53,7 @@ const ViewSchedulePage = () => {
         setEmployeeAssignments({});
         setShiftAssignments({});
         setScheduleLoaded(false);
+        setTotalScheduledHours(0);
     }, [weekStartDate]);
 
     // Fetch and load schedule and shifts for the selected week
@@ -87,6 +89,8 @@ const ViewSchedulePage = () => {
                     const loadedEmployeeAssignments = {};
                     const loadedShiftAssignments = {};
 
+                    let userTotalHours = 0;
+
                     existingSchedule.shifts.forEach(shift => {
                         // Format both dates to YYYY-MM-DD 
                         const shiftDate = shift.date.slice(0, 10); // Extract YYYY-MM-DD
@@ -99,11 +103,17 @@ const ViewSchedulePage = () => {
                                 l_name: shift.employeeName.split(' ')[1]
                             };
                             loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
+                            // Calculate shift duration and add to total if it's the logged-in employee's shift
+                            if (shift.employeeId === loggedInEmployeeId) {
+                                const shiftDuration = calculateShiftDuration(shift.startTime, shift.endTime);
+                                userTotalHours += shiftDuration;
+                            }
                         }
                     });
 
                     setEmployeeAssignments(loadedEmployeeAssignments);
                     setShiftAssignments(loadedShiftAssignments);
+                    setTotalScheduledHours(userTotalHours);
 
                     console.log('Employee Assignments: ', loadedEmployeeAssignments);
                     console.log('Shift Assignments: ', loadedShiftAssignments);
@@ -119,8 +129,16 @@ const ViewSchedulePage = () => {
             }
         };
         loadSchedule();
-    }, [businessId, weekStartDate, dates, employees, setEmployeeAssignments, setShiftAssignments, ]);
+    }, [businessId, weekStartDate, dates, employees, setEmployeeAssignments, setShiftAssignments, loggedInEmployeeId]);
     
+    // Helper function to calculate shift duration in hours
+    const calculateShiftDuration = (startTime, endTime) => {
+        const start = new Date(`1970-01-01T${startTime}`);
+        const end = new Date(`1970-01-01T${endTime}`);
+        const duration = (end - start) / (1000 * 60 * 60); // Convert milliseconds to hours
+        return duration > 0 ? duration : 0;
+    };
+
     return (
         <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
@@ -132,7 +150,7 @@ const ViewSchedulePage = () => {
 
                 <Text style={styles.dashboardText}> View Schedule</Text>
                 <View style={styles.topContainer}>
-                        <Text style={styles.topText}>Scheduled Hours: 0</Text>
+                        <Text style={styles.topText}>Scheduled Hours: {totalScheduledHours}</Text>
                 </View>
 
                 <View style={styles.dashboardContainer}>
@@ -144,10 +162,9 @@ const ViewSchedulePage = () => {
                             setView={setView} 
                             setCurrentDate={setCurrentDate} 
                         />
-                        {scheduleLoaded && !isLoading && (
+                        {scheduleLoaded && !isLoading ? (
                             <View style={styles.scheduleContainer}> 
                                 <View style={styles.gridHeader}>
-                                    {/* Header row for dates */}
                                     <View style={styles.employeeCell}><Text>Employee</Text></View>
                                     {dates.map((date, index) => (
                                         <View key={index} style={styles.headerCell}>
@@ -156,7 +173,6 @@ const ViewSchedulePage = () => {
                                     ))}
                                 </View>
 
-                                {/* Rows for each employee */}
                                 {scheduledEmployees.map((employee) => (
                                     <View 
                                         key={employee.emp_id} 
@@ -164,28 +180,27 @@ const ViewSchedulePage = () => {
                                             styles.gridRow, 
                                             employee.emp_id === loggedInEmployeeId && styles.highlightRow
                                         ]}>
-                                        {/* Employee name cell */}
                                         <View style={styles.employeeCell}>
                                             <Text>{employee.f_name} {employee.l_name}</Text>
                                         </View>
-                                        
-                                        {/* Schedule cells for each day */}
                                         {dates.map((date, colIndex) => {
                                             const cellId = `${employee.emp_id}-${colIndex}`;
                                             const shiftTime = shiftAssignments[cellId];
 
                                             return (
                                                 <View key={colIndex} style={styles.scheduleCell}>
-                                                    <Text>
-                                                        {shiftTime ? shiftTime : 'Off'}
-                                                    </Text>
+                                                    <Text>{shiftTime ? shiftTime : 'Off'}</Text>
                                                 </View>
                                             );
                                         })}
                                     </View>
                                 ))}
                             </View>
-                        )}   
+                        ) : !isLoading && (
+                            <View style={styles.noScheduleContainer}>
+                                <Text style={styles.noScheduleText}>No schedule yet</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
             </View>
@@ -285,6 +300,23 @@ const styles = StyleSheet.create({
     },
     highlightRow: { 
         backgroundColor: '#e0f7fa' 
+    },
+    noScheduleContainer: {
+        width: '100%',
+        height: '100%',
+        borderWidth: 2,
+        borderColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+        backgroundColor: '#f9f9f9',
+    },
+    noScheduleText: {
+        fontSize: 18,
+        color: '#888',
+        textAlign: 'center',
     },
 });
 
