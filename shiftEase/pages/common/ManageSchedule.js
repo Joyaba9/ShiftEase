@@ -5,7 +5,7 @@ import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
 import { createWeeklyScheduleAPI, createShiftAPI } from '../../../backend/api/scheduleApi';
-import { getTotalHoursColor, formatTime } from '../../components/schedule_components/scheduleUtils';
+import { getTotalHoursColor, formatTime, calculateHoursDifference } from '../../components/schedule_components/scheduleUtils';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
 import EmployeeList from '../../components/schedule_components/EmployeeList';
@@ -94,6 +94,20 @@ const SchedulePage = () => {
         const parsedMapping = storedMapping ? JSON.parse(storedMapping) : {};
         if (scheduleId && parsedMapping[scheduleId]) {
             setRowMappingBySchedule(parsedMapping);
+            console.log("Loaded rowMapping for schedule ID from storage:", parsedMapping[scheduleId]);
+        }
+    }, [scheduleId]);
+
+    // Load total hours from local storage on schedule ID change
+    useEffect(() => {
+        if (scheduleId) {
+            const savedTotalHours = localStorage.getItem(`totalHours_${scheduleId}`);
+            if (savedTotalHours) {
+                setTotalHours(parseInt(savedTotalHours, 10));
+                console.log(`Loaded total hours from storage for schedule ID ${scheduleId}:`, savedTotalHours);
+            } else {
+                console.warn(`No total hours found in storage for schedule ID ${scheduleId}`);
+            }
         }
     }, [scheduleId]);
 
@@ -135,6 +149,7 @@ const SchedulePage = () => {
                     employees.forEach((emp) => {
                         emp.shiftHours = savedEmployeeHours[emp.emp_id] || 0;
                     });
+                    console.log("Updated employees with shiftHours from local storage:", employees);
                     setEmployeeAssignments(employees);
                     
                     setButtonText("Update Schedule");
@@ -145,7 +160,7 @@ const SchedulePage = () => {
                 }
             } catch (error) {
                 console.error("Error loading schedule:", error);
-                alert("Failed to load schedule. Please try again.");
+                //alert("Failed to load schedule. Please try again.");
             } finally {
                 console.log("Schedule loaded, setting isLoading to false");
                 setIsLoading(false); // End loading after setting data
@@ -168,6 +183,7 @@ const SchedulePage = () => {
     }, [shiftsData, dates, scheduleId, rowMappingBySchedule]);
 
     const mapShiftsToAssignments = (shifts, scheduleId, rowMapping) => {
+        console.log("Mapping shifts with rowMapping:", rowMapping);
         const loadedEmployeeAssignments = {};
         const loadedShiftAssignments = {};
 
@@ -293,6 +309,22 @@ const SchedulePage = () => {
             const newMapping = {};
             const employeeHours = {};
 
+            // Recalculate each employee's shift hours
+            const updatedEmployeeAssignments = {...employeeAssignments};
+            for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
+                const employee = updatedEmployeeAssignments[cellId];
+                if (employee) {
+                    const [startTime, endTime] = shiftTime.split(' - ');
+                    const shiftHours = calculateHoursDifference(startTime.trim(), endTime.trim());
+
+                    // Update shiftHours for this employee
+                    employee.shiftHours = (employee.shiftHours || 0) + shiftHours;
+                    
+                    // Log the calculated shift hours for verification
+                    console.log(`Calculated shift hours for employee ${employee.emp_id}:`, employee.shiftHours);
+                }
+            }
+
             // Loop through grid cells and save each shift
             for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
                 const employee = employeeAssignments[cellId];
@@ -328,6 +360,11 @@ const SchedulePage = () => {
             }
             // Save the employee hours mapping to localStorage
             localStorage.setItem(`employeeHours_${createdSchedule.scheduleId}`, JSON.stringify(employeeHours));
+            console.log("Employee hours saved to localStorage:", JSON.parse(localStorage.getItem(`employeeHours_${createdSchedule.scheduleId}`)));
+
+            // Save total hours to localStorage with the schedule ID as a key
+            localStorage.setItem(`totalHours_${createdSchedule.scheduleId}`, totalHours);
+            console.log("Total hours saved to localStorage:", localStorage.getItem(`totalHours_${createdSchedule.scheduleId}`));
 
             // Store the new mapping for this specific schedule ID
             setRowMappingBySchedule((prev) => {
