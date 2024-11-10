@@ -133,6 +133,8 @@ const SchedulePage = () => {
                     setScheduleId(scheduleId);
                     console.log("Schedule ID: ", scheduleId);
 
+                    setButtonText("Update Schedule");
+
                     setShiftsData(existingSchedule.shifts);
                     console.log("Loaded Shifts Data: ", existingSchedule.shifts);
 
@@ -152,11 +154,19 @@ const SchedulePage = () => {
                     console.log("Updated employees with shiftHours from local storage:", employees);
                     setEmployeeAssignments(employees);
                     
-                    setButtonText("Update Schedule");
                 } else {
                     setScheduleId(null);
                     setShiftsData([]);  
+
+                    // Reset totalHours and shiftHours
+                    setTotalHours(0);
+                    employees.forEach((emp) => {
+                        emp.shiftHours = 0;
+                    });
+                    setEmployeeAssignments(employees);
+
                     setButtonText("Create Schedule");
+                    console.log("No existing schedule for the week. Ready to create a new schedule.");
                 }
             } catch (error) {
                 console.error("Error loading schedule:", error);
