@@ -44,7 +44,7 @@ const SchedulePage = () => {
     const dates = useMemo(() => {
         return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
     }, [view, currentDate]);
-    const previousDatesRef = useRef(dates);
+    //const previousDatesRef = useRef(dates);
 
     // Default number of rows in the schedule grid
     const DEFAULT_ROW_COUNT = 8;
@@ -59,7 +59,6 @@ const SchedulePage = () => {
     const [shiftsData, setShiftsData] = useState([]);
     const [buttonText, setButtonText] = useState("Create Schedule");
     const [isLoading, setIsLoading] = useState(true);
-    const [dataReady, setDataReady] = useState(false);
     
     const [rowMappingBySchedule, setRowMappingBySchedule] = useState(() => {
         // Load from local storage on initial load
@@ -71,8 +70,6 @@ const SchedulePage = () => {
     const { 
         employees, 
         filteredEmployees, 
-        loading, 
-        error, 
         employeeAssignments,
         shiftAssignments,
         shiftTimes,
@@ -471,10 +468,6 @@ const SchedulePage = () => {
                                         </TouchableOpacity>
                                     ))}
                                 </View>
-                                
-                                {/* {isLoading ? (
-                                    <p>Loading schedule...</p>
-                                ) : ( */}
                                     <ScheduleGrid
                                         ref={scheduleGridRef}
                                         dates={dates}
@@ -593,7 +586,8 @@ const styles = StyleSheet.create({
     wholeScheduleContainer: {
         width: '95%',
         minWidth: '60%',
-        minHeight: '60%',
+        minHeight: '80%',
+        marginBottom: 70,
     },
     scheduleContainer: {
         flexDirection: 'row',

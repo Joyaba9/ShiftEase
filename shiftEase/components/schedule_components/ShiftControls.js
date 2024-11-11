@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, PanResponder } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, PanResponder, Picker } from 'react-native';
 import { Animated } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 
 const ShiftControls = ({ 
@@ -12,6 +13,26 @@ const ShiftControls = ({
   setNewShiftEnd,   // Function to update new shift end time
   handleDrop        // Function to handle drop actions on shifts
 }) => {
+  const [isCustomStart, setIsCustomStart] = useState(false);
+  const [isCustomEnd, setIsCustomEnd] = useState(false);
+
+  // Predefined times for dropdown
+  const times = [
+    '12:00 AM', '12:30 AM', '1:00 AM','1:30 AM', '2:00 AM',
+    '2:30 AM', '3:00 AM', '3:30 AM', '4:00 AM', '4:30 AM',
+    '5:00 AM', '5:30 AM', '6:00 AM', '6:30 AM', '7:00 AM',
+    '7:30 AM', '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM',
+    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM',
+    '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM',
+    '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM',
+    '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM',
+    '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM',
+    '10:30 PM', '11:00 PM', '11:30 PM'
+  ];
+
+  // State to control the open state of each DropDownPicker
+  const [openStartPicker, setOpenStartPicker] = useState(false);
+  const [openEndPicker, setOpenEndPicker] = useState(false);
 
   // Function to add a new shift to the list
   const handleAddShift = () => {
@@ -29,6 +50,8 @@ const ShiftControls = ({
         // Reset the input fields after adding the shift
         setNewShiftStart('');
         setNewShiftEnd('');
+        setIsCustomStart(false);
+        setIsCustomEnd(false);
     }
 };
 
@@ -37,21 +60,104 @@ const ShiftControls = ({
         <Text style={styles.sectionTitle}>Add Shift Time</Text>
 
         {/* Row for entering start and end time of a new shift */}
-        <View style={styles.inputRow}>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Start Time" 
-            value={newShiftStart} 
-            onChangeText={setNewShiftStart}  // Update start time
-          />
-          <TextInput 
-            style={styles.input} 
-            placeholder="End Time" 
-            value={newShiftEnd} 
-            onChangeText={setNewShiftEnd}  // Update end time
-          />
+        <View style={[styles.inputRow, { zIndex: 2000 }]}>
+          {/* Start Time Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <Text style={{marginBottom: 5}}>Start Time</Text>
+            <DropDownPicker
+              open={openStartPicker}
+              setOpen={setOpenStartPicker}
+              value={isCustomStart ? 'Custom' : newShiftStart}
+              items={[
+                ...times.map(time => ({ label: time, value: time })),
+                { label: 'Custom', value: 'Custom' }
+              ]}
+              onSelectItem={(item) => {
+                if (item.value === 'Custom') {
+                  setIsCustomStart(true);
+                  setNewShiftStart(''); 
+                } else {
+                  setIsCustomStart(false);
+                  setNewShiftStart(item.value);
+                }
+              }}
+              placeholder="Select Start Time"
+              style={{ 
+                width: '100%',
+                backgroundColor: 'white', 
+              }}
+              dropDownContainerStyle={{ 
+                backgroundColor: '#ffffff',
+                maxHeight: 150,
+                shadowColor: '#000', // Add a shadow to make it more visible on top of content
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                position: 'absolute',
+              }} 
+              textStyle={{
+                color: 'black', // Text color for better readability
+              }}
+            />
+            {isCustomStart && (
+              <TextInput
+                style={styles.customInput}
+                placeholder="Enter custom time"
+                value={newShiftStart}
+                onChangeText={setNewShiftStart}
+              />
+            )}
+          </View>
+
+          {/* End Time Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <Text style={{marginBottom: 5}}>End Time</Text>
+            <DropDownPicker
+              open={openEndPicker}
+              setOpen={setOpenEndPicker}
+              value={isCustomEnd ? 'Custom' : newShiftEnd}
+              items={[
+                ...times.map(time => ({ label: time, value: time })),
+                { label: 'Custom', value: 'Custom' }
+              ]}
+              onSelectItem={(item) => {
+                if (item.value === 'Custom') {
+                  setIsCustomEnd(true);
+                  setNewShiftEnd('');
+                } else {
+                  setIsCustomEnd(false);
+                  setNewShiftEnd(item.value);
+                }
+              }}
+              placeholder="Select End Time"
+              style={{ 
+                width: '100%',
+                backgroundColor: 'white',
+              }}
+              dropDownContainerStyle={{ 
+                backgroundColor: '#ffffff',
+                maxHeight: 150,
+                shadowColor: '#000', 
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                position: 'absolute',
+              }} 
+              textStyle={{
+                color: 'black', 
+              }}
+            />
+            {isCustomEnd && (
+              <TextInput
+                style={styles.customInput}
+                placeholder="Enter custom time"
+                value={newShiftEnd}
+                onChangeText={setNewShiftEnd}
+              />
+            )}
+          </View>
           <TouchableOpacity style={styles.shiftBtn} onPress={handleAddShift}>
-            <Text>Add Shift</Text>
+            <Text style={{alignSelf: 'center', fontSize: 15}}>Add Shift</Text>
           </TouchableOpacity>
           
         </View>
@@ -115,15 +221,25 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     marginBottom: 10,
   },
+  dropdownContainer: {
+    marginRight: 8,
+  },
   input: { 
-    minWidth: '35%',
+    width: '35%',
     borderWidth: 1, 
     padding: 5, 
     marginRight: 10, 
   },
+  customInput: {
+    width: '100%',
+    borderWidth: 1, 
+    padding: 5, 
+    borderRadius: 8,
+    marginTop: 5
+  },
   shiftBtn: {
-    width: 80,
-    height: 30,
+    width: 100,
+    height: 35,
     justifyContent: 'center',
     padding: 10,
     borderRadius: 10,
