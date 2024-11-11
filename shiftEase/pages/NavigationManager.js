@@ -15,10 +15,13 @@ import LandingPage from './common/LandingPage.js';
 import WelcomePageMobile from './common/WelcomePageMobile.js';
 import EmployeePage from './employee/EmployeePage.js';
 import MessagesPage from './common/MessagesPage.js';
+import SettingsPage from './business/SettingsPage.js';
 import SchedulePage from './common/ManageSchedule.js';
 import ManageBusinessPage from './business/ManageBusinessPage.js';
 import EditRolesPage from './business/EditRolesPage.js';
 import ViewSchedulePage from './employee/ViewSchedulePage.js';
+//import ManagePTORequestPage from './common/ManagePTORequestPage.js';
+import PTORequestPage from './common/PTORequestPage.js';
 
 
 const Stack = createStackNavigator();
@@ -56,14 +59,14 @@ const NavigationManager = () => {
           setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Login');
+          setInitialRoute('Landing');
         }
 
 
     }, []);
 
     if (!initialRoute) {
-        return null; // You can also show a loading spinner here
+        return null; 
     }
 
     return (
@@ -76,6 +79,7 @@ const NavigationManager = () => {
             <Stack.Screen name="Registration" component={RegistrationPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Landing" component={LandingPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Account" component={AccountPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="Settings" component={SettingsPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Business" component={BusinessPage} options={{ headerShown: false }}/>
             <Stack.Screen name="Employee" component={EmployeePage} options={{ headerShown: false }}/>
             <Stack.Screen name="ManageBusiness" component={ManageBusinessPage} options={{ headerShown: false }}/>
@@ -85,6 +89,8 @@ const NavigationManager = () => {
             <Stack.Screen name="ManageSchedule" component={SchedulePage} options={{ headerShown: false }}/>
             <Stack.Screen name="EditRoles" component={EditRolesPage} options={{ headerShown: false }}/>
             <Stack.Screen name="ViewSchedule" component={ViewSchedulePage} options={{ headerShown: false }}/>
+            {/* <Stack.Screen name="ManagePTORequest" component={ManagePTORequestPage} options={{ headerShown: false }}/> */}
+            <Stack.Screen name="PTORequest" component={PTORequestPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>

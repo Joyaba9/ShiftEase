@@ -9,12 +9,14 @@ import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
 import AnnouncementsModal from '../business/AnnouncementsModal';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
 const EmployeePage = () => {
     const navigation = useNavigation();
     const isMobile = width < 768; 
+    const navigation = useNavigation();
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
@@ -75,7 +77,7 @@ const EmployeePage = () => {
                         <SidebarButton
                             icon = {require('../../assets/images/clipboard_with_checkmark.png')}
                             label = "Submit Request"
-                            onPress={ () => {{/* Submit Request Page logic */}}}
+                            onPress={ () => {navigation.navigate('PTORequest')}}
                         />
                         <SidebarButton
                             icon = {require('../../assets/images/calendar_with_gear.png')}
@@ -186,7 +188,6 @@ const EmployeePage = () => {
         </ScrollView>
     );
 };
-
 
 const styles = StyleSheet.create({
     scrollContainer: {

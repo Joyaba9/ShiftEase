@@ -9,6 +9,7 @@ import { logoutBusiness } from '../redux/reducers/businessReducer';
 import { auth } from '../../backend/firebase';
 import { signOut } from "firebase/auth";
 import { setPersistence, browserSessionPersistence } from "firebase/auth";
+import SettingsPage from '../pages/business/SettingsPage';
 
 
 const NavBar = ({ homeRoute }) => {
@@ -118,7 +119,7 @@ const NavBar = ({ homeRoute }) => {
                         <Text style={styles.navText}>Home</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => {/* Settings Page logic */}}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
                         <Text style={styles.navText}>Settings</Text>
                     </TouchableOpacity>
 
