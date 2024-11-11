@@ -36,14 +36,14 @@ export const changeDate = (view, currentDate, direction) => {
 export const getWeekDates = (currentDate) => {
     console.log('Getting week dates');
     const startOfWeek = getStartOfWeek(currentDate); // Use the verified function here
-    console.log('Start of the week in getWeekDates:', startOfWeek);
+    //console.log('Start of the week in getWeekDates:', startOfWeek);
 
     const dates = [];
     for (let i = 0; i < 7; i++) {
         const day = new Date(startOfWeek);
         day.setDate(startOfWeek.getDate() + i); // Increment day by day
         dates.push(day);
-        console.log(`Date for day ${i}:`, day);
+        //console.log(`Date for day ${i}:`, day);
     }
     return dates;
 };

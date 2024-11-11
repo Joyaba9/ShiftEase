@@ -66,15 +66,17 @@ const ViewSchedulePage = () => {
             }
 
             setIsLoading(true);
-            //employeesLoadedRef.current = true;
+            
+            // Format the weekStartDate to 'YYYY-MM-DD' for compatibility
+            const formattedWeekStartDate = weekStartDate.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+            console.log("Formatted Week Start Date:", formattedWeekStartDate);
 
-            //const weekStartDate = getStartOfWeek(currentDate);
-            console.log("Business ID:", businessId, "Week Start Date:", weekStartDate);
+            console.log("Business ID:", businessId, "Week Start Date:", formattedWeekStartDate);
 
             try {
                 console.log("Trying to loadSchedule");
 
-                const existingSchedule = await fetchScheduleAPI(businessId, weekStartDate);
+                const existingSchedule = await fetchScheduleAPI(businessId, formattedWeekStartDate);
                 console.log('Schedule: ', existingSchedule);
 
                 if (existingSchedule && existingSchedule.schedule) {
