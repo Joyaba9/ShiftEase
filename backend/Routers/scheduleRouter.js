@@ -1,6 +1,6 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
 
@@ -94,6 +94,36 @@ router.get('/shiftsByScheduleId', async (req, res) => {
         res.status(200).json({ success: true, shifts });
     } catch (err) {
         console.error('Error fetching shifts:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/getScheduleId', async (req, res) => {
+    const { businessId, weekStartDate } = req.query;
+
+    // Input validation
+    if (!businessId || !weekStartDate) {
+        return res.status(400).json({ error: 'Business ID and week start date are required.' });
+    }
+
+    try {
+        // Check if a schedule exists
+        const existingSchedule = await getScheduleByBusinessIdAndDate(businessId, weekStartDate);
+
+        if (existingSchedule) {
+            // If the schedule exists, fetch associated shifts
+            const shifts = await getShiftsByScheduleId(existingSchedule.schedule_id);
+            return res.status(200).json({
+                success: true,
+                schedule: existingSchedule,
+                shifts,
+            });
+        } else {
+            // If no schedule exists, respond accordingly
+            return res.status(404).json({ success: false, message: 'No schedule found for the specified week.' });
+        }
+    } catch (err) {
+        console.error('Error fetching schedule:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

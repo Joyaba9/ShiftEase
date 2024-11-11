@@ -3,7 +3,7 @@ import { fetchEmployeesWithRoles, fetchAvailableEmployees } from '../../../backe
 import { calculateHoursDifference } from './scheduleUtils';
 import { Animated } from 'react-native';
 
-const useEmployeeData = (businessId) => {
+const useEmployeeData = (businessId, scheduleId) => {
     const [employees, setEmployees] = useState([]);
     // State to store filtered employees based on selection criteria
     const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -26,10 +26,16 @@ const useEmployeeData = (businessId) => {
       try {
         // Fetch employees and add properties for animations and shift hours
         const data = await fetchEmployeesWithRoles(businessId);
+
+        // If scheduleId exists, load shift hours from storage; otherwise, initialize to 0
+        const savedHours = scheduleId 
+        ? JSON.parse(localStorage.getItem(`employeeShiftHours_${businessId}_${scheduleId}`) || "{}")
+        : {};
+
         const employeesWithPan = data.map((employee) => ({
           ...employee,
           pan: new Animated.ValueXY(), // Add animated pan position
-          shiftHours: 0, // Initialize shift hours for each employee
+          shiftHours: savedHours[employee.emp_id] || 0, // Initialize shift hours for each employee
         }));
         
         setEmployees(employeesWithPan); // Set fetched employees
@@ -39,7 +45,20 @@ const useEmployeeData = (businessId) => {
       } finally {
         setLoading(false);
       }
-    }, [businessId]);
+    }, [businessId, scheduleId]);
+
+    // Save shift hours only if scheduleId is defined
+    useEffect(() => {
+      if (!scheduleId) return;
+
+      const employeeHours = employees.reduce((acc, emp) => {
+          acc[emp.emp_id] = emp.shiftHours;
+          return acc;
+      }, {});
+
+      localStorage.setItem(`employeeShiftHours_${businessId}_${scheduleId}`, JSON.stringify(employeeHours));
+      console.log(`Saved employeeShiftHours for schedule ${scheduleId} to storage:`, employeeHours);
+    }, [employees, businessId, scheduleId]);
 
     // Helper function to filter employees by role only (Managers or Employees)
     const filterByRoleOnly = (titleOption, employees) => {
@@ -191,12 +210,15 @@ const useEmployeeData = (businessId) => {
       employeeAssignments,
       shiftTimes,
       getEmployees, 
+      setEmployees,
       filterEmployees,
       assignShiftOrEmployee,
       removeAssignment,
       onDrop,         
       onRemove,
-      setShiftTimes
+      setShiftTimes,
+      setEmployeeAssignments,
+      setShiftAssignments
     };
   };
   

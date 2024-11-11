@@ -1,21 +1,40 @@
 // Function to calculate the difference in hours between a start time and an end time
 export const calculateHoursDifference = (startTime, endTime) => {
-    // Parse start time and end time into hours and minutes
-    const [startHour, startMinutes] = startTime.split(/[: ]/).map((val, index) => index === 0 ? parseInt(val) % 12 : parseInt(val));
-    // Convert hour to 12-hour format (AM/PM)
-    const [endHour, endMinutes] = endTime.split(/[: ]/).map((val, index) => index === 0 ? parseInt(val) % 12 : parseInt(val));
-  
-    // Create a new Date object for start time and set the parsed hours and minutes
+    let [startHour, startMinutes, startPeriod] = startTime.match(/(\d+):(\d+)\s?(AM|PM)/i).slice(1);
+    startHour = parseInt(startHour);
+    startMinutes = parseInt(startMinutes);
+
+    // Convert start time to 24-hour format
+    if (startPeriod.toUpperCase() === 'PM' && startHour !== 12) {
+        startHour += 12;
+    } else if (startPeriod.toUpperCase() === 'AM' && startHour === 12) {
+        startHour = 0;
+    }
+
+    // Parse end time
+    let [endHour, endMinutes, endPeriod] = endTime.match(/(\d+):(\d+)\s?(AM|PM)/i).slice(1);
+    endHour = parseInt(endHour);
+    endMinutes = parseInt(endMinutes);
+
+    // Convert end time to 24-hour format
+    if (endPeriod.toUpperCase() === 'PM' && endHour !== 12) {
+        endHour += 12;
+    } else if (endPeriod.toUpperCase() === 'AM' && endHour === 12) {
+        endHour = 0;
+    }
+
+    // Create Date objects for start and end times on the same day
     const startDate = new Date();
-    startDate.setHours(startHour, startMinutes, 0);
-  
-    // Create a new Date object for end time and set the parsed hours and minutes
-    // If end time is in PM, add 12 to convert to 24-hour format
+    startDate.setHours(startHour, startMinutes, 0, 0);
+
     const endDate = new Date();
-    endDate.setHours(endHour + (endTime.includes('PM') ? 12 : 0), endMinutes, 0);
-  
-    // Calculate the difference in hours by dividing milliseconds by (1000 * 60 * 60)
-    return Math.abs((endDate - startDate) / (1000 * 60 * 60));
+    endDate.setHours(endHour, endMinutes, 0, 0);
+
+    // Calculate the difference in hours
+    const differenceInHours = (endDate - startDate) / (1000 * 60 * 60);
+
+    // If the difference is negative, add 24 hours to handle cases crossing midnight
+    return differenceInHours >= 0 ? differenceInHours : differenceInHours + 24;
 };
   
 // Function to determine the color for total hours display based on limits

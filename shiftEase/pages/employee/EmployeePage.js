@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
@@ -13,21 +14,34 @@ import { useNavigation } from '@react-navigation/native';
 const { width } = Dimensions.get('window');
 
 const EmployeePage = () => {
-
+    const navigation = useNavigation();
     const isMobile = width < 768; 
     const navigation = useNavigation();
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
+    console.log('Logged in user:', loggedInUser);
+
+    useEffect(() => {
+        if (!loggedInUser) {
+            console.log("No logged-in user, redirecting to login page...");
+            navigation.replace('Login');
+        }
+    }, [loggedInUser, navigation]);
+
+    const employee = loggedInUser ? loggedInUser.employee : null;
 
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
 
-    console.log('Logged in user:', loggedInUser);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
         return <EmployeePageMobile />;
+    }
+
+    if (!loggedInUser) {
+        return <Text>Loading...</Text>; 
     }
 
     return (
@@ -42,7 +56,7 @@ const EmployeePage = () => {
                     <View style={styles.spacer} />
 
                     <Text style = {styles.welcomeText}>
-                        {loggedInUser && loggedInUser.employee ? `Welcome, ${loggedInUser.employee.f_name}` : 'Welcome, User'}
+                        {employee ? `Welcome, ${employee.f_name}` : 'Welcome, User'}
                     </Text> 
 
                     <Image
@@ -58,7 +72,7 @@ const EmployeePage = () => {
                         <SidebarButton
                             icon = {require('../../assets/images/view_calendar_icon.png')}
                             label = "View Schedule"
-                            onPress={ () => {{/* View Schedule Page logic */}}}
+                            onPress={ () => navigation.navigate('ViewSchedule')}
                         />
                         <SidebarButton
                             icon = {require('../../assets/images/clipboard_with_checkmark.png')}
@@ -152,10 +166,10 @@ const EmployeePage = () => {
                             </View>
                         </LinearGradient> 
                         <AnnouncementsModal
-                        announcementsVisible={announcementsVisible}
-                        setAnnouncementsVisible={setAnnouncementsVisible}
-                        businessId={loggedInUser.employee.business_id}
-                        />  
+                            announcementsVisible={announcementsVisible}
+                            setAnnouncementsVisible={setAnnouncementsVisible}
+                            businessId={loggedInUser.employee.business_id}
+                        />   
                     </View>
                 </View>
 
