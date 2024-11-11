@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
@@ -20,6 +20,15 @@ const EmployeePage = () => {
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
     console.log('Logged in user:', loggedInUser);
 
+    useEffect(() => {
+        if (!loggedInUser) {
+            console.log("No logged-in user, redirecting to login page...");
+            navigation.replace('Login');
+        }
+    }, [loggedInUser, navigation]);
+
+    const employee = loggedInUser ? loggedInUser.employee : null;
+
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
 
@@ -27,6 +36,10 @@ const EmployeePage = () => {
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
         return <EmployeePageMobile />;
+    }
+
+    if (!loggedInUser) {
+        return <Text>Loading...</Text>; 
     }
 
     return (
@@ -41,7 +54,7 @@ const EmployeePage = () => {
                     <View style={styles.spacer} />
 
                     <Text style = {styles.welcomeText}>
-                        {loggedInUser && loggedInUser.employee ? `Welcome, ${loggedInUser.employee.f_name}` : 'Welcome, User'}
+                        {employee ? `Welcome, ${employee.f_name}` : 'Welcome, User'}
                     </Text> 
 
                     <Image
@@ -150,11 +163,11 @@ const EmployeePage = () => {
                                 
                             </View>
                         </LinearGradient> 
-                        {/* <AnnouncementsModal
-                        announcementsVisible={announcementsVisible}
-                        setAnnouncementsVisible={setAnnouncementsVisible}
-                        businessId={loggedInBusiness.business.business_id}
-                             />    */}
+                        <AnnouncementsModal
+                            announcementsVisible={announcementsVisible}
+                            setAnnouncementsVisible={setAnnouncementsVisible}
+                            businessId={loggedInUser.employee.business_id}
+                        />   
                     </View>
                 </View>
 

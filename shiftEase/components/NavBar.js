@@ -65,20 +65,21 @@ const NavBar = ({ homeRoute }) => {
                 console.log("Persistor state after purge:", persistor.getState());
                 console.log("Firebase Auth current user:", auth.currentUser);
                 console.log('Redux state after logout:', store.getState());
+                setTimeout(() => {
+                    const isLoggedOut = !auth.currentUser &&
+                        store.getState().user.loggedInUser === null &&
+                        store.getState().business.businessInfo === null;
 
-                const isLoggedOut = !auth.currentUser &&
-                    store.getState().user.loggedInUser === null &&
-                    store.getState().business.businessInfo === null;
-
-                if (isLoggedOut) {
-                    console.log("All logged out conditions met, navigating to login page...");
-                    setTimeout(() => {
-                        navigation.replace('Login');
-                        setIsLoggingOut(false);
-                    }, 500);
-                } else {
-                    console.log("Still logging out...");
-                }
+                    if (isLoggedOut) {
+                        console.log("All logged out conditions met, navigating to login page...");
+                        setTimeout(() => {
+                            navigation.replace('Login');
+                            setIsLoggingOut(false);
+                        }, 500);
+                    } else {
+                        console.log("Still logging out...");
+                    }
+                }, 500);
             } else {
                 console.error('Logout failed:', result.message);
                 setIsLoggingOut(false);
