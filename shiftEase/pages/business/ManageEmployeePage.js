@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const ManageEmployeePage = () => {
   const [employees, setEmployees] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [editedEmployee, setEditedEmployee] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [availability, setAvailability] = useState([]);
@@ -16,6 +17,7 @@ const ManageEmployeePage = () => {
 
   useEffect(() => {
     fetchEmployees();
+    fetchRoles();
   }, [businessId]);
 
   const fetchEmployees = async () => {
@@ -153,6 +155,44 @@ const ManageEmployeePage = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+        const response = await fetch(`http://localhost:5050/api/role/getBusinessRoles?businessId=${businessId}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch roles');
+        }
+
+        const data = await response.json();
+        
+        // Define default roles
+        const defaultRoles = [
+            { role_id: 1, role_name: 'Manager' },
+            { role_id: 2, role_name: 'Employee' }
+        ];
+
+        // Combine default roles with fetched roles, ensuring no duplicates
+        const uniqueRoles = [...defaultRoles, ...data.roles].filter((role, index, self) =>
+            index === self.findIndex((r) => r.role_id === role.role_id)
+        );
+
+        // Set the combined list of roles
+        setRoles(uniqueRoles);
+        console.log("Roles with defaults included:", uniqueRoles); // Debugging log
+    } catch (error) {
+        console.error('Error fetching roles:', error);
+    }
+};
+
+
+
+const getRoleName = (role_id) => {
+  console.log("Finding role for role_id:", role_id); // Debugging line
+  const role = roles.find(r => r.role_id === role_id);
+  console.log("Matched role:", role); // Debugging line
+  return role ? role.role_name : 'Unknown Role';
+};
+
+
   const handleAvailabilityChange = (index, field, value) => {
     setAvailability((prev) => {
       const newAvailability = [...prev];
@@ -203,12 +243,19 @@ const ManageEmployeePage = () => {
           {isEditing && editedEmployee && (
             <ScrollView contentContainerStyle={styles.editFormContent} style={styles.editForm}>
               <Text style={styles.editTitle}>Edit Employee</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Role ID"
-                value={editedEmployee.role_id?.toString()}
-                onChangeText={(value) => setEditedEmployee((prev) => ({ ...prev, role_id: value }))}
-              />
+               {/* Role Picker Dropdown */}
+              <Text style={styles.inputLabel}>Role</Text>
+              <Picker
+              selectedValue={editedEmployee.role_id}
+              style={styles.picker}
+              onValueChange={(value) => 
+                setEditedEmployee((prev) => ({ ...prev, role_id: value }))
+            }
+        >
+            {roles.map((role) => (
+                <Picker.Item key={role.role_id} label={role.role_name} value={role.role_id} />
+            ))}
+        </Picker>
               <TextInput
                 style={styles.input}
                 placeholder="First Name"
@@ -236,9 +283,15 @@ const ManageEmployeePage = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Birthday (YYYY-MM-DD)"
-                value={editedEmployee.birthday}
-                onChangeText={(value) => setEditedEmployee((prev) => ({ ...prev, birthday: value }))}
+                value={editedEmployee.birthday ? editedEmployee.birthday.split('T')[0] : ''}
+                onChangeText={(value) => 
+                setEditedEmployee((prev) => ({ 
+                ...prev, 
+                birthday: value.split('T')[0] // Restrict input to date only
+              }))
+              }
               />
+
 
               <Text style={styles.availabilityTitle}>Availability</Text>
               {availability.map((avail, index) => (
@@ -424,6 +477,21 @@ const styles = StyleSheet.create({
     width: 300,
     height: 50,
   },
+  picker: {
+    height: 50,
+    width: '100%',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    backgroundColor: '#fff',
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  }
+
 });
 
 export default ManageEmployeePage;
