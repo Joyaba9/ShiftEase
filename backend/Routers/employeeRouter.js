@@ -186,15 +186,24 @@ router.post('/addRequest', async (req, res) => {
     const requestData = req.body;
 
     // Validate required fields in the request data
-    const requiredFields = ['emp_id', 'business_id', 'request_type', 'day_type', 'start_date', 'end_date', 'reason'];
+    const requiredFields = ['emp_id', 'business_id', 'request_type', 'day_type', 'start_date', 'reason'];
     for (const field of requiredFields) {
         if (!requestData[field]) {
             return res.status(400).json({ success: false, message: `Field ${field} is required.` });
         }
     }
 
+    // Convert dates from string format to Date format for validation
+    const startDate = new Date(requestData.start_date);
+    const endDate = requestData.end_date ? new Date(requestData.end_date) : null;
+
+    // Check if start_date is before or the same as end_date
+    if (endDate && startDate > endDate) {
+        return res.status(400).json({ success: false, message: 'Start date must be before or equal to the end date.' });
+    }
+
     try {
-        // Add a new request for the given employee and business
+        // Add a new request for the given employee and business with validations
         const newRequest = await addRequestForEmployee(requestData);
 
         // Return the new request data in JSON format

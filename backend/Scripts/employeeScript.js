@@ -504,10 +504,13 @@ export async function addRequestForEmployee(requestData) {
     await client.connect();
 
     const { emp_id, business_id, request_type, day_type, start_date, end_date, start_time, end_time, reason } = requestData;
+    const startDate = new Date(start_date);
+    const endDate = end_date ? new Date(end_date) : null;
+    const currentDate = new Date();
 
     // Query to confirm employee's association with the business
     const checkEmployeeQuery = `
-        SELECT emp_id FROM employees 
+        SELECT emp_id, full_time, created_at FROM employees 
         WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
     `;
 
@@ -518,14 +521,54 @@ export async function addRequestForEmployee(requestData) {
         RETURNING request_id, request_type, day_type, start_date, end_date, start_time, end_time, status, reason;
     `;
 
+    // Check 'How long in advance for a request submission' in business preferences
+    const advanceSubmissionQuery = `
+        SELECT number FROM business_preferences 
+        WHERE business_id = $1 
+        AND preference_id = (SELECT preference_id FROM preferences WHERE preference_description = 'How long in advance for a request submission: ')
+    `;
+
+    // Check 'PTO Eligibility Period' in business preferences
+    const ptoEligibilityQuery = `
+        SELECT number FROM business_preferences 
+        WHERE business_id = $1 
+        AND preference_id = (SELECT preference_id FROM preferences WHERE preference_description = 'PTO Eligibility Period:')
+    `;
+
     try {
         // Check if the employee is associated with the business
-        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
-        if (checkRes.rows.length === 0) {
+        const employeeRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (employeeRes.rows.length === 0) {
             throw new Error('Employee is not associated with the specified business or is inactive');
         }
+        const { full_time, created_at: employmentStartDate } = employeeRes.rows[0];
 
-        // Insert the new request
+        // Advance Submission Check
+        const advanceSubmissionRes = await client.query(advanceSubmissionQuery, [business_id]);
+        if (advanceSubmissionRes.rows.length > 0) {
+            const weeksInAdvance = advanceSubmissionRes.rows[0].number;
+            const requiredSubmissionDate = new Date();
+            requiredSubmissionDate.setDate(currentDate.getDate() + weeksInAdvance * 7);
+            if (startDate < requiredSubmissionDate) {
+                throw new Error(`Requests must be submitted at least ${weeksInAdvance} weeks in advance.`);
+            }
+        }
+
+        // PTO Eligibility Check for part-time employees
+        if (!full_time) {
+            const ptoEligibilityRes = await client.query(ptoEligibilityQuery, [business_id]);
+            if (ptoEligibilityRes.rows.length > 0) {
+                const eligibilityMonths = ptoEligibilityRes.rows[0].number;
+                const eligibilityDate = new Date(employmentStartDate);
+                eligibilityDate.setMonth(eligibilityDate.getMonth() + eligibilityMonths);
+
+                if (currentDate < eligibilityDate) {
+                    throw new Error(`Non-full-time employees must work at the business for at least ${eligibilityMonths} months before submitting a PTO request.`);
+                }
+            }
+        }
+
+        // Insert the new request if all checks pass
         const result = await client.query(addRequestQuery, [emp_id, request_type, day_type, start_date, end_date, start_time, end_time, reason]);
         return result.rows[0]; // Return the created request record
     } catch (err) {
