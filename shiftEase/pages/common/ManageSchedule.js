@@ -32,7 +32,6 @@ const SchedulePage = () => {
     const [view, setView] = useState('week');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
-    console.log("Current date:", currentDate);
 
     console.log("Today's date:", new Date().toISOString().slice(0, 10));
     console.log("Current date state:", currentDate);
@@ -44,7 +43,6 @@ const SchedulePage = () => {
     const dates = useMemo(() => {
         return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
     }, [view, currentDate]);
-    //const previousDatesRef = useRef(dates);
 
     // Default number of rows in the schedule grid
     const DEFAULT_ROW_COUNT = 8;
@@ -117,7 +115,7 @@ const SchedulePage = () => {
                 console.log("Trying to loadSchedule");
 
                 // Get the start of the week based on currentDate
-                const weekStartDate = getStartOfWeek(currentDate);
+                const weekStartDate = getStartOfWeek(currentDate).toISOString().split('T')[0];
                 console.log("Business ID:", businessId, "Week Start Date:", weekStartDate);
     
                 // Fetch schedule and shifts from the API
@@ -195,12 +193,25 @@ const SchedulePage = () => {
         const loadedShiftAssignments = {};
 
         console.log("Row Mapping for schedule:", scheduleId, rowMapping);
-    
+
         // Iterate over each shift object in `existingSchedule.shifts`
         shifts.forEach((shift) => {
-            // Find the column index based on the date
-            const colIndex = dates.findIndex(date => date.toISOString().split('T')[0] === shift.date.split('T')[0]);
-    
+            
+            // Format shift date to 'YYYY-MM-DD'
+            const shiftDateFormatted = new Date(shift.date).toISOString().split('T')[0];
+            console.log('Formatted Shift Date: ', shiftDateFormatted)
+            
+            // Map each date in dates array to 'YYYY-MM-DD' format for comparison
+            const formattedDates = dates.map(date => date.toISOString().split('T')[0]);
+            console.log('Formatted Dates: ', formattedDates)
+            
+            // Find the column index for the shift date
+            const colIndex = formattedDates.findIndex(date => date === shiftDateFormatted);
+            
+            console.log('Column Index: ', colIndex)
+            console.log(`Shift Date: ${shiftDateFormatted}, Column Index: ${colIndex}`);
+            console.log("Comparing Shift Date:", shiftDateFormatted, "with Dates:", formattedDates);
+
             if (colIndex !== -1) {
                 // Get the saved employee ID and find the row index from rowMapping
                 const rowIndex = rowMapping[shift.employeeId]; //?? 0;

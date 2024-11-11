@@ -33,20 +33,18 @@ export const changeDate = (view, currentDate, direction) => {
     return newDate;
 };
 
-// Function to get an array of dates representing the days of the current week
 export const getWeekDates = (currentDate) => {
-    const dates = [];
-    // Calculate the start of the week (Sunday)
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    console.log('Getting week dates');
+    const startOfWeek = getStartOfWeek(currentDate); // Use the verified function here
+    console.log('Start of the week in getWeekDates:', startOfWeek);
 
-    // Loop through each day of the week and add it to the dates array
+    const dates = [];
     for (let i = 0; i < 7; i++) {
         const day = new Date(startOfWeek);
-        day.setDate(startOfWeek.getDate() + i); // Add each day of the week starting from the start date
-        dates.push(day); // Add the day to the dates array
+        day.setDate(startOfWeek.getDate() + i); // Increment day by day
+        dates.push(day);
+        console.log(`Date for day ${i}:`, day);
     }
-    // Return the array containing all days of the week
     return dates;
 };
 
@@ -56,13 +54,6 @@ export const getDayView = (currentDate) => {
     return [currentDate];
 };
 
-// export const getStartOfWeek = (date) => {
-//     const currentDate = new Date(date);
-//     const day = currentDate.getDay(); // Get the day of the week (0 = Sunday)
-//     const diff = currentDate.getDate() - day; // Adjust to the previous Sunday
-//     const startOfWeek = new Date(currentDate.setDate(diff));
-//     return startOfWeek.toISOString().slice(0, 10); // Format to YYYY-MM-DD
-// };
 export const getStartOfWeek = (currentDate) => {
     const startOfWeek = new Date(currentDate);
     const day = startOfWeek.getDay(); // 0 (Sunday) to 6 (Saturday)
@@ -71,5 +62,5 @@ export const getStartOfWeek = (currentDate) => {
     startOfWeek.setHours(0, 0, 0, 0);
 
     
-    return startOfWeek.toISOString().slice(0, 10);  // Format as 'YYYY-MM-DD' for API usage
+    return startOfWeek;
 };
