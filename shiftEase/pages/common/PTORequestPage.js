@@ -31,6 +31,10 @@ const PTORequestPage = () => {
     useEffect(() => {
         if (activeTab === 'Pending') {
             getAllRequestStatusByEmployee('Pending');
+        } else if (activeTab === 'Approved') {
+            getAllRequestStatusByEmployee('Approved');
+        } else if (activeTab === 'Rejected') {
+            getAllRequestStatusByEmployee('Rejected');
         }
     }, [activeTab]);
 
