@@ -9,8 +9,11 @@ const getRequestById = async (requestID) => {
             throw new Error('Failed to fetch request details');
         }
         const data = await response.json();
+        console.log('Data received from API:', data);
+
         if (data.success) {
-            return data.requestInfo; // Return the request data
+            console.log('Request info returned from API:', data.requestInfo);
+            return data.requestInfo;
         } else {
             throw new Error('Request not found');
         }
@@ -19,11 +22,10 @@ const getRequestById = async (requestID) => {
         return null;
     }
 };
-
 const { width } = Dimensions.get('window');
 
 const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
-    const [pulledOpenRequest, setPulledOpenRequest] = useState([]);
+    const [pulledOpenRequest, setPulledOpenRequest] = useState(null);
     const [canEdit, setCanEdit] = useState(false);
     const [managerComments, setManagerComments] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('');
@@ -32,9 +34,12 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
         if (requestID) {
             getRequestById(requestID).then((requestData) => {
                 if (requestData) {
-                    setPulledOpenRequest([requestData]); // Assuming only one request is returned
-                    console.log('request Data:' , setPulledOpenRequest);
-                    setSelectedStatus(requestData.status);
+                    setPulledOpenRequest(requestData);
+                    setManagerComments(requestData.manager_comments || '');
+                    setSelectedStatus(requestData.request_status || ''); // Update to use request_status
+
+                    console.log('Pulled Open Request:', requestData);
+
                     if (requestData.role === 'manager') {
                         setCanEdit(true);
                     }
@@ -74,24 +79,24 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
                                 <Text style={styles.sectionLabel}>First Name</Text>
                                 <TextInput
                                     style={styles.input}
-                                    //value={pulledOpenRequest[0].EmpFName}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.first_name || ''}
+                                    editable={false}
                                 />
                             </View>
                             <View style={styles.empInfoItem}>
                                 <Text style={styles.sectionLabel}>Last Name</Text>
                                 <TextInput
                                     style={styles.input}
-                                    //value={pulledOpenRequest[0].EmpLName}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.last_name || ''}
+                                    editable={false}
                                 />
                             </View>
                             <View style={styles.empInfoItem}>
                                 <Text style={styles.sectionLabel}>Created At</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.created_at}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? new Date(pulledOpenRequest.created_at).toLocaleDateString() : ''}
+                                    editable={false}
                                 />
                             </View>
                         </View>
@@ -104,8 +109,8 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
                                 <Text style={styles.sectionLabel}>Request Comments</Text>
                                 <TextInput
                                     style={styles.inputComment}
-                                    value={pulledOpenRequest.reason}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.request_comments || ''} // Use request_comments
+                                    editable={false}
                                     multiline
                                 />
 
@@ -115,7 +120,7 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
                                     placeholder="Enter any additional comments"
                                     value={managerComments}
                                     onChangeText={setManagerComments}
-                                    readOnly={!canEdit}
+                                    editable={canEdit}
                                     multiline
                                 />
                             </View>
@@ -124,29 +129,29 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
                                 <Text style={styles.sectionLabel}>Start Date</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.start_date}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? new Date(pulledOpenRequest.start_date).toLocaleDateString() : ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>End Date</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.end_date}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? new Date(pulledOpenRequest.end_date).toLocaleDateString() : ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>Start Time</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.start_time}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.start_time || ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>End Time</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.start_time}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.end_time || ''}
+                                    editable={false}
                                 />
                             </View>
 
@@ -154,32 +159,30 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
                                 <Text style={styles.sectionLabel}>Request ID</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.request_id}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? String(pulledOpenRequest.request_id) : ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>Request Status</Text>
                                 <Picker
-                                    selectedValue={pulledOpenRequest.status}
+                                    selectedValue={selectedStatus}
                                     style={styles.inputPicker}
                                     onValueChange={(itemValue) => setSelectedStatus(itemValue)}
                                     enabled={canEdit}
                                 >
                                     <Picker.Item label="Pending" value="Pending" />
                                     <Picker.Item label="Approved" value="Approved" />
-                                    <Picker.Item label="Denied" value="Denied" />
+                                    <Picker.Item label="Rejected" value="Rejected" />
                                 </Picker>
 
                                 <Text style={styles.sectionLabel}>Time-Off Type</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest.day_type}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.time_off_type || ''} // Use time_off_type
+                                    editable={false}
                                 />
                             </View>
                         </View>
-
-                        
                     </View>
                     
                     <View style={styles.buttonRowContainer}>

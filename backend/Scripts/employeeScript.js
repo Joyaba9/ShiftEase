@@ -534,7 +534,7 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status)
 }
 
 /**
- * Fetches details of a specific request based on the request ID.
+ * Fetches details of a specific request based on the request ID, including employee information.
  * 
  * @param {number} request_id - The ID of the request to fetch.
  * @returns {Promise<Object|null>} - An object containing all request details, or null if not found.
@@ -543,11 +543,24 @@ export async function getRequestById(request_id) {
     const client = await getClient();
     await client.connect();
 
-    // Query to fetch all fields for a specific request by request_id
+    // Query to fetch request details along with employee first name and last name
     const getRequestByIdQuery = `
-        SELECT request_id, request_type, start_date, end_date, status, reason, created_at day_type, start_time, end_time, manager_comments
-        FROM requests
-        WHERE request_id = $1;
+        SELECT 
+            r.request_id,
+            e.f_name AS first_name,
+            e.l_name AS last_name,
+            r.created_at,
+            r.reason AS request_comments,
+            r.manager_comments,
+            r.start_date,
+            r.end_date,
+            r.start_time,
+            r.end_time,
+            r.status AS request_status,
+            r.request_type AS time_off_type
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE r.request_id = $1;
     `;
 
     try {
@@ -563,6 +576,7 @@ export async function getRequestById(request_id) {
         await client.end();
     }
 }
+
 //#endregion
 
 //#region Add Request For Employee
