@@ -5,7 +5,7 @@ import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
 import { createWeeklyScheduleAPI, createShiftAPI } from '../../../backend/api/scheduleApi';
-import { getTotalHoursColor, formatTime, calculateHoursDifference } from '../../components/schedule_components/scheduleUtils';
+import { getTotalHoursColor, formatTime, calculateHoursDifference, convertRangeTo24HourFormat, convertTo24HourFormat } from '../../components/schedule_components/scheduleUtils';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
 import EmployeeList from '../../components/schedule_components/EmployeeList';
@@ -310,6 +310,7 @@ const SchedulePage = () => {
     // Color calculation for total hours display based on current values
     const totalHoursColor = getTotalHoursColor(totalHours, maxHours);
 
+    
     const handleCreateSchedule = async () => {
         console.log("Starting schedule creation...");
         if (!businessId) {
@@ -318,82 +319,88 @@ const SchedulePage = () => {
         }
     
         try {
-            //const weekStartDate = currentDate.toISOString().slice(0, 10);
             const weekStartDate = getStartOfWeek(currentDate);
+            console.log('Week start date: ', weekStartDate);
+    
+            const formattedWeekStartDate = `${weekStartDate.getFullYear()}-${(weekStartDate.getMonth() + 1)
+                .toString()
+                .padStart(2, '0')}-${weekStartDate.getDate().toString().padStart(2, '0')}`;
+            console.log('Formatted week start date: ', formattedWeekStartDate);
     
             // Create the weekly schedule
-            const createdSchedule = await createWeeklyScheduleAPI(businessId, weekStartDate);
-            
+            const createdSchedule = await createWeeklyScheduleAPI(businessId, formattedWeekStartDate);
+    
             const newMapping = {};
             const employeeHours = {};
-
+            const updatedEmployeeAssignments = { ...employeeAssignments };
+    
             // Recalculate each employee's shift hours
-            const updatedEmployeeAssignments = {...employeeAssignments};
             for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
                 const employee = updatedEmployeeAssignments[cellId];
-                if (employee) {
-                    const [startTime, endTime] = shiftTime.split(' - ');
-                    const shiftHours = calculateHoursDifference(startTime.trim(), endTime.trim());
-
-                    // Update shiftHours for this employee
-                    employee.shiftHours = (employee.shiftHours || 0) + shiftHours;
-                    
-                    // Log the calculated shift hours for verification
-                    console.log(`Calculated shift hours for employee ${employee.emp_id}:`, employee.shiftHours);
+                if (employee && shiftTime) {
+                    console.log(`Processing shift time: ${shiftTime}`);
+                    const [startTimeStr, endTimeStr] = shiftTime.split(' - ');
+    
+                    // Validate before converting to 24-hour format
+                    if (startTimeStr && endTimeStr) {
+                        const startTime = convertTo24HourFormat(startTimeStr.trim());
+                        const endTime = convertTo24HourFormat(endTimeStr.trim());
+                        const shiftHours = calculateHoursDifference(startTime, endTime);
+    
+                        employee.shiftHours = (employee.shiftHours || 0) + shiftHours;
+                        console.log(`Calculated shift hours for employee ${employee.emp_id}:`, employee.shiftHours);
+                    } else {
+                        console.error(`Invalid shift time format for ${shiftTime}. Expected "start - end" format.`);
+                    }
                 }
             }
-
+    
             // Loop through grid cells and save each shift
             for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
                 const employee = employeeAssignments[cellId];
-                if (employee) {
-                    
-                    // Extract rowIndex and colIndex from cellId to get the date for this shift
+                if (employee && shiftTime) {
                     const [rowIndex, colIndex] = cellId.split('-');
-
-                    // Record rowIndex in the mapping, associating it with the employee's ID
                     newMapping[employee.emp_id] = parseInt(rowIndex, 10);
-                    
-                    const [startTime, endTime] = shiftTime.split(' - ');
-
-                    // Calculate the date for the shift based on the week start date and column index (day of the week)
-                    const shiftDate = new Date(weekStartDate);
-                    shiftDate.setDate(shiftDate.getDate() + parseInt(colIndex));
-                    const formattedDate = shiftDate.toISOString().slice(0, 10); // Format to 'YYYY-MM-DD'
     
-                    console.log("Creating shift for:", employee.emp_id, formattedDate, startTime.trim(), endTime.trim());  // Log before calling API
-
-                    // Save shift for this employee on the specific date and time
-                    await createShiftAPI(
-                        employee.emp_id,
-                        createdSchedule.scheduleId,
-                        formattedDate,
-                        startTime.trim(),
-                        endTime.trim(),
-                    );
-
-                    // Store employee shift hours
-                    employeeHours[employee.emp_id] = employee.shiftHours;
+                    const [startTimeStr, endTimeStr] = shiftTime.split(' - ');
+                    if (startTimeStr && endTimeStr) {
+                        const startTime = convertTo24HourFormat(startTimeStr.trim());
+                        const endTime = convertTo24HourFormat(endTimeStr.trim());
+    
+                        // Calculate the date for the shift
+                        const shiftDate = new Date(weekStartDate);
+                        shiftDate.setDate(shiftDate.getDate() + parseInt(colIndex));
+                        const formattedDate = shiftDate.toISOString().slice(0, 10);
+    
+                        console.log("Creating shift for:", employee.emp_id, formattedDate, startTime, endTime);
+    
+                        // Save shift with 24-hour format times
+                        await createShiftAPI(
+                            employee.emp_id,
+                            createdSchedule.scheduleId,
+                            formattedDate,
+                            startTime,
+                            endTime,
+                        );
+    
+                        // Store employee shift hours
+                        employeeHours[employee.emp_id] = employee.shiftHours;
+                    } else {
+                        console.error(`Invalid shift time format for ${shiftTime}. Expected "start - end" format.`);
+                    }
                 }
             }
-            // Save the employee hours mapping to localStorage
+    
+            // Save employee hours and other data to localStorage
             localStorage.setItem(`employeeHours_${createdSchedule.scheduleId}`, JSON.stringify(employeeHours));
-            console.log("Employee hours saved to localStorage:", JSON.parse(localStorage.getItem(`employeeHours_${createdSchedule.scheduleId}`)));
-
-            // Save total hours to localStorage with the schedule ID as a key
             localStorage.setItem(`totalHours_${createdSchedule.scheduleId}`, totalHours);
-            console.log("Total hours saved to localStorage:", localStorage.getItem(`totalHours_${createdSchedule.scheduleId}`));
-
-            // Store the new mapping for this specific schedule ID
             setRowMappingBySchedule((prev) => {
                 const updatedMapping = { ...prev, [createdSchedule.scheduleId]: newMapping };
-                // Save updated mapping to local storage
                 localStorage.setItem("rowMappingBySchedule", JSON.stringify(updatedMapping));
                 return updatedMapping;
             });
-
+    
             console.log("Row Mapping for schedule:", createdSchedule.scheduleId, newMapping);
-
             alert("Schedule and shifts created successfully!");
     
         } catch (error) {
