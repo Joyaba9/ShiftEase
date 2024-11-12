@@ -1,39 +1,40 @@
 // Function to calculate the difference in hours between a start time and an end time
 export const calculateHoursDifference = (startTime, endTime) => {
-    let [startHour, startMinutes, startPeriod] = startTime.match(/(\d+):(\d+)\s?(AM|PM)/i).slice(1);
+    const startMatch = startTime.match(/(\d+):(\d+)\s?(AM|PM)/i);
+    const endMatch = endTime.match(/(\d+):(\d+)\s?(AM|PM)/i);
+
+    if (!startMatch || !endMatch) {
+        console.error(`Invalid time format. Start: ${startTime}, End: ${endTime}`);
+        return 0; // or handle this error as needed
+    }
+
+    let [startHour, startMinutes, startPeriod] = startMatch.slice(1);
     startHour = parseInt(startHour);
     startMinutes = parseInt(startMinutes);
 
-    // Convert start time to 24-hour format
     if (startPeriod.toUpperCase() === 'PM' && startHour !== 12) {
         startHour += 12;
     } else if (startPeriod.toUpperCase() === 'AM' && startHour === 12) {
         startHour = 0;
     }
 
-    // Parse end time
-    let [endHour, endMinutes, endPeriod] = endTime.match(/(\d+):(\d+)\s?(AM|PM)/i).slice(1);
+    let [endHour, endMinutes, endPeriod] = endMatch.slice(1);
     endHour = parseInt(endHour);
     endMinutes = parseInt(endMinutes);
 
-    // Convert end time to 24-hour format
     if (endPeriod.toUpperCase() === 'PM' && endHour !== 12) {
         endHour += 12;
     } else if (endPeriod.toUpperCase() === 'AM' && endHour === 12) {
         endHour = 0;
     }
 
-    // Create Date objects for start and end times on the same day
     const startDate = new Date();
     startDate.setHours(startHour, startMinutes, 0, 0);
 
     const endDate = new Date();
     endDate.setHours(endHour, endMinutes, 0, 0);
 
-    // Calculate the difference in hours
     const differenceInHours = (endDate - startDate) / (1000 * 60 * 60);
-
-    // If the difference is negative, add 24 hours to handle cases crossing midnight
     return differenceInHours >= 0 ? differenceInHours : differenceInHours + 24;
 };
   
@@ -55,4 +56,26 @@ export const formatTime = (timeStr) => {
     const formattedHour = hour % 12 || 12; 
     // Format time with leading zero for minutes
     return `${formattedHour}:${minute.toString().padStart(2, '0')} ${period}`;
+};
+
+// Helper function to convert a 12-hour time range to 24-hour format
+export const convertRangeTo24HourFormat = (timeRange) => {
+    const [startTime, endTime] = timeRange.split(" - ");
+    return `${convertTo24HourFormat(startTime)} - ${convertTo24HourFormat(endTime)}`;
+};
+  
+export const convertTo24HourFormat = (time) => {
+    const [timePart, modifier] = time.split(" ");
+    let [hours, minutes] = timePart.split(":");
+  
+    hours = parseInt(hours, 10);
+  
+    if (hours === 12) {
+      hours = 0;
+    }
+    if (modifier === "PM") {
+      hours += 12;
+    }
+  
+    return `${String(hours).padStart(2, "0")}:${minutes}`;
 };

@@ -37,23 +37,51 @@ const ShiftControls = ({
   // Function to add a new shift to the list
   const handleAddShift = () => {
     if (newShiftStart && newShiftEnd) {
+      // Convert times to 24-hour format for database storage
+      const startTime12Hour = convertTo12HourFormat(convertTo24HourFormat(newShiftStart));
+      const endTime12Hour = convertTo12HourFormat(convertTo24HourFormat(newShiftEnd));
+
       // Create a new shift object with a unique ID, start and end time, and draggable properties
         const newShift = {
             id: (shiftTimes.length + 1).toString(),    // Unique ID for the shift
-            time: `${newShiftStart} - ${newShiftEnd}`, // Displayed time range for the shift
+            time: `${startTime12Hour} - ${endTime12Hour}`, // Displayed time range for the shift
             assigned: false,                           // Initially not assigned
             pan: new Animated.ValueXY(),               // Initial pan position for dragging
         };
         // Add the new shift to the list of shift times
         setShiftTimes((prev) => [...prev, newShift]);
 
-        // Reset the input fields after adding the shift
         setNewShiftStart('');
         setNewShiftEnd('');
         setIsCustomStart(false);
         setIsCustomEnd(false);
     }
-};
+  };
+
+  const convertTo12HourFormat = (time24) => {
+    const [hours, minutes] = time24.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const adjustedHours = hours % 12 || 12; // Convert 0 or 12 to 12 in 12-hour format
+    return `${adjustedHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+  };
+
+    const convertTo24HourFormat = (time) => {
+      const [timePart, modifier] = time.split(" ");
+      let [hours, minutes] = timePart.split(":");
+
+      hours = parseInt(hours, 10);
+
+      if (hours === "12") {
+        hours = "00";
+      }
+      if (modifier === "PM") {
+        hours += 12;
+      }
+
+      hours = String(hours).padStart(2, "0");
+
+      return `${hours}:${minutes}`;
+    };
 
     return (
       <View style={styles.shiftContainer}>
