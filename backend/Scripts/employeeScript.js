@@ -488,6 +488,95 @@ export async function getAllRequestsByEmployee(emp_id, business_id) {
     }
 }
 
+/**
+ * Fetches all requests for an employee, sorted by the latest start date first,
+ * ensuring the employee belongs to the specified business.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @param {number} business_id - The ID of the business.
+ * @param {string} status - The status that is being searched for
+ * @returns {Promise<Array>} - An array of all request records, including day type and times.
+ */
+export async function getAllRequestStatusByEmployee(emp_id, business_id, status) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch all requests sorted by the latest start date first
+    const allRequestsByStatusQuery = `
+        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
+        FROM requests
+        WHERE emp_id = $1 AND status = $2
+        ORDER BY start_date DESC;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        // Fetch all requests if the association is confirmed
+        const result = await client.query(allRequestsByStatusQuery, [emp_id, status]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching all requests:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+/**
+ * Fetches details of a specific request based on the request ID, including employee information.
+ * 
+ * @param {number} request_id - The ID of the request to fetch.
+ * @returns {Promise<Object|null>} - An object containing all request details, or null if not found.
+ */
+export async function getRequestById(request_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to fetch request details along with employee first name and last name
+    const getRequestByIdQuery = `
+        SELECT 
+            r.request_id,
+            e.f_name AS first_name,
+            e.l_name AS last_name,
+            r.created_at,
+            r.reason AS request_comments,
+            r.manager_comments,
+            r.start_date,
+            r.end_date,
+            r.start_time,
+            r.end_time,
+            r.status AS request_status,
+            r.request_type AS time_off_type
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE r.request_id = $1;
+    `;
+
+    try {
+        // Fetch the request details
+        const result = await client.query(getRequestByIdQuery, [request_id]);
+
+        // Return the request details or null if not found
+        return result.rows.length > 0 ? result.rows[0] : null;
+    } catch (err) {
+        console.error('Error fetching request by ID:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 //#endregion
 
 //#region Add Request For Employee

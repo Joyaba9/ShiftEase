@@ -1,31 +1,100 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, Picker } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
 const { width } = Dimensions.get('window');
 
-const AddPTORequest = ({ addRequestVisible, setAddRequestVisible, businessId }) => {
+const AddPTORequest = ({ addRequestVisible, setAddRequestVisible}) => {
     const isMobile = width < 768;
     const [selectedPTOType, setSelectedPTOType] = useState("");
     const [selectedTimeOption, setSelectedTimeOption] = useState("One Day");
     const timeOptions = ["One Day", "Multi-Day"];
     const currentDate = new Date();
     const formattedDate = currentDate.toISOString().split('T')[0];
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+    const businessId = loggedInUser?.employee?.business_id;
+    const loggedInEmployeeId = loggedInUser?.employee?.emp_id;
 
-    const [markedDates1, setMarkedDates1] = useState({});
-    const [markedDates2, setMarkedDates2] = useState({});
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [markedStartDate, setMarkedStartDate] = useState({});
+    const [markedEndDate, setMarkedEndDate] = useState({});
     const [requestComments, setRequestComments] = useState('');
     const [startTime, setStartTime] = useState('9:00 AM');
-    const [endTime, setEndTime] = useState('9:30 AM');
+    const [endTime, setEndTime] = useState('5:00 PM');
+
+    const handleAddRequest = async () => {
+        if (!loggedInEmployeeId || !businessId ) {
+            alert('Error with emp or bus id');
+            return;
+        }
+
+        const adjustedEndDate = selectedTimeOption === 'One Day' ? startDate : endDate;
+
+        try {
+            console.log('Payload being sent:', {
+                loggedInEmployeeId,
+                businessId,
+                selectedPTOType,
+                selectedTimeOption,
+                startDate,
+                endDate,
+                startTime,
+                endTime,
+                requestComments
+            });
+        
+            const response = await fetch('http://localhost:5050/api/employee/addRequest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    emp_id: loggedInEmployeeId,
+                    business_id: businessId,
+                    request_type: selectedPTOType,
+                    day_type: selectedTimeOption,
+                    start_date: startDate,
+                    end_date: adjustedEndDate,
+                    start_time: startTime,
+                    end_time: endTime,
+                    reason: requestComments
+                }),
+            });
+        
+            const data = await response.json();
+        
+            if (response.ok) {
+                alert('Added request successfully');
+                // Clear input fields
+                setSelectedPTOType('');
+                setSelectedTimeOption('One Day');
+                setStartDate('');
+                setEndDate('');
+                setStartTime('9:00 AM');
+                setEndTime('5:00 PM');
+                setRequestComments(''); 
+            } else {
+                console.error('Failed to add request:', data);
+                alert(data.message || 'Failed to add request');
+            }
+        } catch (err) {
+            console.error('Error during adding request:', err);
+            alert('Error adding request');
+        }
+    }
 
     const handleDayPress1 = (day) => {
-        setMarkedDates1({
+        setStartDate(day.dateString);
+        setMarkedStartDate({
             [day.dateString]: { selected: true, selectedColor: '#9DCDCD' },
         });
     };
 
     const handleDayPress2 = (day) => {
-        setMarkedDates2({
+        setEndDate(day.dateString);
+        setMarkedEndDate({
             [day.dateString]: { selected: true, selectedColor: '#9DCDCD' },
         });
     };
@@ -77,7 +146,7 @@ const AddPTORequest = ({ addRequestVisible, setAddRequestVisible, businessId }) 
                                             style={styles.calendar}
                                             current={formattedDate}
                                             onDayPress={handleDayPress1}
-                                            markedDates={markedDates1}
+                                            markedDates={markedStartDate}
                                         />
                                     </View>
                                 )}
@@ -89,7 +158,7 @@ const AddPTORequest = ({ addRequestVisible, setAddRequestVisible, businessId }) 
                                                 style={styles.calendar}
                                                 current={formattedDate}
                                                 onDayPress={handleDayPress1}
-                                                markedDates={markedDates1}
+                                                markedDates={markedStartDate}
                                             />
                                         </View>
                                         <View style={styles.calendarWrapper}>
@@ -98,7 +167,7 @@ const AddPTORequest = ({ addRequestVisible, setAddRequestVisible, businessId }) 
                                                 style={styles.calendar}
                                                 current={formattedDate}
                                                 onDayPress={handleDayPress2}
-                                                markedDates={markedDates2}
+                                                markedDates={markedEndDate}
                                             />
                                         </View>
                                     </View>
@@ -188,7 +257,7 @@ const AddPTORequest = ({ addRequestVisible, setAddRequestVisible, businessId }) 
                     </View>
 
                     <View style={styles.buttonRowContainer}>
-                        <TouchableOpacity style={styles.bubbleButton} onPress={() => console.log("Submit pressed")}>
+                        <TouchableOpacity style={styles.bubbleButton} onPress={handleAddRequest}>
                             <Text style={styles.buttonText}>Submit</Text>
                         </TouchableOpacity>
 

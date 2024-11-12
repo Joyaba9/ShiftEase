@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -177,6 +177,49 @@ router.get('/getAllRequests', async (req, res) => {
         res.status(200).json({ success: true, allRequests });
     } catch (err) {
         console.error('Error fetching all requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to fetch all requests for a specifric employee, sorted by status
+router.get('/getAllRequestsByStatus', async (req, res) => {
+    console.log('Function being called');
+    const { emp_id, business_id, status } = req.query; // Extract emp_id and business_id from query parameters
+
+    // Validate input
+    if (!emp_id || !business_id || !status) {
+        return res.status(400).json({ success: false, message: 'Employee ID, Business ID, and Status are required' });
+    }
+
+    try {
+        // Fetch all requests for the given employee and business
+        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status);
+
+        // Return the list of all requests in JSON format
+        res.status(200).json({ success: true, allRequestsByStatus });
+    } catch (err) {
+        console.error('Error fetching all requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ROute for displaying the request by requestid
+router.get('/getRequestInfo', async (req, res) => {
+    const { request_id } = req.query; 
+
+    // Validate input
+    if (!request_id) {
+        return res.status(400).json({ success: false, message: 'request id is required' });
+    }
+
+    try {
+        // Fetch all requests for the given employee and business
+        const requestInfo = await getRequestById (request_id);
+
+        // Return the list of all requests in JSON format
+        res.status(200).json({ success: true, requestInfo });
+    } catch (err) {
+        console.error('Error fetching request info:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });

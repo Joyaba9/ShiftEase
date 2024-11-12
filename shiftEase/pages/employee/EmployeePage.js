@@ -9,12 +9,10 @@ import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
 import AnnouncementsModal from '../business/AnnouncementsModal';
-import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
 const EmployeePage = () => {
-    const navigation = useNavigation();
     const isMobile = width < 768; 
     const navigation = useNavigation();
 
