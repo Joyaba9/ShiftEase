@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -199,6 +199,27 @@ router.get('/getAllRequestsByStatus', async (req, res) => {
         res.status(200).json({ success: true, allRequestsByStatus });
     } catch (err) {
         console.error('Error fetching all requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ROute for displaying the request by requestid
+router.get('/getRequestInfo', async (req, res) => {
+    const { request_id } = req.query; 
+
+    // Validate input
+    if (!request_id) {
+        return res.status(400).json({ success: false, message: 'request id is required' });
+    }
+
+    try {
+        // Fetch all requests for the given employee and business
+        const requestInfo = await getRequestById (request_id);
+
+        // Return the list of all requests in JSON format
+        res.status(200).json({ success: true, requestInfo });
+    } catch (err) {
+        console.error('Error fetching request info:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });

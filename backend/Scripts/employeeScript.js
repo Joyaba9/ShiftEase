@@ -532,6 +532,37 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status)
         await client.end();
     }
 }
+
+/**
+ * Fetches details of a specific request based on the request ID.
+ * 
+ * @param {number} request_id - The ID of the request to fetch.
+ * @returns {Promise<Object|null>} - An object containing all request details, or null if not found.
+ */
+export async function getRequestById(request_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to fetch all fields for a specific request by request_id
+    const getRequestByIdQuery = `
+        SELECT request_id, request_type, start_date, end_date, status, reason, created_at day_type, start_time, end_time, manager_comments
+        FROM requests
+        WHERE request_id = $1;
+    `;
+
+    try {
+        // Fetch the request details
+        const result = await client.query(getRequestByIdQuery, [request_id]);
+
+        // Return the request details or null if not found
+        return result.rows.length > 0 ? result.rows[0] : null;
+    } catch (err) {
+        console.error('Error fetching request by ID:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
 //#endregion
 
 //#region Add Request For Employee
