@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -175,6 +175,28 @@ router.get('/getAllRequests', async (req, res) => {
 
         // Return the list of all requests in JSON format
         res.status(200).json({ success: true, allRequests });
+    } catch (err) {
+        console.error('Error fetching all requests:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to fetch all requests for a specifric employee, sorted by status
+router.get('/getAllRequestsByStatus', async (req, res) => {
+    console.log('Function being called');
+    const { emp_id, business_id, status } = req.query; // Extract emp_id and business_id from query parameters
+
+    // Validate input
+    if (!emp_id || !business_id || !status) {
+        return res.status(400).json({ success: false, message: 'Employee ID, Business ID, and Status are required' });
+    }
+
+    try {
+        // Fetch all requests for the given employee and business
+        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status);
+
+        // Return the list of all requests in JSON format
+        res.status(200).json({ success: true, allRequestsByStatus });
     } catch (err) {
         console.error('Error fetching all requests:', err);
         res.status(500).json({ success: false, message: err.message });

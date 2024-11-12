@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import NavBar from '../../components/NavBar';
 import AddPTORequestModal from './AddPTORequestModal';
 import OpenPTORequestModal from './OpenPTORequestModal';
 
 const PTORequestPage = () => {
-    const [activeTab, setActiveTab] = useState('Pending'); 
+    const [activeTab, setActiveTab] = useState('Upcoming'); 
     const [addRequestVisible, setAddRequestVisible] = useState(false);
     const [requestVisible, setRequestVisible] = useState(false);
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+    const businessId = loggedInUser?.employee?.business_id;
+    const loggedInEmployeeId = loggedInUser?.employee?.emp_id;
     
     const handleAddRequestVis = () => {
         setAddRequestVisible(true);
@@ -16,7 +20,7 @@ const PTORequestPage = () => {
     const handleOpenRequest = () => {
         setRequestVisible(true);
     };
-
+    
     //Hardcoded test content
     pulledAccount = [
         {isBusiness: 'no', BusID: '6', EmpID: '6U27'}
@@ -35,11 +39,63 @@ const PTORequestPage = () => {
     ];
     pulledPastRequest = [];
 
+    const getAllRequestStatusByEmployee = async ( status ) => {
+        if (!loggedInEmployeeId || !businessId || !status) {
+            alert('Error with emp or bus id or status');
+            return;
+        }
+
+        // orig
+        /*
+        try {
+            console.log('Payload being sent:', {
+                loggedInEmployeeId,
+                businessId,
+                status
+            });
+        
+            const response = await fetch('http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+        
+            const data = await response.json();
+        
+            if (response.ok) {
+                alert('Displayed request successfully');
+            } else {
+                console.error('Failed to display request:', data);
+                alert(data.message || 'Failed to display request');
+            }
+        } catch (err) {
+            console.error('Error during displaying request:', err);
+            alert('Error displaying request');
+        }*/
+
+        //new
+        try {
+            const response = await fetch(`http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}`);
+            if (!response.ok) {
+              throw new Error('Failed to fetch employees');
+            }
+            const data = await response.json();
+            console.log('Fetched roles:', data);
+            //setEmployees(data.map(employee => ({ ...employee, id: employee.emp_id })));
+          } catch (error) {
+            console.error('Error fetching employees:', error);
+          }
+
+    }
+
     // Function to render content based on the selected tab
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'Pending':
+            case 'Upcoming':
                 return setTabContent(pulledPendingRequest);
+            case 'Pending':
+                return getAllRequestStatusByEmployee('Pending');
             case 'Approved':
                 return setTabContent(pulledApprovedRequest);
             case 'Rejected':
@@ -91,8 +147,8 @@ const PTORequestPage = () => {
     };
 
     // Function to return the appropriate circle style based on status
-    const getStatusCircleStyle = (status) => {
-        switch (status) {
+    const getStatusCircleStyle = (statusTab) => {
+        switch (statusTab) {
             case 'Pending':
                 return { backgroundColor: '#F5C242' }; 
             case 'Approved':
@@ -120,6 +176,13 @@ const PTORequestPage = () => {
 
                     <View style={styles.tabContainer}>
                         {/* Tabs */}
+
+                        <TouchableOpacity 
+                            style={[styles.tabButton, activeTab === 'Upcoming' && styles.activeTab]} 
+                            onPress={() => setActiveTab('Upcoming')}
+                        >
+                            <Text style={styles.tabText}>Upcoming</Text>
+                        </TouchableOpacity>
                         <TouchableOpacity 
                             style={[styles.tabButton, activeTab === 'Pending' && styles.activeTab]} 
                             onPress={() => setActiveTab('Pending')}
