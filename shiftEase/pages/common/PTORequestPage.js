@@ -13,6 +13,9 @@ const PTORequestPage = () => {
     const [rejectedRequests, setRejectedRequests] = useState([]);
     const [requestVisible, setRequestVisible] = useState(false);
     const [requestID, setRequestID] = useState('');
+    const [upcomingRequests, setUpcomingRequests] = useState([]);
+    const [pastRequests, setPastRequests] = useState([]);
+
 
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
     const businessId = loggedInUser?.employee?.business_id;
@@ -35,31 +38,43 @@ const PTORequestPage = () => {
             getAllRequestStatusByEmployee('Approved');
         } else if (activeTab === 'Rejected') {
             getAllRequestStatusByEmployee('Rejected');
+        } else if (activeTab === 'Upcoming') {
+            getAllRequestStatusByEmployee('Upcoming');
+        } else if (activeTab === 'Past') {
+            getAllRequestStatusByEmployee('Past');
         }
     }, [activeTab]);
 
     const getAllRequestStatusByEmployee = async (status) => {
-        if (!loggedInEmployeeId || !businessId || !status) {
-            alert('Error with employee or business id or status');
+        if (!loggedInEmployeeId || !businessId) {
+            alert('Error with employee or business ID');
             return;
         }
-
+    
         try {
-            const response = await fetch(`http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch requests');
+            let url;
+            let setFunction;
+    
+            if (status === 'Pending' || status === 'Approved' || status === 'Rejected') {
+                // For Pending, Approved, and Rejected, use the existing route
+                url = `http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}`;
+                setFunction = status === 'Pending' ? setPendingRequests : status === 'Approved' ? setApprovedRequests : setRejectedRequests;
+            } else if (status === 'Upcoming') {
+                // For Upcoming, use the getFutureRequests route
+                url = `http://localhost:5050/api/employee/getFutureRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`;
+                setFunction = setUpcomingRequests;
+            } else if (status === 'Past') {
+                // For Past, use the getPastRequests route
+                url = `http://localhost:5050/api/employee/getPastRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`;
+                setFunction = setPastRequests;
             }
+    
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch requests');
+    
             const data = await response.json();
             if (data.success) {
-                if (status === 'Pending') {
-                    setPendingRequests(data.allRequestsByStatus);
-                } else if (status === 'Approved') {
-                    setApprovedRequests(data.allRequestsByStatus);
-                } else if (status === 'Rejected') {
-                    setRejectedRequests(data.allRequestsByStatus);
-                } else if (status === 'Past') {
-                    setPastRequests(data.allRequestsByStatus);
-                }
+                setFunction(data.allRequestsByStatus || data.pastRequests || data.futureRequests || []);
             } else {
                 console.error('Unexpected response format:', data);
             }
@@ -71,20 +86,17 @@ const PTORequestPage = () => {
 
     // Add a log in renderTabContent to check if pendingRequests contains data
     const renderTabContent = () => {
-        console.log("Rendering tab content for:", activeTab);
-        console.log("Current pendingRequests:", pendingRequests); // Log pendingRequests
-    
         switch (activeTab) {
             case 'Upcoming':
-                return setTabContent(pulledPastRequest || []);
+                return setTabContent(upcomingRequests || []);
             case 'Pending':
-                return setTabContent(pendingRequests || []); // Use the array or an empty array
+                return setTabContent(pendingRequests || []);
             case 'Approved':
                 return setTabContent(approvedRequests || []);
             case 'Rejected':
                 return setTabContent(rejectedRequests || []);
             case 'Past':
-                return setTabContent(pulledPastRequest || []);
+                return setTabContent(pastRequests || []);
             default:
                 return null;
         }
@@ -108,30 +120,17 @@ const PTORequestPage = () => {
 
     // Updated setTabContent with a check to ensure pulledRequestArray is an array
     const setTabContent = (pulledRequestArray = []) => {
-        console.log("Received array for tab content:", pulledRequestArray);
-    
         if (!Array.isArray(pulledRequestArray)) {
             console.error("Expected an array but received:", pulledRequestArray);
             return null;
         }
     
-        // Log fields of each request to confirm structure
-        pulledRequestArray.forEach(request => console.log("Request structure:", request));
-    
-        // Assuming `status` or similar criteria could be used to filter data if necessary
-        const filteredRequests = pulledRequestArray.filter(request => {
-            // Apply other relevant filters here if needed
-            return true; // For now, return all requests without additional filtering
-        });
-    
-        console.log("Filtered requests for rendering:", filteredRequests);
-    
-        return filteredRequests.length === 0 ? (
+        return pulledRequestArray.length === 0 ? (
             <View>
-                <Text style={styles.noTabContent}>No Pending Requests</Text>
+                <Text style={styles.noTabContent}>No {activeTab} Requests</Text>
             </View>
         ) : (
-            filteredRequests.map((request) => (
+            pulledRequestArray.map((request) => (
                 <View key={request.request_id} style={styles.requestBox}>
                     <View style={styles.requestRow}>
                         <View style={[styles.requestItem, styles.idColumn]}>
