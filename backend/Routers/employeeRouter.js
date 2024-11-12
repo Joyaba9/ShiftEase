@@ -214,9 +214,9 @@ router.post('/addRequest', async (req, res) => {
     }
 });
 
-// Route to update the status of a request (Approve or Reject)
+// Route to update the status of a request (Approve or Reject) and add manager comments
 router.put('/updateRequestStatus', async (req, res) => {
-    const { request_id, business_id, status } = req.body;
+    const { request_id, business_id, status, manager_comments } = req.body;
 
     // Validate input
     if (!request_id || !business_id || !status) {
@@ -224,8 +224,8 @@ router.put('/updateRequestStatus', async (req, res) => {
     }
 
     try {
-        // Update the request status
-        const updatedRequest = await updateRequestStatus(request_id, business_id, status);
+        // Update the request status and manager comments
+        const updatedRequest = await updateRequestStatus(request_id, business_id, status, manager_comments);
 
         // Return the updated request data in JSON format
         res.status(200).json({ success: true, updatedRequest });

@@ -584,14 +584,15 @@ export async function addRequestForEmployee(requestData) {
 //#region Update Request Status
 
 /**
- * Updates the status of a request for an employee.
+ * Updates the status of a request for an employee and optionally adds manager comments.
  * 
  * @param {number} request_id - The ID of the request to update.
  * @param {number} business_id - The ID of the business associated with the request.
  * @param {string} status - The new status of the request ('Approved' or 'Rejected').
+ * @param {string} [manager_comments] - Optional manager comments to include with the update.
  * @returns {Promise<Object>} - The updated request record.
  */
-export async function updateRequestStatus(request_id, business_id, status) {
+export async function updateRequestStatus(request_id, business_id, status, manager_comments = null) {
     const client = await getClient();
     await client.connect();
 
@@ -608,12 +609,13 @@ export async function updateRequestStatus(request_id, business_id, status) {
         WHERE request_id = $1 AND emp_id IN (SELECT emp_id FROM employees WHERE business_id = $2);
     `;
 
-    // Query to update the request status
+    // Query to update the request status and optionally add manager comments
     const updateStatusQuery = `
         UPDATE requests
-        SET status = $1, updated_at = CURRENT_TIMESTAMP
+        SET status = $1, updated_at = CURRENT_TIMESTAMP, 
+            manager_comments = COALESCE($3, manager_comments)
         WHERE request_id = $2
-        RETURNING request_id, emp_id, request_type, day_type, start_date, end_date, start_time, end_time, status, reason;
+        RETURNING request_id, emp_id, request_type, day_type, start_date, end_date, start_time, end_time, status, reason, manager_comments;
     `;
 
     try {
@@ -623,8 +625,8 @@ export async function updateRequestStatus(request_id, business_id, status) {
             throw new Error('Request not found or does not belong to the specified business.');
         }
 
-        // Update the status of the request
-        const result = await client.query(updateStatusQuery, [status, request_id]);
+        // Update the status and manager comments of the request
+        const result = await client.query(updateStatusQuery, [status, request_id, manager_comments]);
         return result.rows[0]; // Return the updated request record
     } catch (err) {
         console.error('Error updating request status:', err);
