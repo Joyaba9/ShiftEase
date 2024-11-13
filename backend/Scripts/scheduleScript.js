@@ -151,7 +151,7 @@ export async function createWeeklySchedule(businessId, weekStartDate) {
  * @param {string} endTime - The end time of the shift (HH:MM:SS format).
  * @returns {Promise<Object>} - The created shift details.
  */
-export async function createShift(employeeId, scheduleId, date, startTime, endTime) {
+export async function createShift(employeeId, scheduleId, date, startTime, endTime, rowIndex) {
     const client = await getClient();
     await client.connect();
 
@@ -161,7 +161,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
         scheduleId,
         date,
         startTime,
-        endTime
+        endTime,
+        rowIndex
     });
 
     // Begin transaction
@@ -169,8 +170,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
     try {
         // Insert new shift into the shifts table
         const shiftInsertQuery = `
-            INSERT INTO shifts (schedule_id, emp_id, title, description, start_time, end_time, shift_status, is_open, date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING shift_id;
+            INSERT INTO shifts (schedule_id, emp_id, title, description, start_time, end_time, shift_status, is_open, date, row_index)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING shift_id;
         `;
         const shiftTitle = `Shift for Employee ${employeeId} on ${date}`;
         const shiftDescription = `Shift on ${date} from ${startTime} to ${endTime} for Employee ${employeeId}`;
@@ -185,7 +186,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             endTime,
             'assigned',
             false,
-            date
+            date,
+            rowIndex
         ]);
 
         // Execute shift insertion
@@ -198,7 +200,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             endTime,
             'assigned',  // Default status
             false,        // Default: not open
-            date
+            date,
+            rowIndex
         ]);
 
         // Commit transaction
@@ -215,6 +218,7 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             description: shiftDescription,
             status: 'assigned',
             date,
+            rowIndex
         };
 
     } catch (err) {

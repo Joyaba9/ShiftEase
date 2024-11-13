@@ -372,7 +372,7 @@ const SchedulePage = () => {
                         shiftDate.setDate(shiftDate.getDate() + parseInt(colIndex));
                         const formattedDate = shiftDate.toISOString().slice(0, 10);
     
-                        console.log("Creating shift for:", employee.emp_id, formattedDate, startTime, endTime);
+                        console.log("Creating shift for:", employee.emp_id, formattedDate, startTime, endTime, parseInt(rowIndex, 10));
     
                         // Save shift with 24-hour format times
                         await createShiftAPI(
@@ -381,6 +381,7 @@ const SchedulePage = () => {
                             formattedDate,
                             startTime,
                             endTime,
+                            parseInt(rowIndex, 10)
                         );
     
                         // Store employee shift hours
@@ -394,13 +395,13 @@ const SchedulePage = () => {
             // Save employee hours and other data to localStorage
             localStorage.setItem(`employeeHours_${createdSchedule.scheduleId}`, JSON.stringify(employeeHours));
             localStorage.setItem(`totalHours_${createdSchedule.scheduleId}`, totalHours);
-            setRowMappingBySchedule((prev) => {
-                const updatedMapping = { ...prev, [createdSchedule.scheduleId]: newMapping };
-                localStorage.setItem("rowMappingBySchedule", JSON.stringify(updatedMapping));
-                return updatedMapping;
-            });
+            // setRowMappingBySchedule((prev) => {
+            //     const updatedMapping = { ...prev, [createdSchedule.scheduleId]: newMapping };
+            //     localStorage.setItem("rowMappingBySchedule", JSON.stringify(updatedMapping));
+            //     return updatedMapping;
+            // });
     
-            console.log("Row Mapping for schedule:", createdSchedule.scheduleId, newMapping);
+            //console.log("Row Mapping for schedule:", createdSchedule.scheduleId, newMapping);
             alert("Schedule and shifts created successfully!");
     
         } catch (error) {

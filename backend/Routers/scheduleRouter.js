@@ -56,16 +56,16 @@ router.post('/createWeeklySchedule', async (req, res) => {
 
 // Route to create a shift for an employee on a specific date
 router.post('/createShift', async (req, res) => {
-    const { employeeId, scheduleId, date, startTime, endTime } = req.body;
+    const { employeeId, scheduleId, date, startTime, endTime, rowIndex } = req.body;
 
     // Input validation
-    if (!employeeId || !scheduleId || !date || !startTime || !endTime) {
-        return res.status(400).json({ error: 'All fields (employeeId, scheduleId, date, startTime, endTime) are required.' });
+    if (employeeId === undefined || scheduleId === undefined || date === undefined || startTime === undefined || endTime === undefined || rowIndex === undefined) {
+        return res.status(400).json({ error: 'All fields (employeeId, scheduleId, date, startTime, endTime, rowIndex) are required.' });
     }
 
     try {
         // Call the script function to create the shift
-        const shift = await createShift(employeeId, scheduleId, date, startTime, endTime);
+        const shift = await createShift(employeeId, scheduleId, date, startTime, endTime, rowIndex);
 
         res.status(200).json({ success: true, shift });
     } catch (err) {

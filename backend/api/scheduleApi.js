@@ -27,8 +27,8 @@ export async function createWeeklyScheduleAPI(businessId, weekStartDate) {
 }
 
 // Function to call the backend API to create a shift
-export async function createShiftAPI(employeeId, scheduleId, date, startTime, endTime) {
-    console.log("Calling createShiftAPI with:", { employeeId, scheduleId, date, startTime, endTime });  
+export async function createShiftAPI(employeeId, scheduleId, date, startTime, endTime, rowIndex) {
+    console.log("Calling createShiftAPI with:", { employeeId, scheduleId, date, startTime, endTime, rowIndex });  
     try {
         const response = await fetch(baseURL + `schedule/createShift`, {
             method: 'POST',
@@ -41,6 +41,7 @@ export async function createShiftAPI(employeeId, scheduleId, date, startTime, en
                 date,
                 startTime,
                 endTime,
+                rowIndex,
             }),
         });
 
