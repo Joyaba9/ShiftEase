@@ -58,12 +58,6 @@ const SchedulePage = () => {
     const [buttonText, setButtonText] = useState("Create Schedule");
     const [isLoading, setIsLoading] = useState(true);
     
-    const [rowMappingBySchedule, setRowMappingBySchedule] = useState(() => {
-        // Load from local storage on initial load
-        const storedMapping = localStorage.getItem("rowMappingBySchedule");
-        return storedMapping ? JSON.parse(storedMapping) : {};
-    });
-
     // Custom hook to handle employee and schedule-related data
     const { 
         employees, 
@@ -78,19 +72,6 @@ const SchedulePage = () => {
         setEmployeeAssignments,
         setShiftAssignments
     } = useEmployeeData(businessId);
-
-    // Load total hours from local storage on schedule ID change
-    useEffect(() => {
-        if (scheduleId) {
-            const savedTotalHours = localStorage.getItem(`totalHours_${scheduleId}`);
-            if (savedTotalHours) {
-                setTotalHours(parseInt(savedTotalHours, 10));
-                console.log(`Loaded total hours from storage for schedule ID ${scheduleId}:`, savedTotalHours);
-            } else {
-                console.warn(`No total hours found in storage for schedule ID ${scheduleId}`);
-            }
-        }
-    }, [scheduleId]);
 
     // Load the existing schedule and shifts when the component mounts
     useEffect(() => {
@@ -119,15 +100,7 @@ const SchedulePage = () => {
                     setShiftsData(existingSchedule.shifts);
                     console.log("Loaded Shifts Data: ", existingSchedule.shifts);
 
-                    mapShiftsToAssignments(existingSchedule.shifts, scheduleId);
-                    
-                    // Load saved shift hours for employees
-                    const savedEmployeeHours = JSON.parse(localStorage.getItem(`employeeHours_${scheduleId}`) || "{}");
-                    employees.forEach((emp) => {
-                        emp.shiftHours = savedEmployeeHours[emp.emp_id] || 0;
-                    });
-                    console.log("Updated employees with shiftHours from local storage:", employees);
-                    setEmployeeAssignments(employees);
+                    mapShiftsToAssignments(existingSchedule.shifts);
                     
                 } else {
                     setScheduleId(null);
@@ -152,7 +125,7 @@ const SchedulePage = () => {
             }
         };
         loadSchedule();
-    }, [businessId, currentDate, rowMappingBySchedule]);
+    }, [businessId, currentDate]);
 
     // Verify that dates are consistent and not changing unexpectedly
     useEffect(() => {
@@ -166,9 +139,11 @@ const SchedulePage = () => {
         }
     }, [shiftsData, dates, scheduleId]);
 
-    const mapShiftsToAssignments = (shifts, scheduleId) => {
+    const mapShiftsToAssignments = (shifts) => {
         const loadedEmployeeAssignments = {};
         const loadedShiftAssignments = {};
+        let totalHours = 0;
+        const employeeHoursMap = {};
 
         // Iterate over each shift object in `existingSchedule.shifts`
         shifts.forEach((shift) => {
@@ -183,13 +158,9 @@ const SchedulePage = () => {
             
             // Find the column index for the shift date
             const colIndex = formattedDates.findIndex(date => date === shiftDateFormatted);
-            
-            console.log('Column Index: ', colIndex)
-            console.log(`Shift Date: ${shiftDateFormatted}, Column Index: ${colIndex}`);
-            console.log("Comparing Shift Date:", shiftDateFormatted, "with Dates:", formattedDates);
 
             if (colIndex !== -1) {
-                // Get the saved employee ID and find the row index from rowMapping
+                // Get the saved employee ID and find the row index from shifts data 
                 const rowIndex = shift.rowIndex ?? 0;
                 console.log("RowIndex: ", rowIndex);
                 if (rowIndex === undefined) {
@@ -207,13 +178,34 @@ const SchedulePage = () => {
     
                 // Assign shift timing to the corresponding cell
                 loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
-    
                 console.log(`Mapped cell ${cellId}:`, loadedEmployeeAssignments[cellId], loadedShiftAssignments[cellId]);
+            
+                // Calculate shift hours for the employee
+                const shiftHours = calculateHoursDifference(shift.startTime, shift.endTime);
+                console.log(`Shift hours calculated for ${f_name} ${l_name}: ${shiftHours}`);
+
+                totalHours += shiftHours;
+            
+                // Add hours to the employee's total
+                if (!employeeHoursMap[shift.employeeId]) {
+                    employeeHoursMap[shift.employeeId] = 0;
+                }
+                employeeHoursMap[shift.employeeId] += shiftHours;
+        
             }
         });
 
+        // Update state with recalculated hours
+        employees.forEach(emp => {
+            emp.shiftHours = employeeHoursMap[emp.emp_id] || 0;
+            console.log(`Updated shift hours for ${emp.f_name} ${emp.l_name}: ${emp.shiftHours}`);
+        });
+        setTotalHours(totalHours);
         setEmployeeAssignments(loadedEmployeeAssignments);
         setShiftAssignments(loadedShiftAssignments);
+
+        console.log("Calculated total hours:", totalHours);
+        console.log("Updated employee shift hours:", employees);
     };
 
     // Function to handle the selection of a role filter option
@@ -363,17 +355,7 @@ const SchedulePage = () => {
                     }
                 }
             }
-    
-            // Save employee hours and other data to localStorage
-            localStorage.setItem(`employeeHours_${createdSchedule.scheduleId}`, JSON.stringify(employeeHours));
-            localStorage.setItem(`totalHours_${createdSchedule.scheduleId}`, totalHours);
-            // setRowMappingBySchedule((prev) => {
-            //     const updatedMapping = { ...prev, [createdSchedule.scheduleId]: newMapping };
-            //     localStorage.setItem("rowMappingBySchedule", JSON.stringify(updatedMapping));
-            //     return updatedMapping;
-            // });
-    
-            //console.log("Row Mapping for schedule:", createdSchedule.scheduleId, newMapping);
+            
             alert("Schedule and shifts created successfully!");
     
         } catch (error) {
