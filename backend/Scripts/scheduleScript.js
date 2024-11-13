@@ -257,7 +257,8 @@ export async function getShiftsByScheduleId(scheduleId) {
                 s.end_time,
                 s.shift_status,
                 s.is_open,
-                s.date AS shift_date
+                s.date AS shift_date,
+                s.row_index
             FROM
                 shifts s
             JOIN
@@ -280,7 +281,8 @@ export async function getShiftsByScheduleId(scheduleId) {
             startTime: row.start_time,
             endTime: row.end_time,
             status: row.shift_status,
-            isOpen: row.is_open
+            isOpen: row.is_open,
+            rowIndex: row.row_index
         }));
 
     } catch (err) {

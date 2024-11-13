@@ -79,20 +79,6 @@ const SchedulePage = () => {
         setShiftAssignments
     } = useEmployeeData(businessId);
 
-    useEffect(() => {
-        localStorage.setItem("rowMappingBySchedule", JSON.stringify(rowMappingBySchedule));
-    }, [rowMappingBySchedule]);
-
-    // Load row mapping on schedule ID change
-    useEffect(() => {
-        const storedMapping = localStorage.getItem("rowMappingBySchedule");
-        const parsedMapping = storedMapping ? JSON.parse(storedMapping) : {};
-        if (scheduleId && parsedMapping[scheduleId]) {
-            setRowMappingBySchedule(parsedMapping);
-            console.log("Loaded rowMapping for schedule ID from storage:", parsedMapping[scheduleId]);
-        }
-    }, [scheduleId]);
-
     // Load total hours from local storage on schedule ID change
     useEffect(() => {
         if (scheduleId) {
@@ -133,13 +119,7 @@ const SchedulePage = () => {
                     setShiftsData(existingSchedule.shifts);
                     console.log("Loaded Shifts Data: ", existingSchedule.shifts);
 
-                    // Check the row mapping for the loaded schedule
-                    const loadedRowMapping = rowMappingBySchedule[scheduleId] || {};
-                    if (Object.keys(loadedRowMapping).length === 0) {
-                        console.warn(`Row mapping not found for schedule ID: ${scheduleId}`);
-                    }
-
-                    mapShiftsToAssignments(existingSchedule.shifts, scheduleId, loadedRowMapping);
+                    mapShiftsToAssignments(existingSchedule.shifts, scheduleId);
                     
                     // Load saved shift hours for employees
                     const savedEmployeeHours = JSON.parse(localStorage.getItem(`employeeHours_${scheduleId}`) || "{}");
@@ -182,17 +162,13 @@ const SchedulePage = () => {
     // Map shifts to assignments whenever shiftsData changes
     useEffect(() => {
         if (shiftsData.length > 0 && dates.length > 0 && scheduleId) {
-            const loadedRowMapping = rowMappingBySchedule[scheduleId] || {};
-            mapShiftsToAssignments(shiftsData, scheduleId, loadedRowMapping);
+            mapShiftsToAssignments(shiftsData, scheduleId);
         }
-    }, [shiftsData, dates, scheduleId, rowMappingBySchedule]);
+    }, [shiftsData, dates, scheduleId]);
 
-    const mapShiftsToAssignments = (shifts, scheduleId, rowMapping) => {
-        console.log("Mapping shifts with rowMapping:", rowMapping);
+    const mapShiftsToAssignments = (shifts, scheduleId) => {
         const loadedEmployeeAssignments = {};
         const loadedShiftAssignments = {};
-
-        console.log("Row Mapping for schedule:", scheduleId, rowMapping);
 
         // Iterate over each shift object in `existingSchedule.shifts`
         shifts.forEach((shift) => {
@@ -214,10 +190,10 @@ const SchedulePage = () => {
 
             if (colIndex !== -1) {
                 // Get the saved employee ID and find the row index from rowMapping
-                const rowIndex = rowMapping[shift.employeeId]; //?? 0;
+                const rowIndex = shift.rowIndex ?? 0;
                 console.log("RowIndex: ", rowIndex);
                 if (rowIndex === undefined) {
-                    console.warn(`No row mapping found for employee ID ${shift.employeeId}; defaulting to row 0.`);
+                    console.warn(`No row index found for employee ID ${shift.employeeId}; defaulting to row 0.`);
                 }
                 const safeRowIndex = rowIndex ?? 0;
                 // Generate the cell ID based on employeeId and column index
@@ -239,10 +215,6 @@ const SchedulePage = () => {
         setEmployeeAssignments(loadedEmployeeAssignments);
         setShiftAssignments(loadedShiftAssignments);
     };
-
-    useEffect(() => {
-        console.log("Current rowMappingBySchedule state:", rowMappingBySchedule);
-    }, [rowMappingBySchedule]);
 
     // Function to handle the selection of a role filter option
     const handleSelectTitle = (selectedTitle) => {
