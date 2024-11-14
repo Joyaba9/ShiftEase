@@ -1,6 +1,6 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
 
@@ -125,6 +125,25 @@ router.get('/getScheduleId', async (req, res) => {
     } catch (err) {
         console.error('Error fetching schedule:', err);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Route to create a shift offer
+router.post('/createShiftOffer', async (req, res) => {
+    const { shift_id, emp_id } = req.body;
+
+    // Validate that both shift_id and emp_id are provided
+    if (!shift_id || !emp_id) {
+        return res.status(400).json({ error: 'Shift ID and Employee ID are required.' });
+    }
+
+    try {
+        // Create the shift offer and handle shift history if needed
+        const result = await createShiftOffer(shift_id, emp_id);
+        res.status(200).json({ success: true, result });
+    } catch (err) {
+        console.error('Error creating shift offer:', err);
+        res.status(400).json({ success: false, error: err.message });
     }
 });
 

@@ -314,3 +314,99 @@ export async function getScheduleByBusinessIdAndDate(businessId, weekStartDate) 
 }
 
 //#endregion
+
+//#region Create Shift Offer
+
+/**
+ * Creates a shift offer for a specified shift and employee.
+ * Sets the offer status to 'offered' by default and logs the offered timestamp.
+ * If the shift does not exist in shift_history, creates an initial entry.
+ *
+ * @param {number} shift_id - The unique identifier of the shift.
+ * @param {number} emp_id - The ID of the employee to whom the shift offer is made.
+ * @returns {Promise<object>} - An object containing details of the created shift offer and shift history status.
+ */
+export async function createShiftOffer(shift_id, emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Check if the shift_id is associated with the emp_id in the shifts table, if none, throw an error
+        const associationCheckQuery = `
+            SELECT 1 FROM shifts WHERE shift_id = $1 AND emp_id = $2
+        `;
+        const associationCheckResult = await client.query(associationCheckQuery, [shift_id, emp_id]);
+
+        if (associationCheckResult.rowCount === 0) {
+            throw new Error(`Shift ID ${shift_id} is not associated with Employee ID ${emp_id}`);
+        }
+
+        // Check if a shift offer for this shift_id and emp_id already exists, if it does, throw an error
+        const offerExistsQuery = `
+            SELECT 1 FROM shift_offers WHERE shift_id = $1 AND offered_emp_id = $2
+        `;
+        const offerExistsResult = await client.query(offerExistsQuery, [shift_id, emp_id]);
+
+        if (offerExistsResult.rowCount > 0) {
+            throw new Error(`A shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} already exists`);
+        }
+
+        // Check if shift_id exists in shift_history
+        const historyCheckQuery = `
+            SELECT 1 FROM shift_history WHERE shift_id = $1
+        `;
+        const historyCheckResult = await client.query(historyCheckQuery, [shift_id]);
+
+        // If the shift is not in shift_history, fetch shift details and create an entry
+        if (historyCheckResult.rowCount === 0) {
+            const shiftQuery = `
+                SELECT emp_id AS current_emp_id, start_time AS current_start_time, end_time AS current_end_time
+                FROM shifts
+                WHERE shift_id = $1
+            `;
+            const shiftResult = await client.query(shiftQuery, [shift_id]);
+
+            if (shiftResult.rowCount === 0) {
+                throw new Error(`Shift with ID ${shift_id} not found`);
+            }
+
+            const { current_emp_id, current_start_time, current_end_time } = shiftResult.rows[0];
+
+            // Insert a new entry into shift_history
+            const historyInsertQuery = `
+                INSERT INTO shift_history (
+                    shift_id, previous_emp_id, current_emp_id, old_start_time, current_start_time,
+                    old_end_time, current_end_time, status, change_date
+                )
+                VALUES ($1, NULL, $2, $3, $3, $4, $4, 'confirmed', CURRENT_TIMESTAMP)
+                RETURNING shift_history_id
+            `;
+            await client.query(historyInsertQuery, [shift_id, current_emp_id, current_start_time, current_end_time]);
+            console.log('Shift history created successfully for shift_id:', shift_id);
+        }
+
+        // SQL query to insert a new shift offer
+        const offerInsertQuery = `
+            INSERT INTO shift_offers (shift_id, offered_emp_id, offer_status, offered_at)
+            VALUES ($1, $2, 'offered', CURRENT_TIMESTAMP)
+            RETURNING shift_offer_id, shift_id, offered_emp_id, offer_status, offered_at;
+        `;
+
+        const offerResult = await client.query(offerInsertQuery, [shift_id, emp_id]);
+        console.log('Shift offer created successfully:', offerResult.rows[0]);
+
+        // Return the created shift
+        return {
+            shiftOffer: offerResult.rows[0],
+            message: historyCheckResult.rowCount === 0 ? 'Shift history created' : 'Shift history already exists'
+        };
+    } catch (err) {
+        console.error('Error creating shift offer:', err); // Log error for debugging
+        throw err; // Rethrow error for higher-level handling
+    } finally {
+        await client.end(); // Ensure database connection is closed
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
