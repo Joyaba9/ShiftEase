@@ -503,7 +503,7 @@ export async function acceptShiftOffer(shift_id, emp_id) {
 
         /*
         * If a shift history entry exists, update it with the new emp_id and add to change_type "Employee Change"
-        * If no shift history entry exists, create a new entry with the previous_emp_id as NULL and add to change_type "Employee Change"
+        * If no shift history entry exists, create a new entry
         */
         if (historyCheckResult.rowCount > 0) {
             const { shift_history_id, current_emp_id: previousEmpId, change_type } = historyCheckResult.rows[0];
