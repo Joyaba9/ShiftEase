@@ -151,7 +151,7 @@ export async function createWeeklySchedule(businessId, weekStartDate) {
  * @param {string} endTime - The end time of the shift (HH:MM:SS format).
  * @returns {Promise<Object>} - The created shift details.
  */
-export async function createShift(employeeId, scheduleId, date, startTime, endTime) {
+export async function createShift(employeeId, scheduleId, date, startTime, endTime, rowIndex) {
     const client = await getClient();
     await client.connect();
 
@@ -161,7 +161,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
         scheduleId,
         date,
         startTime,
-        endTime
+        endTime,
+        rowIndex
     });
 
     // Begin transaction
@@ -169,8 +170,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
     try {
         // Insert new shift into the shifts table
         const shiftInsertQuery = `
-            INSERT INTO shifts (schedule_id, emp_id, title, description, start_time, end_time, shift_status, is_open, date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING shift_id;
+            INSERT INTO shifts (schedule_id, emp_id, title, description, start_time, end_time, shift_status, is_open, date, row_index)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING shift_id;
         `;
         const shiftTitle = `Shift for Employee ${employeeId} on ${date}`;
         const shiftDescription = `Shift on ${date} from ${startTime} to ${endTime} for Employee ${employeeId}`;
@@ -185,7 +186,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             endTime,
             'assigned',
             false,
-            date
+            date,
+            rowIndex
         ]);
 
         // Execute shift insertion
@@ -198,7 +200,8 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             endTime,
             'assigned',  // Default status
             false,        // Default: not open
-            date
+            date,
+            rowIndex
         ]);
 
         // Commit transaction
@@ -215,6 +218,7 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
             description: shiftDescription,
             status: 'assigned',
             date,
+            rowIndex
         };
 
     } catch (err) {
@@ -228,6 +232,103 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
 }
 
 //#endregion
+
+/**
+ * Updates an existing shift's details.
+ *
+ * @param {number} shiftId - The ID of the shift to update.
+ * @param {Object} newShiftInfo - The new details for the shift.
+ * @param {string} newShiftInfo.startTime - The new start time of the shift.
+ * @param {string} newShiftInfo.endTime - The new end time of the shift.
+ * @returns {Promise<void>}
+ */
+export async function updateShift(shiftId, newShiftInfo) {
+    const client = await getClient();
+    console.log('Database Client Obtained');
+
+    await client.connect();
+    console.log('Connected to Database');
+
+    const { startTime, endTime } = newShiftInfo;
+
+    // First, retrieve the shift details to get the date and emp_id for generating the new description
+    const getShiftQuery = `
+        SELECT date, emp_id
+        FROM shifts
+        WHERE shift_id = $1
+    `;
+
+    try {
+        const shiftResult = await client.query(getShiftQuery, [shiftId]);
+        
+        if (shiftResult.rowCount === 0) {
+            throw new Error('Shift not found');
+        }
+
+        const { date, emp_id } = shiftResult.rows[0];
+
+        // Generate the new description
+        const description = `Shift on ${date} from ${startTime} to ${endTime} for Employee ${emp_id}`;
+
+        // SQL query to update shift information including the description
+        const updateQuery = `
+            UPDATE shifts
+            SET start_time = $1,
+                end_time = $2,
+                description = $3,
+                updated_at = NOW()
+            WHERE shift_id = $4
+        `;
+
+        const res = await client.query(updateQuery, [startTime, endTime, description, shiftId]);
+        console.log('Update Query Executed');
+
+        if (res.rowCount > 0) {
+            console.log(`Shift ID ${shiftId} updated successfully with new description: ${description}`);
+        } else {
+            throw new Error('Shift update failed');
+        }
+    } catch (err) {
+        console.error('Error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+/**
+ * Removes a shift by its shift_id.
+ * @param {number} shiftId - The ID of the shift to be removed.
+ * @returns {Promise<Object>} - Confirmation of the deleted shift.
+ */
+export async function removeShift(shiftId) {
+    const client = await getClient();
+    await client.connect();
+
+    // Begin transaction
+    await client.query('BEGIN');
+    try {
+        // Delete the shift by shift_id
+        const deleteQuery = `DELETE FROM shifts WHERE shift_id = $1 RETURNING *;`;
+        const result = await client.query(deleteQuery, [shiftId]);
+
+        if (result.rowCount === 0) {
+            throw new Error('Shift not found');
+        }
+
+        // Commit transaction
+        await client.query('COMMIT');
+        return { success: true, message: 'Shift removed successfully', deletedShift: result.rows[0] };
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error removing shift:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
 
 //#region Get Shifts by Schedule ID
 
@@ -253,7 +354,8 @@ export async function getShiftsByScheduleId(scheduleId) {
                 s.end_time,
                 s.shift_status,
                 s.is_open,
-                s.date AS shift_date
+                s.date AS shift_date,
+                s.row_index
             FROM
                 shifts s
             JOIN
@@ -276,7 +378,8 @@ export async function getShiftsByScheduleId(scheduleId) {
             startTime: row.start_time,
             endTime: row.end_time,
             status: row.shift_status,
-            isOpen: row.is_open
+            isOpen: row.is_open,
+            rowIndex: row.row_index
         }));
 
     } catch (err) {

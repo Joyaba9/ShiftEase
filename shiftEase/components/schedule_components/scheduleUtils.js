@@ -1,41 +1,50 @@
 // Function to calculate the difference in hours between a start time and an end time
 export const calculateHoursDifference = (startTime, endTime) => {
-    const startMatch = startTime.match(/(\d+):(\d+)\s?(AM|PM)/i);
-    const endMatch = endTime.match(/(\d+):(\d+)\s?(AM|PM)/i);
+    // Match 12-hour format with optional AM/PM
+    const match12Hour = /(\d{1,2}):(\d{2})\s?(AM|PM)?/i;
+    // Match 24-hour format without AM/PM
+    const match24Hour = /(\d{1,2}):(\d{2})(?::\d{2})?/;
+
+    let startHour, startMinutes, endHour, endMinutes;
+
+    const startMatch = startTime.match(match12Hour) || startTime.match(match24Hour);
+    const endMatch = endTime.match(match12Hour) || endTime.match(match24Hour);
 
     if (!startMatch || !endMatch) {
         console.error(`Invalid time format. Start: ${startTime}, End: ${endTime}`);
-        return 0; // or handle this error as needed
+        return 0;
     }
 
-    let [startHour, startMinutes, startPeriod] = startMatch.slice(1);
-    startHour = parseInt(startHour);
-    startMinutes = parseInt(startMinutes);
-
-    if (startPeriod.toUpperCase() === 'PM' && startHour !== 12) {
-        startHour += 12;
-    } else if (startPeriod.toUpperCase() === 'AM' && startHour === 12) {
-        startHour = 0;
+    // Parse start time
+    [startHour, startMinutes] = [parseInt(startMatch[1]), parseInt(startMatch[2])];
+    if (startMatch[3]) {  // If AM/PM format
+        const period = startMatch[3].toUpperCase();
+        if (period === 'PM' && startHour !== 12) startHour += 12;
+        if (period === 'AM' && startHour === 12) startHour = 0;
     }
 
-    let [endHour, endMinutes, endPeriod] = endMatch.slice(1);
-    endHour = parseInt(endHour);
-    endMinutes = parseInt(endMinutes);
-
-    if (endPeriod.toUpperCase() === 'PM' && endHour !== 12) {
-        endHour += 12;
-    } else if (endPeriod.toUpperCase() === 'AM' && endHour === 12) {
-        endHour = 0;
+    // Parse end time
+    [endHour, endMinutes] = [parseInt(endMatch[1]), parseInt(endMatch[2])];
+    if (endMatch[3]) {  // If AM/PM format
+        const period = endMatch[3].toUpperCase();
+        if (period === 'PM' && endHour !== 12) endHour += 12;
+        if (period === 'AM' && endHour === 12) endHour = 0;
     }
 
+    // Create date objects
     const startDate = new Date();
     startDate.setHours(startHour, startMinutes, 0, 0);
 
     const endDate = new Date();
     endDate.setHours(endHour, endMinutes, 0, 0);
 
-    const differenceInHours = (endDate - startDate) / (1000 * 60 * 60);
-    return differenceInHours >= 0 ? differenceInHours : differenceInHours + 24;
+    // Calculate the difference
+    let differenceInHours = (endDate - startDate) / (1000 * 60 * 60);
+
+    // Handle shifts that go past midnight
+    if (differenceInHours < 0) differenceInHours += 24;
+
+    return differenceInHours;
 };
   
 // Function to determine the color for total hours display based on limits
