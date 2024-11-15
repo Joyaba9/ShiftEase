@@ -549,3 +549,67 @@ export async function acceptShiftOffer(shift_id, emp_id) {
 }
 
 //#endregion
+
+//#region Cancel Shift Offer
+
+/**
+ * Cancels a shift offer for a specific shift and employee.
+ * Updates the offer status to 'cancelled', resets accepted_at, and sets accepted_emp_id to offered_emp_id.
+ * Throws an error if the shift offer is already accepted.
+ *
+ * @param {number} shift_id - The unique identifier of the shift.
+ * @param {number} emp_id - The ID of the employee who was offered the shift.
+ * @returns {Promise<object>} - An object containing details of the cancelled shift offer.
+ */
+export async function cancelShiftOffer(shift_id, emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Step 1: Check if the shift offer exists and its current status
+        const checkQuery = `
+            SELECT offer_status, offered_emp_id, accepted_emp_id 
+            FROM shift_offers 
+            WHERE shift_id = $1 AND offered_emp_id = $2;
+        `;
+        const checkResult = await client.query(checkQuery, [shift_id, emp_id]);
+
+        if (checkResult.rowCount === 0) {
+            throw new Error(`No active shift offer found for Shift ID ${shift_id} and Employee ID ${emp_id}`);
+        }
+
+        const { offer_status, offered_emp_id, accepted_emp_id } = checkResult.rows[0];
+
+        // Prevent cancellation if the shift offer is already accepted
+        if (offer_status === 'accepted') {
+            throw new Error(
+                `Cannot cancel the shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} as it has already been accepted by Employee ID ${accepted_emp_id}`
+            );
+        }
+
+        // Prevent duplicate cancellations
+        if (offer_status === 'cancelled') {
+            throw new Error(`Shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} is already cancelled`);
+        }
+
+        // Step 2: Update the offer status to 'cancelled', reset accepted_at, and set accepted_emp_id to offered_emp_id
+        const cancelQuery = `
+            UPDATE shift_offers
+            SET offer_status = 'cancelled', accepted_at = NULL, accepted_emp_id = $1
+            WHERE shift_id = $2 AND offered_emp_id = $3
+            RETURNING shift_offer_id, shift_id, offered_emp_id, accepted_emp_id, offer_status, accepted_at;
+        `;
+        const cancelResult = await client.query(cancelQuery, [offered_emp_id, shift_id, emp_id]);
+
+        console.log(`Shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} has been cancelled successfully.`);
+        return cancelResult.rows[0];
+    } catch (err) {
+        console.error('Error cancelling shift offer:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion

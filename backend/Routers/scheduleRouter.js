@@ -1,6 +1,6 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer, cancelShiftOffer } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
 
@@ -162,6 +162,23 @@ router.post('/acceptShiftOffer', async (req, res) => {
         res.status(200).json({ success: true, result });
     } catch (err) {
         console.error('Error accepting shift offer:', err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+// Route to cancel a shift offer
+router.post('/cancelShiftOffer', async (req, res) => {
+    const { shift_id, emp_id } = req.body;
+
+    if (!shift_id || !emp_id) {
+        return res.status(400).json({ error: 'Shift ID and Employee ID are required.' });
+    }
+
+    try {
+        const result = await cancelShiftOffer(shift_id, emp_id);
+        res.status(200).json({ success: true, result });
+    } catch (err) {
+        console.error('Error cancelling shift offer:', err);
         res.status(400).json({ success: false, error: err.message });
     }
 });
