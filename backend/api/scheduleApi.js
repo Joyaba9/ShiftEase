@@ -80,3 +80,58 @@ export async function fetchScheduleAPI(businessId, weekStartDate) {
         throw error;
     }
 }
+
+// Function to call the backend API to update a shift
+export async function updateShiftAPI(shiftId, startTime, endTime, description) {
+    try {
+        const response = await fetch(baseURL + `schedule/updateShift/${shiftId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                startTime,
+                endTime,
+                description,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Shift updated:", data);
+            return data;
+        } else {
+            const errorData = await response.json();
+            console.error("Failed to update shift:", errorData);
+            throw new Error(errorData.message || 'Failed to update shift');
+        }
+    } catch (error) {
+        console.error('Error updating shift:', error);
+        throw error;
+    }
+}
+
+// Function to call the backend API to remove a shift
+export async function removeShiftAPI(shiftId) {
+    try {
+        const response = await fetch(baseURL + `schedule/removeShift/${shiftId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Shift removed successfully:", data);
+            return data;
+        } else {
+            const errorData = await response.json();
+            console.error("Failed to remove shift:", errorData);
+            throw new Error(errorData.message || 'Failed to remove shift');
+        }
+    } catch (error) {
+        console.error('Error removing shift:', error);
+        throw error;
+    }
+}

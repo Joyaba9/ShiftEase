@@ -4,7 +4,7 @@ import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
-import { createWeeklyScheduleAPI, createShiftAPI } from '../../../backend/api/scheduleApi';
+import { createWeeklyScheduleAPI, createShiftAPI, updateShiftAPI, removeShiftAPI } from '../../../backend/api/scheduleApi';
 import { getTotalHoursColor, formatTime, calculateHoursDifference, convertRangeTo24HourFormat, convertTo24HourFormat } from '../../components/schedule_components/scheduleUtils';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
@@ -364,6 +364,82 @@ const SchedulePage = () => {
         }
     };
 
+    const handleUpdateSchedule = async () => {
+        console.log('Dates:', dates);
+        console.log('Shifts Data:', shiftsData);
+
+        try {
+            // Iterate over each shift in the previously loaded schedule
+            for (const previousShift of shiftsData) {
+                // Construct cellId for the previous shift
+                const colIndex = dates.findIndex(
+                    date => new Date(date).toISOString().split('T')[0] === previousShift.date.split('T')[0]
+                );
+                const cellId = `${previousShift.rowIndex}-${colIndex}`;
+
+                // Log previous shift and cellId
+                console.log('Checking previous shift:', previousShift);
+                console.log('Calculated cellId:', cellId);
+
+                const currentShiftTime = shiftAssignments[cellId];
+
+                if (!currentShiftTime) {
+                    // The cell is empty, but there was a shift before - remove it
+                    if (previousShift.shiftId) {
+                        await removeShiftAPI(previousShift.shiftId);
+                        console.log(`Removed shift for cell ${cellId}`);
+                    } else {
+                        console.warn(`Shift ID missing for previous shift in cell ${cellId}`);
+                    }
+                } else if (currentShiftTime) {
+                    const [newStartTime, newEndTime] = currentShiftTime.split(' - ').map(convertTo24HourFormat);
+
+                    if (
+                        newStartTime !== previousShift.startTime ||
+                        newEndTime !== previousShift.endTime
+                    ) {
+                        // Update the shift if the times have changed
+                        await updateShiftAPI(
+                            previousShift.shiftId,
+                            newStartTime,
+                            newEndTime,
+                            `Shift on ${previousShift.date}`
+                        );
+                        console.log(`Updated shift for cell ${cellId}`);
+                    }
+                }
+            }
+
+            // Handle new shifts added in the grid but not present in shiftsData
+            for (const cellId in employeeAssignments) {
+                const employee = employeeAssignments[cellId];
+                const currentShiftTime = shiftAssignments[cellId];
+                const [rowIndex, colIndex] = cellId.split('-').map(Number);
+                const shiftDate = new Date(dates[colIndex]).toISOString().split('T')[0];
+
+                if (
+                    currentShiftTime &&
+                    !shiftsData.some(
+                        shift =>
+                            `${shift.rowIndex}-${dates.findIndex(date => new Date(date).toISOString().split('T')[0] === shift.date.split('T')[0])}` === cellId
+                    )
+                ) {
+                    // A new shift is present in the grid but not in the loaded data - create it
+                    if (employee && employee.emp_id) {
+                        const [startTime, endTime] = currentShiftTime.split(' - ').map(convertTo24HourFormat);
+                        await createShiftAPI(employee.emp_id, scheduleId, shiftDate, startTime, endTime, rowIndex);
+                        console.log(`Created new shift for cell ${cellId}`);
+                    }
+                }
+            }
+
+            alert('Schedule updated successfully!');
+        } catch (error) {
+            console.error('Error updating schedule:', error);
+            alert('Failed to update schedule. Please try again.');
+        }
+    };
+
     return (
         <ScrollView 
                 contentContainerStyle={{ flexGrow: 1 }}
@@ -476,7 +552,10 @@ const SchedulePage = () => {
                                         onBlur={handleRowCountBlur}
                                     />
                                 </View>
-                                <TouchableOpacity style={styles.createBtn} onPress={handleCreateSchedule}>
+                                <TouchableOpacity 
+                                    style={styles.createBtn} 
+                                    onPress={buttonText === "Create Schedule" ? handleCreateSchedule : handleUpdateSchedule}
+                                >
                                     <Text style = {{ color: '#fff' }}>{buttonText}</Text>
                                 </TouchableOpacity>
                             </View>  

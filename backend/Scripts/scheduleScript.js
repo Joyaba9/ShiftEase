@@ -233,6 +233,103 @@ export async function createShift(employeeId, scheduleId, date, startTime, endTi
 
 //#endregion
 
+/**
+ * Updates an existing shift's details.
+ *
+ * @param {number} shiftId - The ID of the shift to update.
+ * @param {Object} newShiftInfo - The new details for the shift.
+ * @param {string} newShiftInfo.startTime - The new start time of the shift.
+ * @param {string} newShiftInfo.endTime - The new end time of the shift.
+ * @returns {Promise<void>}
+ */
+export async function updateShift(shiftId, newShiftInfo) {
+    const client = await getClient();
+    console.log('Database Client Obtained');
+
+    await client.connect();
+    console.log('Connected to Database');
+
+    const { startTime, endTime } = newShiftInfo;
+
+    // First, retrieve the shift details to get the date and emp_id for generating the new description
+    const getShiftQuery = `
+        SELECT date, emp_id
+        FROM shifts
+        WHERE shift_id = $1
+    `;
+
+    try {
+        const shiftResult = await client.query(getShiftQuery, [shiftId]);
+        
+        if (shiftResult.rowCount === 0) {
+            throw new Error('Shift not found');
+        }
+
+        const { date, emp_id } = shiftResult.rows[0];
+
+        // Generate the new description
+        const description = `Shift on ${date} from ${startTime} to ${endTime} for Employee ${emp_id}`;
+
+        // SQL query to update shift information including the description
+        const updateQuery = `
+            UPDATE shifts
+            SET start_time = $1,
+                end_time = $2,
+                description = $3,
+                updated_at = NOW()
+            WHERE shift_id = $4
+        `;
+
+        const res = await client.query(updateQuery, [startTime, endTime, description, shiftId]);
+        console.log('Update Query Executed');
+
+        if (res.rowCount > 0) {
+            console.log(`Shift ID ${shiftId} updated successfully with new description: ${description}`);
+        } else {
+            throw new Error('Shift update failed');
+        }
+    } catch (err) {
+        console.error('Error executing query:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+/**
+ * Removes a shift by its shift_id.
+ * @param {number} shiftId - The ID of the shift to be removed.
+ * @returns {Promise<Object>} - Confirmation of the deleted shift.
+ */
+export async function removeShift(shiftId) {
+    const client = await getClient();
+    await client.connect();
+
+    // Begin transaction
+    await client.query('BEGIN');
+    try {
+        // Delete the shift by shift_id
+        const deleteQuery = `DELETE FROM shifts WHERE shift_id = $1 RETURNING *;`;
+        const result = await client.query(deleteQuery, [shiftId]);
+
+        if (result.rowCount === 0) {
+            throw new Error('Shift not found');
+        }
+
+        // Commit transaction
+        await client.query('COMMIT');
+        return { success: true, message: 'Shift removed successfully', deletedShift: result.rows[0] };
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error removing shift:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 //#region Get Shifts by Schedule ID
 
 /**
