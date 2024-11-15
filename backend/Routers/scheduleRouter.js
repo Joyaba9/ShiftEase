@@ -1,6 +1,6 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, updateShift, removeShift } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
 
@@ -56,16 +56,16 @@ router.post('/createWeeklySchedule', async (req, res) => {
 
 // Route to create a shift for an employee on a specific date
 router.post('/createShift', async (req, res) => {
-    const { employeeId, scheduleId, date, startTime, endTime } = req.body;
+    const { employeeId, scheduleId, date, startTime, endTime, rowIndex } = req.body;
 
     // Input validation
-    if (!employeeId || !scheduleId || !date || !startTime || !endTime) {
-        return res.status(400).json({ error: 'All fields (employeeId, scheduleId, date, startTime, endTime) are required.' });
+    if (employeeId === undefined || scheduleId === undefined || date === undefined || startTime === undefined || endTime === undefined || rowIndex === undefined) {
+        return res.status(400).json({ error: 'All fields (employeeId, scheduleId, date, startTime, endTime, rowIndex) are required.' });
     }
 
     try {
         // Call the script function to create the shift
-        const shift = await createShift(employeeId, scheduleId, date, startTime, endTime);
+        const shift = await createShift(employeeId, scheduleId, date, startTime, endTime, rowIndex);
 
         res.status(200).json({ success: true, shift });
     } catch (err) {
@@ -125,6 +125,41 @@ router.get('/getScheduleId', async (req, res) => {
     } catch (err) {
         console.error('Error fetching schedule:', err);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Route to update an existing shift
+router.put('/updateShift/:shift_id', async (req, res) => {
+    const { shift_id } = req.params; // Get shift_id from URL
+    const { startTime, endTime, description } = req.body;
+
+    // Validate required fields
+    if (!startTime || !endTime || !description) {
+        return res.status(400).json({ success: false, message: 'Start time and end time, and description are required' });
+    }
+
+    const newShiftInfo = { startTime, endTime, description };
+
+    try {
+        // Call updateShift function with shift_id
+        await updateShift(shift_id, newShiftInfo);
+
+        res.status(200).json({ success: true, message: 'Shift updated successfully' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Route to delete a shift by shift_id
+router.delete('/removeShift/:shiftId', async (req, res) => {
+    const { shiftId } = req.params;
+
+    try {
+        const result = await removeShift(shiftId);
+        res.status(200).json(result);
+    } catch (err) {
+        console.error('Error removing shift:', err);
+        res.status(500).json({ error: 'Failed to remove shift' });
     }
 });
 
