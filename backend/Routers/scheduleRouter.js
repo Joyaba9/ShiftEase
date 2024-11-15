@@ -1,6 +1,6 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, updateShift, removeShift } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer, cancelShiftOffer, searchOpenShiftOffers, updateShift, removeShift } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
 
@@ -127,6 +127,76 @@ router.get('/getScheduleId', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+// Route to create a shift offer
+router.post('/createShiftOffer', async (req, res) => {
+    const { shift_id, emp_id } = req.body;
+
+    // Validate that both shift_id and emp_id are provided
+    if (!shift_id || !emp_id) {
+        return res.status(400).json({ error: 'Shift ID and Employee ID are required.' });
+    }
+
+    try {
+        // Create the shift offer and handle shift history if needed
+        const result = await createShiftOffer(shift_id, emp_id);
+        res.status(200).json({ success: true, result });
+    } catch (err) {
+        console.error('Error creating shift offer:', err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+// Route to accept a shift offer
+router.post('/acceptShiftOffer', async (req, res) => {
+    const { shift_id, emp_id } = req.body;
+
+    // Validate input
+    if (!shift_id || !emp_id) {
+        return res.status(400).json({ error: 'Shift ID and Employee ID are required.' });
+    }
+
+    try {
+        // Call the script to accept the shift offer
+        const result = await acceptShiftOffer(shift_id, emp_id);
+        res.status(200).json({ success: true, result });
+    } catch (err) {
+        console.error('Error accepting shift offer:', err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+// Route to cancel a shift offer
+router.post('/cancelShiftOffer', async (req, res) => {
+    const { shift_id, emp_id } = req.body;
+
+    if (!shift_id || !emp_id) {
+        return res.status(400).json({ error: 'Shift ID and Employee ID are required.' });
+    }
+
+    try {
+        const result = await cancelShiftOffer(shift_id, emp_id);
+        res.status(200).json({ success: true, result });
+    } catch (err) {
+        console.error('Error cancelling shift offer:', err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+// Route to search for open shift offers
+router.get('/searchOpenShiftOffers', async (req, res) => {
+    const { emp_id, business_id } = req.query;
+
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ error: 'Employee ID and Business ID are required.' });
+    }
+
+    try {
+        const offers = await searchOpenShiftOffers(Number(emp_id), Number(business_id));
+        res.status(200).json({ success: true, offers });
+    } catch (err) {
+        console.error('Error searching open shift offers:', err);
+        res.status(400).json({ success: false, error: err.message });
 
 // Route to update an existing shift
 router.put('/updateShift/:shift_id', async (req, res) => {

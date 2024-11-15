@@ -417,3 +417,383 @@ export async function getScheduleByBusinessIdAndDate(businessId, weekStartDate) 
 }
 
 //#endregion
+
+//#region Create Shift Offer
+
+/**
+ * Creates a shift offer for a specified shift and employee.
+ *
+ * @param {number} shift_id - The unique identifier of the shift.
+ * @param {number} emp_id - The ID of the employee who is making the shift offer
+ * @returns {Promise<object>} - An object containing details of the created shift offer and shift history status.
+ */
+export async function createShiftOffer(shift_id, emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Check if the shift_id is associated with the emp_id in the shifts table, if none, throw an error
+        const associationCheckQuery = `
+            SELECT 1 FROM shifts WHERE shift_id = $1 AND emp_id = $2
+        `;
+        const associationCheckResult = await client.query(associationCheckQuery, [shift_id, emp_id]);
+
+        if (associationCheckResult.rowCount === 0) {
+            throw new Error(`Shift ID ${shift_id} is not associated with Employee ID ${emp_id}`);
+        }
+
+        // Check if a shift offer for this shift_id and emp_id already exists, if it does, throw an error
+        const offerExistsQuery = `
+            SELECT 1 FROM shift_offers WHERE shift_id = $1 AND offered_emp_id = $2
+        `;
+        const offerExistsResult = await client.query(offerExistsQuery, [shift_id, emp_id]);
+
+        if (offerExistsResult.rowCount > 0) {
+            throw new Error(`A shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} already exists`);
+        }
+
+        // Check if shift_id exists in shift_history
+        const historyCheckQuery = `
+            SELECT 1 FROM shift_history WHERE shift_id = $1
+        `;
+        const historyCheckResult = await client.query(historyCheckQuery, [shift_id]);
+
+        // If the shift is not in shift_history, fetch shift details and create an entry
+        if (historyCheckResult.rowCount === 0) {
+            const shiftQuery = `
+                SELECT emp_id AS current_emp_id, start_time AS current_start_time, end_time AS current_end_time
+                FROM shifts
+                WHERE shift_id = $1
+            `;
+            const shiftResult = await client.query(shiftQuery, [shift_id]);
+
+            if (shiftResult.rowCount === 0) {
+                throw new Error(`Shift with ID ${shift_id} not found`);
+            }
+
+            const { current_emp_id, current_start_time, current_end_time } = shiftResult.rows[0];
+
+            // Insert a new entry into shift_history
+            const historyInsertQuery = `
+                INSERT INTO shift_history (
+                    shift_id, previous_emp_id, current_emp_id, old_start_time, current_start_time,
+                    old_end_time, current_end_time, status, change_date
+                )
+                VALUES ($1, NULL, $2, $3, $3, $4, $4, 'confirmed', CURRENT_TIMESTAMP)
+                RETURNING shift_history_id
+            `;
+            await client.query(historyInsertQuery, [shift_id, current_emp_id, current_start_time, current_end_time]);
+            console.log('Shift history created successfully for shift_id:', shift_id);
+        }
+
+        // Update the shift to open on the shifts table
+        const updateQuery = `UPDATE shifts SET is_open = true WHERE shift_id = $1`;
+        await client.query(updateQuery, [shift_id]);
+
+        // PostgreSQL query to insert a new shift offer
+        const offerInsertQuery = `
+            INSERT INTO shift_offers (shift_id, offered_emp_id, offer_status, offered_at)
+            VALUES ($1, $2, 'offered', CURRENT_TIMESTAMP)
+            RETURNING shift_offer_id, shift_id, offered_emp_id, offer_status, offered_at;
+        `;
+
+        const offerResult = await client.query(offerInsertQuery, [shift_id, emp_id]);
+        console.log('Shift offer created successfully:', offerResult.rows[0]);
+
+        // Return the created shift
+        return {
+            shiftOffer: offerResult.rows[0],
+            message: historyCheckResult.rowCount === 0 ? 'Shift history created' : 'Shift history already exists'
+        };
+    } catch (err) {
+        console.error('Error creating shift offer:', err); // Log error for debugging
+        throw err; // Rethrow error for higher-level handling
+    } finally {
+        await client.end(); // Ensure database connection is closed
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
+
+//#region Accept Shift Offer
+
+/**
+ * Accepts a shift offer for a specified shift and employee.
+ *
+ * @param {number} shift_id - The unique identifier of the shift.
+ * @param {number} emp_id - The ID of the employee accepting the shift.
+ * @returns {Promise<object>} - An object containing details of the updated shift offer and shift history status.
+ */
+export async function acceptShiftOffer(shift_id, emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Retrieve the offered_emp_id and business_id for the shift offer
+        const offerQuery = `
+            SELECT so.offered_emp_id, e1.business_id AS offered_business_id, e1.role_id AS offered_role_id
+            FROM shift_offers so
+            JOIN employees e1 ON so.offered_emp_id = e1.emp_id
+            WHERE so.shift_id = $1 AND so.offer_status = 'offered';
+        `;
+        const offerResult = await client.query(offerQuery, [shift_id]);
+
+        if (offerResult.rowCount === 0) {
+            throw new Error(`No open shift offer found for Shift ID ${shift_id}`);
+        }
+
+        const { offered_emp_id, offered_business_id, offered_role_id } = offerResult.rows[0];
+
+        // Ensure that the accepting emp_id is different from the offered_emp_id
+        if (offered_emp_id === emp_id) {
+            throw new Error('The offered and accepting employees must be different.');
+        }
+
+        // Check that the accepting employee belongs to the same business as the offering employee
+        const acceptingEmployeeQuery = `
+            SELECT business_id, role_id FROM employees WHERE emp_id = $1;
+        `;
+        const acceptingEmployeeResult = await client.query(acceptingEmployeeQuery, [emp_id]);
+
+        if (acceptingEmployeeResult.rowCount === 0) {
+            throw new Error(`Employee ID ${emp_id} not found`);
+        }
+
+        const { business_id: acceptingBusinessId, role_id: accepted_role_id } = acceptingEmployeeResult.rows[0];
+
+        if (offered_business_id !== acceptingBusinessId) {
+            throw new Error('Both employees must be associated with the same business.');
+        }
+
+        // Check business preferences to see if role restriction is enabled, if it is, will ensure shifts are only accepted by employees with the same role
+        const preferenceQuery = `
+            SELECT 1 FROM business_preferences bp
+            JOIN preferences p ON bp.preference_id = p.preference_id
+            WHERE bp.business_id = $1 AND p.preference_description = 'Restrict shift offers to same role?'
+        `;
+        const preferenceResult = await client.query(preferenceQuery, [offered_business_id]);
+
+        const restrictToSameRole = preferenceResult.rowCount > 0; // True if preference exists, false otherwise
+
+        if (restrictToSameRole && offered_role_id !== accepted_role_id) {
+            throw new Error('Shift offers are restricted to employees with the same role.');
+        }
+
+        // Update the shift offer to accepted
+        const offerUpdateQuery = `
+            UPDATE shift_offers
+            SET offer_status = 'accepted', accepted_emp_id = $1, accepted_at = CURRENT_TIMESTAMP
+            WHERE shift_id = $2 AND offered_emp_id = $3
+            RETURNING shift_offer_id, shift_id, offer_status, accepted_emp_id, accepted_at;
+        `;
+        const offerUpdateResult = await client.query(offerUpdateQuery, [emp_id, shift_id, offered_emp_id]);
+
+        // Update the shift to closed on the shifts table
+        const updateIsOpenQuery = `UPDATE shifts SET is_open = false WHERE shift_id = $1`;
+        await client.query(updateIsOpenQuery, [shift_id]);
+
+        // Update the emp_id on shifts table
+        const updateEmployeeShiftsQuery = `UPDATE shifts SET emp_id = $1 WHERE shift_id = $2`;
+        await client.query(updateEmployeeShiftsQuery, [emp_id, shift_id]);
+
+        // Check if a shift history entry already exists for this shift_id
+        const historyCheckQuery = `
+            SELECT shift_history_id, current_emp_id, change_type
+            FROM shift_history WHERE shift_id = $1 ORDER BY change_date DESC LIMIT 1
+        `;
+        const historyCheckResult = await client.query(historyCheckQuery, [shift_id]);
+
+        /*
+        * If a shift history entry exists, update it with the new emp_id and add to change_type "Employee Change"
+        * If no shift history entry exists, create a new entry
+        */
+        if (historyCheckResult.rowCount > 0) {
+            const { shift_history_id, current_emp_id: previousEmpId, change_type } = historyCheckResult.rows[0];
+
+            const newChangeType = change_type ? `${change_type}, Employee Change` : 'Employee Change';
+
+            const historyUpdateQuery = `
+                UPDATE shift_history
+                SET previous_emp_id = $1, current_emp_id = $2, change_type = $3, change_date = CURRENT_TIMESTAMP
+                WHERE shift_history_id = $4
+                RETURNING shift_history_id, shift_id, previous_emp_id, current_emp_id, change_type, change_date;
+            `;
+            const historyUpdateResult = await client.query(historyUpdateQuery, [previousEmpId, emp_id, newChangeType, shift_history_id]);
+
+            console.log('Shift history updated for shift_id:', shift_id);
+            return {
+                shiftOffer: offerUpdateResult.rows[0],
+                shiftHistory: historyUpdateResult.rows[0]
+            };
+        } else {
+            const historyInsertQuery = `
+                INSERT INTO shift_history (
+                    shift_id, previous_emp_id, current_emp_id, change_type, change_date, status
+                )
+                VALUES ($1, NULL, $2, 'Employee Change', CURRENT_TIMESTAMP, 'confirmed')
+                RETURNING shift_history_id, shift_id, previous_emp_id, current_emp_id, change_type, change_date, status;
+            `;
+            const historyInsertResult = await client.query(historyInsertQuery, [shift_id, emp_id]);
+
+            console.log('New shift history created for shift_id:', shift_id);
+            return {
+                shiftOffer: offerUpdateResult.rows[0],
+                shiftHistory: historyInsertResult.rows[0]
+            };
+        }
+    } catch (err) {
+        console.error('Error accepting shift offer:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
+
+//#region Cancel Shift Offer
+
+/**
+ * Cancels a shift offer for a specific shift and employee.
+ * Updates the offer status to 'cancelled', resets accepted_at, and sets accepted_emp_id to offered_emp_id.
+ *
+ * @param {number} shift_id - The unique identifier of the shift.
+ * @param {number} emp_id - The ID of the employee who was offered the shift.
+ * @returns {Promise<object>} - An object containing details of the cancelled shift offer.
+ */
+export async function cancelShiftOffer(shift_id, emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Check if the shift offer exists and its current status
+        const checkQuery = `
+            SELECT offer_status, offered_emp_id, accepted_emp_id 
+            FROM shift_offers 
+            WHERE shift_id = $1 AND offered_emp_id = $2;
+        `;
+        const checkResult = await client.query(checkQuery, [shift_id, emp_id]);
+
+        if (checkResult.rowCount === 0) {
+            throw new Error(`No active shift offer found for Shift ID ${shift_id} and Employee ID ${emp_id}`);
+        }
+
+        const { offer_status, offered_emp_id, accepted_emp_id } = checkResult.rows[0];
+
+        // Prevent cancellation if the shift offer is already accepted
+        if (offer_status === 'accepted') {
+            throw new Error(
+                `Cannot cancel the shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} as it has already been accepted by Employee ID ${accepted_emp_id}`
+            );
+        }
+
+        // Prevent duplicate cancellations
+        if (offer_status === 'cancelled') {
+            throw new Error(`Shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} is already cancelled`);
+        }
+
+        // Update the offer status to 'cancelled', reset accepted_at, and set accepted_emp_id to offered_emp_id
+        const cancelQuery = `
+            UPDATE shift_offers
+            SET offer_status = 'cancelled', accepted_at = NULL, accepted_emp_id = $1
+            WHERE shift_id = $2 AND offered_emp_id = $3
+            RETURNING shift_offer_id, shift_id, offered_emp_id, accepted_emp_id, offer_status, accepted_at;
+        `;
+        const cancelResult = await client.query(cancelQuery, [offered_emp_id, shift_id, emp_id]);
+
+        console.log(`Shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} has been cancelled successfully.`);
+        return cancelResult.rows[0];
+    } catch (err) {
+        console.error('Error cancelling shift offer:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
+
+//#region Search Open Shift Offers
+
+/**
+ * Searches for open shift offers for a specific employee in a business.
+ * Filters results based on the 'Restrict shift offers to same role?' business preference.
+ * If the preference is false, will show all shifts open in the business.
+ * Otherwise will only show the shifts open of the same role as the employee.
+ *
+ * @param {number} emp_id - The ID of the employee searching for shift offers.
+ * @param {number} business_id - The ID of the business the employee works at.
+ * @returns {Promise<Array>} - A list of open shift offers and the shift information matching the criteria.
+ */
+export async function searchOpenShiftOffers(emp_id, business_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Validate emp_id and business_id match
+        const employeeQuery = `
+            SELECT business_id, role_id
+            FROM employees
+            WHERE emp_id = $1;
+        `;
+        const employeeResult = await client.query(employeeQuery, [emp_id]);
+
+        if (employeeResult.rowCount === 0) {
+            throw new Error(`Employee with ID ${emp_id} not found`);
+        }
+
+        const { business_id: employeeBusinessId, role_id } = employeeResult.rows[0];
+
+        if (employeeBusinessId !== business_id) {
+            throw new Error(`Employee with ID ${emp_id} does not belong to Business ID ${business_id}`);
+        }
+
+        // Check the business preferences for 'Restrict shift offers to same role?', if the preference exists it is true
+        const preferenceQuery = `
+            SELECT 1
+            FROM business_preferences bp
+            JOIN preferences p ON bp.preference_id = p.preference_id
+            WHERE bp.business_id = $1 AND p.preference_description = 'Restrict shift offers to same role?';
+        `;
+        const preferenceResult = await client.query(preferenceQuery, [business_id]);
+
+        const restrictToSameRole = preferenceResult.rowCount > 0;
+
+        // Query open shift offers and shift data
+        const shiftOffersQuery = restrictToSameRole
+            ? `
+                SELECT sh.*, so.offered_emp_id, so.offer_status, so.offered_at
+                FROM shifts sh
+                JOIN shift_offers so ON sh.shift_id = so.shift_id
+                JOIN employees e ON so.offered_emp_id = e.emp_id
+                WHERE so.offer_status = 'offered'
+                  AND e.business_id = $1
+                  AND e.role_id = $2;
+              `
+            : `
+                SELECT sh.*, so.offered_emp_id, so.offer_status, so.offered_at
+                FROM shifts sh
+                JOIN shift_offers so ON sh.shift_id = so.shift_id
+                JOIN employees e ON so.offered_emp_id = e.emp_id
+                WHERE so.offer_status = 'offered'
+                  AND e.business_id = $1;
+              `;
+
+        const shiftOffersParams = restrictToSameRole ? [business_id, role_id] : [business_id];
+        const shiftOffersResult = await client.query(shiftOffersQuery, shiftOffersParams);
+
+        console.log(`Found ${shiftOffersResult.rowCount} open shift offers for Employee ID ${emp_id}`);
+        return shiftOffersResult.rows;
+    } catch (err) {
+        console.error('Error searching open shift offers:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
