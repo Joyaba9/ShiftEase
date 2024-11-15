@@ -612,3 +612,85 @@ export async function cancelShiftOffer(shift_id, emp_id) {
 }
 
 //#endregion
+
+//#region Search Open Shift Offers
+
+/**
+ * Searches for open shift offers for a specific employee in a business.
+ * Filters results based on the 'Restrict shift offers to same role?' business preference.
+ * If the preference is false, will show all shifts open in the business.
+ * Otherwise will only show the shifts open of the same role as the employee.
+ *
+ * @param {number} emp_id - The ID of the employee searching for shift offers.
+ * @param {number} business_id - The ID of the business the employee works at.
+ * @returns {Promise<Array>} - A list of open shift offers and the shift information matching the criteria.
+ */
+export async function searchOpenShiftOffers(emp_id, business_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Validate emp_id and business_id match
+        const employeeQuery = `
+            SELECT business_id, role_id
+            FROM employees
+            WHERE emp_id = $1;
+        `;
+        const employeeResult = await client.query(employeeQuery, [emp_id]);
+
+        if (employeeResult.rowCount === 0) {
+            throw new Error(`Employee with ID ${emp_id} not found`);
+        }
+
+        const { business_id: employeeBusinessId, role_id } = employeeResult.rows[0];
+
+        if (employeeBusinessId !== business_id) {
+            throw new Error(`Employee with ID ${emp_id} does not belong to Business ID ${business_id}`);
+        }
+
+        // Check the business preferences for 'Restrict shift offers to same role?', if the preference exists it is true
+        const preferenceQuery = `
+            SELECT 1
+            FROM business_preferences bp
+            JOIN preferences p ON bp.preference_id = p.preference_id
+            WHERE bp.business_id = $1 AND p.preference_description = 'Restrict shift offers to same role?';
+        `;
+        const preferenceResult = await client.query(preferenceQuery, [business_id]);
+
+        const restrictToSameRole = preferenceResult.rowCount > 0;
+
+        // Query open shift offers and shift data
+        const shiftOffersQuery = restrictToSameRole
+            ? `
+                SELECT sh.*, so.offered_emp_id, so.offer_status, so.offered_at
+                FROM shifts sh
+                JOIN shift_offers so ON sh.shift_id = so.shift_id
+                JOIN employees e ON so.offered_emp_id = e.emp_id
+                WHERE so.offer_status = 'offered'
+                  AND e.business_id = $1
+                  AND e.role_id = $2;
+              `
+            : `
+                SELECT sh.*, so.offered_emp_id, so.offer_status, so.offered_at
+                FROM shifts sh
+                JOIN shift_offers so ON sh.shift_id = so.shift_id
+                JOIN employees e ON so.offered_emp_id = e.emp_id
+                WHERE so.offer_status = 'offered'
+                  AND e.business_id = $1;
+              `;
+
+        const shiftOffersParams = restrictToSameRole ? [business_id, role_id] : [business_id];
+        const shiftOffersResult = await client.query(shiftOffersQuery, shiftOffersParams);
+
+        console.log(`Found ${shiftOffersResult.rowCount} open shift offers for Employee ID ${emp_id}`);
+        return shiftOffersResult.rows;
+    } catch (err) {
+        console.error('Error searching open shift offers:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
