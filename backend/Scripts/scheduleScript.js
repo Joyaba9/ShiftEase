@@ -555,7 +555,6 @@ export async function acceptShiftOffer(shift_id, emp_id) {
 /**
  * Cancels a shift offer for a specific shift and employee.
  * Updates the offer status to 'cancelled', resets accepted_at, and sets accepted_emp_id to offered_emp_id.
- * Throws an error if the shift offer is already accepted.
  *
  * @param {number} shift_id - The unique identifier of the shift.
  * @param {number} emp_id - The ID of the employee who was offered the shift.
@@ -566,7 +565,7 @@ export async function cancelShiftOffer(shift_id, emp_id) {
     await client.connect();
 
     try {
-        // Step 1: Check if the shift offer exists and its current status
+        // Check if the shift offer exists and its current status
         const checkQuery = `
             SELECT offer_status, offered_emp_id, accepted_emp_id 
             FROM shift_offers 
@@ -592,7 +591,7 @@ export async function cancelShiftOffer(shift_id, emp_id) {
             throw new Error(`Shift offer for Shift ID ${shift_id} and Employee ID ${emp_id} is already cancelled`);
         }
 
-        // Step 2: Update the offer status to 'cancelled', reset accepted_at, and set accepted_emp_id to offered_emp_id
+        // Update the offer status to 'cancelled', reset accepted_at, and set accepted_emp_id to offered_emp_id
         const cancelQuery = `
             UPDATE shift_offers
             SET offer_status = 'cancelled', accepted_at = NULL, accepted_emp_id = $1
