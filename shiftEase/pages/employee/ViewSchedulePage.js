@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { Image, View, Text, Button, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import NavBar from '../../components/NavBar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
@@ -31,6 +31,10 @@ const ViewSchedulePage = () => {
 
     // Calculate week start date from the current date
     const weekStartDate = useMemo(() => getStartOfWeek(currentDate), [currentDate]);
+
+    // State for managing shift details popup
+    const [popupVisible, setPopupVisible] = useState(false);
+    const [selectedShift, setSelectedShift] = useState(null);
     
     const dates = useMemo(() => {
         return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
@@ -41,9 +45,6 @@ const ViewSchedulePage = () => {
     console.log('Data from useEmployeeData: ');
     console.log('Employees: ', employees);
     console.log('Shift Assignments: ', shiftAssignments);
-
-    // Track if employees have been loaded
-    //const employeesLoadedRef = useRef(false);
 
     // Clear previous schedule data whenever `weekStartDate` changes
     useEffect(() => {
@@ -141,6 +142,18 @@ const ViewSchedulePage = () => {
         return duration > 0 ? duration : 0;
     };
 
+    // Function to handle cell click for logged-in employee
+    const handleShiftClick = (shift) => {
+        setSelectedShift(shift);
+        setPopupVisible(true);
+    };
+
+    // Function to handle closing the popup
+    const closePopup = () => {
+        setPopupVisible(false);
+        setSelectedShift(null);
+    };
+
     return (
         <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
@@ -190,9 +203,24 @@ const ViewSchedulePage = () => {
                                             const shiftTime = shiftAssignments[cellId];
 
                                             return (
-                                                <View key={colIndex} style={styles.scheduleCell}>
+                                                <TouchableOpacity
+                                                    key={colIndex}
+                                                    style={[
+                                                        styles.scheduleCell,
+                                                        employee.emp_id === loggedInEmployeeId && styles.clickableCell
+                                                    ]}
+                                                    onPress={() => 
+                                                        employee.emp_id === loggedInEmployeeId &&
+                                                        shiftTime &&
+                                                        handleShiftClick({
+                                                            date: date.toDateString(),
+                                                            time: shiftTime,
+                                                            employee: `${employee.f_name} ${employee.l_name}`,
+                                                        })
+                                                    }
+                                                >
                                                     <Text>{shiftTime ? shiftTime : 'Off'}</Text>
-                                                </View>
+                                                </TouchableOpacity>
                                             );
                                         })}
                                     </View>
@@ -205,6 +233,50 @@ const ViewSchedulePage = () => {
                         )}
                     </View>
                 </View>
+
+                {/* Shift Details Popup */}
+                <Modal
+                    visible={popupVisible}
+                    animationType="slide"
+                    transparent={true}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <View style={styles.topShiftDetailsContainer}>
+                                <Text style={styles.modalHeader}>Shift Details:</Text>
+                                <TouchableOpacity onPress={closePopup}>
+                                    <Image
+                                        resizeMode="contain"
+                                        source={require('../../assets/images/x_icon.png')}
+                                        style={styles.cancelPhoto}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                            
+                            {selectedShift && (
+                                <>
+                                    <Text>Employee: {selectedShift.employee}</Text>
+                                    <Text>Date: {selectedShift.date}</Text>
+                                    <Text>Time: {selectedShift.time}</Text>
+                                </>
+                            )}
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity 
+                                    style={styles.button} 
+                                    onPress={() => console.log('Offer Shift')}
+                                >
+                                    <Text style={styles.buttonText}>Offer Shift</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    style={[styles.button, { marginLeft: 10 }]} 
+                                    onPress={() => console.log('Swap Shift')}
+                                >
+                                    <Text style={styles.buttonText}>Swap Shift</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
             </View>
 
         </ScrollView>
@@ -319,6 +391,59 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#888',
         textAlign: 'center',
+    },
+    clickableCell: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    topShiftDetailsContainer: {
+        flexDirection: 'row', 
+        width: '100%', 
+        justifyContent: 'space-between', 
+        alignItems: 'baseline',
+        // borderWidth: 2,
+        // borderColor: 'green'
+    },
+    cancelPhoto: {
+        width: 20,
+        height: 20,
+    },
+    modalContent: {
+        width: '30%',
+        height: '20%',
+        backgroundColor: 'white',
+        justifyContent: 'space-between',
+        padding: 20,
+        borderRadius: 10,
+        //alignItems: 'center',
+    },
+    modalHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    buttonContainer: {
+        width: '100%',
+        flexDirection: 'row',
+        alignSelf: 'flex-end',   
+        marginVertical: 10,
+        // borderWidth: 2,
+        // borderColor: 'red'
+    },
+    button: {
+        width: 100,
+        height: 35,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 30,
+        backgroundColor: 'lightblue'
     },
 });
 
