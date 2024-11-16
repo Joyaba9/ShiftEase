@@ -3,9 +3,10 @@ import { useSelector } from 'react-redux';
 import { Image, View, Text, Button, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import NavBar from '../../components/NavBar';
+import { LinearGradient } from 'expo-linear-gradient';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
-import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
-import { formatTime } from '../../components/schedule_components/scheduleUtils';
+import { fetchScheduleAPI, offerShiftAPI, fetchEmployeeShiftOffersAPI, cancelShiftOfferAPI } from '../../../backend/api/scheduleApi';
+import { formatTime, formatDate } from '../../components/schedule_components/scheduleUtils';
 import useEmployeeData from '../../components/schedule_components/useEmployeeData';
 
 const ViewSchedulePage = () => {
@@ -35,6 +36,8 @@ const ViewSchedulePage = () => {
     // State for managing shift details popup
     const [popupVisible, setPopupVisible] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
+    const [offeredShifts, setOfferedShifts] = useState([]);
+
     
     const dates = useMemo(() => {
         return view === 'week' ? getWeekDates(currentDate) : getDayView(currentDate);
@@ -105,7 +108,13 @@ const ViewSchedulePage = () => {
                                 f_name: shift.employeeName.split(' ')[0],
                                 l_name: shift.employeeName.split(' ')[1]
                             };
-                            loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
+                            //loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
+                            // Add shift details, including shiftId
+                            loadedShiftAssignments[cellId] = {
+                                shiftId: shift.shiftId, // Include the shiftId
+                                time: `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`,
+                            };
+                            
                             // Calculate shift duration and add to total if it's the logged-in employee's shift
                             if (shift.employeeId === loggedInEmployeeId) {
                                 const shiftDuration = calculateShiftDuration(shift.startTime, shift.endTime);
@@ -147,6 +156,25 @@ const ViewSchedulePage = () => {
         setSelectedShift(shift);
         setPopupVisible(true);
     };
+
+    useEffect(() => {
+        const fetchOfferedShifts = async () => {
+            try {
+                const response = await fetchEmployeeShiftOffersAPI(loggedInEmployeeId);
+                setOfferedShifts(response || []);
+            } catch (error) {
+                console.error('Error fetching offered shifts:', error);
+            }
+        };
+
+        if (loggedInEmployeeId) {
+            fetchOfferedShifts();
+        }
+    }, [loggedInEmployeeId]);
+
+    useEffect(() => {
+        console.log("Offered Shifts:", offeredShifts);
+    }, [offeredShifts]);
 
     // Function to handle closing the popup
     const closePopup = () => {
@@ -200,7 +228,8 @@ const ViewSchedulePage = () => {
                                         </View>
                                         {dates.map((date, colIndex) => {
                                             const cellId = `${employee.emp_id}-${colIndex}`;
-                                            const shiftTime = shiftAssignments[cellId];
+                                            //const shiftTime = shiftAssignments[cellId];
+                                            const shiftData = shiftAssignments[cellId]; 
 
                                             return (
                                                 <TouchableOpacity
@@ -211,15 +240,16 @@ const ViewSchedulePage = () => {
                                                     ]}
                                                     onPress={() => 
                                                         employee.emp_id === loggedInEmployeeId &&
-                                                        shiftTime &&
+                                                        shiftData &&
                                                         handleShiftClick({
+                                                            shiftId: shiftData.shiftId,
                                                             date: date.toDateString(),
-                                                            time: shiftTime,
+                                                            time: shiftData.time,
                                                             employee: `${employee.f_name} ${employee.l_name}`,
                                                         })
                                                     }
                                                 >
-                                                    <Text>{shiftTime ? shiftTime : 'Off'}</Text>
+                                                    <Text>{shiftData ? shiftData.time : 'Off'}</Text>
                                                 </TouchableOpacity>
                                             );
                                         })}
@@ -232,6 +262,65 @@ const ViewSchedulePage = () => {
                             </View>
                         )}
                     </View>
+
+                    {/* Conditionally render Offered Shifts section */}
+                    {offeredShifts.length > 0 && (
+                        <View style={styles.wholeOfferedShiftsContainer}>
+                            <Text style={styles.sectionHeader}>Offered Shifts</Text>
+                            
+                            <View style={styles.offeredShiftsContainer}>
+                                
+                                {offeredShifts.map((shift) => {
+                                    console.log('Offered At:', shift.offeredAt);
+
+                                    return (
+                                        <LinearGradient 
+                                        colors={['#E7E7E7', '#A7CAD8']} 
+                                        style={styles.offeredShiftItem}
+                                        key={shift.shiftOfferId}
+                                        >
+                                            <View style={{flex: 1, justifyContent: 'space-between'}}>
+                                                <Text>
+                                                    Status: <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{shift.status.toUpperCase()}</Text>
+                                                </Text>
+                                                
+                                                <Text>Date: {new Date(shift.date).toLocaleDateString()}</Text>
+                                                
+                                                <Text>Time: {" "}
+                                                        {shift.startTime && shift.endTime
+                                                            ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`
+                                                            : "Invalid time"}
+                                                </Text>
+                                                
+                                                {/*<Text>Offered At: {new Date(shift.offered_at).toLocaleString()}</Text>*/}
+                                                <Text>Offered At: {shift.offeredAt ? formatDate(shift.offeredAt) : 'N/A'}</Text>
+
+                                                <TouchableOpacity 
+                                                    style={styles.cancelShiftBtn} 
+                                                    onPress={async () => {
+                                                        try {
+                                                            const result = await cancelShiftOfferAPI(shift.shiftId, loggedInEmployeeId);
+                                                            console.log('Shift offer cancelled:', result);
+                                                            alert('Shift offer cancelled successfully!');
+                                                            // Optionally, update state or refetch offered shifts
+                                                            setOfferedShifts((prev) =>
+                                                                prev.filter((offeredShift) => offeredShift.shiftId !== shift.shiftId)
+                                                            );
+                                                        } catch (error) {
+                                                            console.error('Error cancelling shift offer:', error);
+                                                            alert(`Failed to cancel shift offer: ${error.message}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Text style={{color: '#FFFFFF', fontSize: 15}}>Cancel Offer</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </LinearGradient>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    )}
                 </View>
 
                 {/* Shift Details Popup */}
@@ -263,7 +352,23 @@ const ViewSchedulePage = () => {
                             <View style={styles.buttonContainer}>
                                 <TouchableOpacity 
                                     style={styles.button} 
-                                    onPress={() => console.log('Offer Shift')}
+                                    onPress={async () => {
+                                        if (selectedShift && selectedShift.shiftId) {
+                                            console.log('Selected Shift:', selectedShift); // Debugging log
+                                            console.log('Logged In Employee ID:', loggedInEmployeeId); // Debugging log
+
+                                            try {
+                                                const { shiftId } = selectedShift;
+                                                const result = await offerShiftAPI(selectedShift.shiftId, loggedInEmployeeId);
+                                                console.log('Shift offer result:', result);
+                                                alert('Shift offered successfully!');
+                                                closePopup(); // Close the popup after successful action
+                                            } catch (error) {
+                                                console.error('Error offering shift:', error);
+                                                alert(`Failed to offer shift: ${error.message}`);
+                                            }
+                                        }
+                                    }}
                                 >
                                     <Text style={styles.buttonText}>Offer Shift</Text>
                                 </TouchableOpacity>
@@ -330,8 +435,6 @@ const styles = StyleSheet.create({
         minHeight: '50%',
         alignSelf: 'center',
         minHeight: '45%',
-        //borderWidth: 2,
-        //borderColor: 'red'
     },
     gridHeader: {
         width: '100%',
@@ -396,6 +499,43 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
     },
+    wholeOfferedShiftsContainer: {
+        width: '95%',
+        height: '28%',
+    },
+    offeredShiftsContainer: {
+        //marginTop: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        height: '90%',
+        paddingHorizontal: 10,
+        alignItems: 'stretch',
+    },
+    sectionHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    offeredShiftItem: {
+        width: '20%',
+        height: '100%',
+        flexDirection: 'column',
+        padding: 10,
+        marginRight: 15,
+        borderRadius: 5,
+        //marginBottom: 10,
+    },
+    cancelShiftBtn: {
+        width: 120,
+        height: 35,
+        justifyContent: 'center',
+        alignItems: 'center',
+        alignSelf: 'flex-end',
+        padding: 10,
+        borderRadius: 30,
+        backgroundColor: 'black'
+    },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -407,8 +547,6 @@ const styles = StyleSheet.create({
         width: '100%', 
         justifyContent: 'space-between', 
         alignItems: 'baseline',
-        // borderWidth: 2,
-        // borderColor: 'green'
     },
     cancelPhoto: {
         width: 20,

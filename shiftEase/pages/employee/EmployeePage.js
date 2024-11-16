@@ -82,12 +82,12 @@ const EmployeePage = () => {
                             label = "Change Availability"
                             onPress={ () => {{/* Change Availability Page logic */}}}
                         />
-                        <SidebarButton
-                            icon = {require('../../assets/images/offer_up_icon.png')}
-                            label = "Offer Up Shift"
-                            onPress={ () => {{/* Offer Up Shift Page logic */}}}
-                            customContainerStyle={{ right: -10 }}
-                        />
+                        {/*<SidebarButton
+                            //icon = {require('../../assets/images/offer_up_icon.png')}
+                            //label = "Offer Up Shift"
+                            //onPress={ () => {{/* Offer Up Shift Page logic }}}
+                            //customContainerStyle={{ right: -10 }}
+                        />*/}
                         <SidebarButton
                             icon = {require('../../assets/images/time_card_icon.png')}
                             label = "Time Card History"
