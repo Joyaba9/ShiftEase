@@ -74,7 +74,6 @@ router.post('/createShift', async (req, res) => {
     }
 });
 
-
 router.get('/shiftsByScheduleId', async (req, res) => {
     const { scheduleId } = req.body;
 
@@ -195,8 +194,10 @@ router.get('/searchOpenShiftOffers', async (req, res) => {
         const offers = await searchOpenShiftOffers(Number(emp_id), Number(business_id));
         res.status(200).json({ success: true, offers });
     } catch (err) {
-        console.error('Error searching open shift offers:', err);
-        res.status(400).json({ success: false, error: err.message });
+                console.error('Error searching open shift offers:', err);
+                res.status(400).json({ success: false, error: err.message });
+    }
+});
 
 // Route to update an existing shift
 router.put('/updateShift/:shift_id', async (req, res) => {
