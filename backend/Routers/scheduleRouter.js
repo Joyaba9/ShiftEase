@@ -1,6 +1,6 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer, cancelShiftOffer, searchOpenShiftOffers, updateShift, removeShift } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer, cancelShiftOffer, searchOpenShiftOffers, searchEmployeeShiftOffers, updateShift, removeShift } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
 
@@ -194,8 +194,25 @@ router.get('/searchOpenShiftOffers', async (req, res) => {
         const offers = await searchOpenShiftOffers(Number(emp_id), Number(business_id));
         res.status(200).json({ success: true, offers });
     } catch (err) {
-                console.error('Error searching open shift offers:', err);
-                res.status(400).json({ success: false, error: err.message });
+        console.error('Error searching open shift offers:', err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+// Route to fetch shift offers made by the logged-in employee
+router.get('/employeeShiftOffers', async (req, res) => {
+    const { emp_id } = req.query;
+
+    if (!emp_id) {
+        return res.status(400).json({ error: 'Employee ID is required.' });
+    }
+
+    try {
+        const offers = await searchEmployeeShiftOffers(Number(emp_id));
+        res.status(200).json({ success: true, offers });
+    } catch (err) {
+        console.error('Error fetching employee shift offers:', err);
+        res.status(400).json({ success: false, error: err.message });
     }
 });
 

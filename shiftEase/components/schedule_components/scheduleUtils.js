@@ -57,6 +57,8 @@ export const getTotalHoursColor = (totalHours, maxHours) => {
 
 // Helper function to convert time to 12-hour format with AM/PM
 export const formatTime = (timeStr) => {
+    if (!timeStr) return "Invalid time";
+    
     // Split time string into hour and minute
     const [hour, minute] = timeStr.split(':').map(Number);
     // Determine if time is AM or PM
@@ -87,4 +89,15 @@ export const convertTo24HourFormat = (time) => {
     }
   
     return `${String(hours).padStart(2, "0")}:${minutes}`;
+};
+
+export const formatDate = (dateString) => {
+    const timestamp = Date.parse(dateString);
+    if (isNaN(timestamp)) return 'Invalid Date';
+    const date = new Date(timestamp);
+  
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
 };

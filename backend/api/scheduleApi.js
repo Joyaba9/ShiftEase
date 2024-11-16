@@ -135,3 +135,82 @@ export async function removeShiftAPI(shiftId) {
         throw error;
     }
 }
+
+// Function to call the backend API to create a shift offer
+export async function offerShiftAPI(shiftId, empId) {
+    console.log('offerShiftAPI called with:', { shiftId, empId });
+    try {
+        const response = await fetch(baseURL + `schedule/createShiftOffer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                shift_id: shiftId,
+                emp_id: empId,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Shift offer created successfully:', data);
+            return data;
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to create shift offer:', errorData);
+            throw new Error(errorData.message || 'Failed to create shift offer');
+        }
+    } catch (error) {
+        console.error('Error in offerShiftAPI:', error);
+        throw error;
+    }
+}
+
+export async function fetchEmployeeShiftOffersAPI(empId) {
+    try {
+        const response = await fetch(baseURL + `schedule/employeeShiftOffers?emp_id=${empId}`, {
+            method: 'GET',
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            return data.offers;
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to fetch offered shifts:', errorData);
+            throw new Error(errorData.message || 'Failed to fetch offered shifts');
+        }
+    } catch (error) {
+        console.error('Error in fetchOfferedShiftsAPI:', error);
+        throw error;
+    }
+}
+
+export async function cancelShiftOfferAPI(shiftId, empId) {
+    console.log('cancelShiftOfferAPI called with:', { shiftId, empId });
+    try {
+        const response = await fetch(baseURL + `schedule/cancelShiftOffer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                shift_id: shiftId,
+                emp_id: empId,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Shift offer cancelled successfully:', data);
+            return data;
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to cancel shift offer:', errorData);
+            throw new Error(errorData.message || 'Failed to cancel shift offer');
+        }
+    } catch (error) {
+        console.error('Error in cancelShiftOfferAPI:', error);
+        throw error;
+    }
+}

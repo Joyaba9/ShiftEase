@@ -716,6 +716,63 @@ export async function cancelShiftOffer(shift_id, emp_id) {
 
 //#endregion
 
+/**
+ * Searches for shift offers created by a specific employee.
+ *
+ * @param {number} emp_id - The ID of the employee who offered the shifts.
+ * @returns {Promise<Array>} - A list of shift offers created by the employee.
+ */
+export async function searchEmployeeShiftOffers(emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Query to fetch shift offers created by the employee
+        const query = `
+            SELECT
+                so.shift_offer_id,
+                so.shift_id,
+                so.offer_status,
+                so.offered_at,
+                sh.date AS shift_date,
+                sh.start_time,
+                sh.end_time,
+                e.f_name,
+                e.l_name
+            FROM
+                shift_offers so
+            JOIN
+                shifts sh ON so.shift_id = sh.shift_id
+            JOIN
+                employees e ON sh.emp_id = e.emp_id
+            WHERE
+                so.offered_emp_id = $1
+            ORDER BY
+                so.offered_at DESC;
+        `;
+
+        const result = await client.query(query, [emp_id]);
+
+        // Map result rows to desired format
+        return result.rows.map(row => ({
+            shiftOfferId: row.shift_offer_id,
+            shiftId: row.shift_id,
+            status: row.offer_status,
+            offeredAt: row.offered_at,
+            date: row.shift_date,
+            startTime: row.start_time,
+            endTime: row.end_time,
+            employeeName: `${row.f_name} ${row.l_name}`,
+        }));
+    } catch (err) {
+        console.error('Error searching employee shift offers:', err);
+        throw err;
+    } finally {
+        await client.end();
+        console.log('Database connection closed');
+    }
+}
+
 //#region Search Open Shift Offers
 
 /**
