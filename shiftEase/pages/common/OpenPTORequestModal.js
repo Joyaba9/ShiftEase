@@ -24,7 +24,7 @@ const getRequestById = async (requestID) => {
 };
 const { width } = Dimensions.get('window');
 
-const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
+const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID, business_id, isManager}) => {
     const [pulledOpenRequest, setPulledOpenRequest] = useState(null);
     const [canEdit, setCanEdit] = useState(false);
     const [managerComments, setManagerComments] = useState('');
@@ -40,7 +40,7 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
 
                     console.log('Pulled Open Request:', requestData);
 
-                    if (requestData.role === 'manager') {
+                    if (isManager) {
                         setCanEdit(true);
                     }
                 }
@@ -53,10 +53,51 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
         setRequestVisible(false);
     };
 
-    const handleSubmit = () => {
-        console.log("Submit pressed")
-        //Enter Logic...
+    const handleSubmit = async () => {
+        console.log("Submit pressed");
+        if (!pulledOpenRequest || !selectedStatus) {
+            alert("Request details or status are missing.");
+            return;
+        }
+    
+        console.log("Payload:", {
+            request_id: pulledOpenRequest.request_id,
+            business_id: business_id,
+            status: selectedStatus,
+            manager_comments: managerComments,
+        });
+
+        try {
+            const response = await fetch('http://localhost:5050/api/employee/updateRequestStatus', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    request_id: pulledOpenRequest.request_id,
+                    business_id: business_id,
+                    status: selectedStatus,
+                    manager_comments: managerComments,
+                }),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok && data.success) {
+                alert("Request status updated successfully.");
+                console.log("Updated Request:", data.updatedRequest);
+    
+                setRequestVisible(false);
+            } else {
+                console.error("Failed to update request:", data.message);
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error("Error while updating request:", error);
+            alert("An error occurred while updating the request.");
+        }
     };
+    
 
     return (
         <Modal
@@ -67,7 +108,7 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
         >
             <View style={styles.screenGray}>
                 <View style={styles.OpenRequestContainer}>
-                    <Text style={styles.modalHeader}>Manage a Request</Text>
+                    <Text style={styles.modalHeader}>View a Request</Text>
                     <View style={styles.HDivider} />
 
                     <View style={styles.mainContainer}>
@@ -186,10 +227,11 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID }) => {
                     </View>
                     
                     <View style={styles.buttonRowContainer}>
+                        { isManager && (
                         <TouchableOpacity style={styles.bubbleButton} onPress={handleSubmit}>
                             <Text style={styles.buttonText}>Submit</Text>
                         </TouchableOpacity>
-
+                        )}
                         <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
                             <Text style={styles.buttonText}>Cancel</Text>
                         </TouchableOpacity>

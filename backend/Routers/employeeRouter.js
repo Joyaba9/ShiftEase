@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -120,7 +120,7 @@ router.get('/availability/fetch/:emp_id', async (req, res) => {
 
 // Route to fetch all future requests for a specific employee and business
 router.get('/getFutureRequests', async (req, res) => {
-    const { emp_id, business_id } = req.query; // Extract emp_id and business_id from query parameters
+    const { emp_id, business_id, isManager } = req.query; // Extract emp_id and business_id from query parameters
 
     // Validate input
     if (!emp_id || !business_id) {
@@ -129,7 +129,7 @@ router.get('/getFutureRequests', async (req, res) => {
 
     try {
         // Fetch future requests for the given employee and business
-        const futureRequests = await getFutureRequestsByEmployee(emp_id, business_id);
+        const futureRequests = await getFutureRequestsByEmployee(emp_id, business_id, isManager);
 
         // Return the list of future requests in JSON format
         res.status(200).json({ success: true, futureRequests });
@@ -141,16 +141,19 @@ router.get('/getFutureRequests', async (req, res) => {
 
 // Route to fetch all past requests for a specific employee and business
 router.get('/getPastRequests', async (req, res) => {
-    const { emp_id, business_id } = req.query; // Extract emp_id and business_id from query parameters
+    const { emp_id, business_id, isManager} = req.query; // Extract emp_id and business_id from query parameters
 
     // Validate input
-    if (!emp_id || !business_id) {
-        return res.status(400).json({ success: false, message: 'Employee ID and Business ID are required' });
+    if (!emp_id || !business_id || !isManager) {
+        return res.status(400).json({ success: false, message: 'Employee ID, Business ID, and isManager are required' });
     }
+    
+    console.log('isManager in status past router: ', isManager);
+    console.log('Type of isManager past: ', typeof isManager);
 
     try {
         // Fetch past requests for the given employee and business
-        const pastRequests = await getPastRequestsByEmployee(emp_id, business_id);
+        const pastRequests = await getPastRequestsByEmployee(emp_id, business_id, isManager);
 
         // Return the list of past requests in JSON format
         res.status(200).json({ success: true, pastRequests });
@@ -184,16 +187,19 @@ router.get('/getAllRequests', async (req, res) => {
 // Route to fetch all requests for a specifric employee, sorted by status
 router.get('/getAllRequestsByStatus', async (req, res) => {
     console.log('Function being called');
-    const { emp_id, business_id, status } = req.query; // Extract emp_id and business_id from query parameters
+    const { emp_id, business_id, status, isManager } = req.query; // Extract emp_id and business_id from query parameters
 
     // Validate input
     if (!emp_id || !business_id || !status) {
         return res.status(400).json({ success: false, message: 'Employee ID, Business ID, and Status are required' });
     }
 
+    console.log('isManager in status router: ', isManager);
+    console.log('Type of isManager: ', typeof isManager);
+
     try {
         // Fetch all requests for the given employee and business
-        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status);
+        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status, isManager);
 
         // Return the list of all requests in JSON format
         res.status(200).json({ success: true, allRequestsByStatus });
@@ -261,6 +267,8 @@ router.post('/addRequest', async (req, res) => {
 router.put('/updateRequestStatus', async (req, res) => {
     const { request_id, business_id, status, manager_comments } = req.body;
 
+    console.log("Received Payload:", req.body);
+
     // Validate input
     if (!request_id || !business_id || !status) {
         return res.status(400).json({ success: false, message: 'Request ID, Business ID, and status are required' });
@@ -274,6 +282,26 @@ router.put('/updateRequestStatus', async (req, res) => {
         res.status(200).json({ success: true, updatedRequest });
     } catch (err) {
         console.error('Error updating request status:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/checkIfEmployeeIsManager', async (req, res) => {
+    const { emp_id } = req.query;  // Assume emp_id is passed as a query parameter
+
+    // Validate input
+    if (!emp_id) {
+        return res.status(400).json({ success: false, message: 'Employee ID is required' });
+    }
+
+    try {
+        // Check if the employee is a manager
+        const isManager = await checkIfEmployeeIsManager(emp_id);
+
+        // Return the result in JSON format
+        res.status(200).json({ success: true, isManager });
+    } catch (err) {
+        console.error('Error checking if employee is a manager:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
