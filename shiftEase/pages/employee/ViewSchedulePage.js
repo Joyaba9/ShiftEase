@@ -38,15 +38,19 @@ const ViewSchedulePage = () => {
     const [selectedShift, setSelectedShift] = useState(null);
     const [offeredShifts, setOfferedShifts] = useState([]);
 
-    const filteredOfferedShifts = offeredShifts.map((shift) => {
-        const employee = scheduledEmployees.find(
-            (emp) =>`${emp.f_name} ${emp.l_name}` === shift.employeeName
-        );
-        if (employee) {
-            return { ...shift, employeeId: employee.emp_id };
-        }
-        return shift;
-    }).filter(shift => shift.status.toLowerCase() !== 'cancelled');
+    const filteredOfferedShifts = useMemo(() => {
+        return offeredShifts
+            .map((shift) => {
+                const employee = scheduledEmployees.find(
+                    (emp) => `${emp.f_name} ${emp.l_name}` === shift.employeeName
+                );
+                if (employee) {
+                    return { ...shift, employeeId: employee.emp_id };
+                }
+                return shift;
+            })
+            .filter((shift) => shift.status.toLowerCase() !== 'cancelled');
+    }, [offeredShifts, scheduledEmployees]);
 
     
     const dates = useMemo(() => {
@@ -72,86 +76,88 @@ const ViewSchedulePage = () => {
 
     // Fetch and load schedule and shifts for the selected week
     useEffect(() => {
-        const loadSchedule = async () => {
-            // Check if employees are loaded before running the function
-            if (!employees || employees.length === 0) {
-                console.log("Employees not yet loaded, skipping schedule load.");
-                return;
-            }
-
-            setIsLoading(true);
-            
-            // Format the weekStartDate to 'YYYY-MM-DD' for compatibility
-            const formattedWeekStartDate = weekStartDate.toISOString().slice(0, 10); // 'YYYY-MM-DD'
-            console.log("Formatted Week Start Date:", formattedWeekStartDate);
-
-            console.log("Business ID:", businessId, "Week Start Date:", formattedWeekStartDate);
-
-            try {
-                console.log("Trying to loadSchedule");
-
-                const existingSchedule = await fetchScheduleAPI(businessId, formattedWeekStartDate);
-                console.log('Schedule: ', existingSchedule);
-
-                if (existingSchedule && existingSchedule.schedule) {
-                    setScheduleId(existingSchedule.schedule.schedule_id);
-
-                    // Filter employees who have shifts in the schedule
-                    const scheduledEmployeeIds = new Set(existingSchedule.shifts.map(shift => shift.employeeId));
-                    const filteredScheduledEmployees = employees.filter(employee => scheduledEmployeeIds.has(employee.emp_id));
-                    setScheduledEmployees(filteredScheduledEmployees);
-
-                    // Set assignments to display in grid
-                    const loadedEmployeeAssignments = {};
-                    const loadedShiftAssignments = {};
-
-                    let userTotalHours = 0;
-
-                    existingSchedule.shifts.forEach(shift => {
-                        // Format both dates to YYYY-MM-DD 
-                        const shiftDate = shift.date.slice(0, 10); // Extract YYYY-MM-DD
-                        const dateIndex = dates.findIndex(date => date.toISOString().slice(0, 10) === shiftDate);
-
-                        if (dateIndex !== -1) {
-                            const cellId = `${shift.employeeId}-${dateIndex}`;
-                            loadedEmployeeAssignments[cellId] = {
-                                f_name: shift.employeeName.split(' ')[0],
-                                l_name: shift.employeeName.split(' ')[1]
-                            };
-                            //loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
-                            // Add shift details, including shiftId
-                            loadedShiftAssignments[cellId] = {
-                                shiftId: shift.shiftId, // Include the shiftId
-                                time: `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`,
-                            };
-                            
-                            // Calculate shift duration and add to total if it's the logged-in employee's shift
-                            if (shift.employeeId === loggedInEmployeeId) {
-                                const shiftDuration = calculateShiftDuration(shift.startTime, shift.endTime);
-                                userTotalHours += shiftDuration;
-                            }
-                        }
-                    });
-
-                    setEmployeeAssignments(loadedEmployeeAssignments);
-                    setShiftAssignments(loadedShiftAssignments);
-                    setTotalScheduledHours(userTotalHours);
-
-                    console.log('Employee Assignments: ', loadedEmployeeAssignments);
-                    console.log('Shift Assignments: ', loadedShiftAssignments);
-                    
-                    setScheduleLoaded(true);
-                } else {
-                    setScheduleId(null); // Clear schedule ID if no schedule found
+        if (employees.length > 0) {
+            const loadSchedule = async () => {
+                // Check if employees are loaded before running the function
+                if (!employees || employees.length === 0) {
+                    console.log("Employees not yet loaded, skipping schedule load.");
+                    return;
                 }
-            } catch (error) {
-                console.error("Error loading schedule:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadSchedule();
-    }, [businessId, weekStartDate, dates, employees, setEmployeeAssignments, setShiftAssignments, loggedInEmployeeId]);
+
+                setIsLoading(true);
+                
+                // Format the weekStartDate to 'YYYY-MM-DD' for compatibility
+                const formattedWeekStartDate = weekStartDate.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+                console.log("Formatted Week Start Date:", formattedWeekStartDate);
+
+                console.log("Business ID:", businessId, "Week Start Date:", formattedWeekStartDate);
+
+                try {
+                    console.log("Trying to loadSchedule");
+
+                    const existingSchedule = await fetchScheduleAPI(businessId, formattedWeekStartDate);
+                    console.log('Schedule: ', existingSchedule);
+
+                    if (existingSchedule && existingSchedule.schedule) {
+                        setScheduleId(existingSchedule.schedule.schedule_id);
+
+                        // Filter employees who have shifts in the schedule
+                        const scheduledEmployeeIds = new Set(existingSchedule.shifts.map(shift => shift.employeeId));
+                        const filteredScheduledEmployees = employees.filter(employee => scheduledEmployeeIds.has(employee.emp_id));
+                        setScheduledEmployees(filteredScheduledEmployees);
+
+                        // Set assignments to display in grid
+                        const loadedEmployeeAssignments = {};
+                        const loadedShiftAssignments = {};
+
+                        let userTotalHours = 0;
+
+                        existingSchedule.shifts.forEach(shift => {
+                            // Format both dates to YYYY-MM-DD 
+                            const shiftDate = shift.date.slice(0, 10); // Extract YYYY-MM-DD
+                            const dateIndex = dates.findIndex(date => date.toISOString().slice(0, 10) === shiftDate);
+
+                            if (dateIndex !== -1) {
+                                const cellId = `${shift.employeeId}-${dateIndex}`;
+                                loadedEmployeeAssignments[cellId] = {
+                                    f_name: shift.employeeName.split(' ')[0],
+                                    l_name: shift.employeeName.split(' ')[1]
+                                };
+
+                                // Add shift details, including shiftId
+                                loadedShiftAssignments[cellId] = {
+                                    shiftId: shift.shiftId, // Include the shiftId
+                                    time: `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`,
+                                };
+                                
+                                // Calculate shift duration and add to total if it's the logged-in employee's shift
+                                if (shift.employeeId === loggedInEmployeeId) {
+                                    const shiftDuration = calculateShiftDuration(shift.startTime, shift.endTime);
+                                    userTotalHours += shiftDuration;
+                                }
+                            }
+                        });
+
+                        setEmployeeAssignments(loadedEmployeeAssignments);
+                        setShiftAssignments(loadedShiftAssignments);
+                        setTotalScheduledHours(userTotalHours);
+
+                        console.log('Employee Assignments: ', loadedEmployeeAssignments);
+                        console.log('Shift Assignments: ', loadedShiftAssignments);
+                        
+                        setScheduleLoaded(true);
+                    } else {
+                        setScheduleId(null); // Clear schedule ID if no schedule found
+                    }
+                } catch (error) {
+                    console.error("Error loading schedule:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            loadSchedule();
+        }
+    }, [businessId, weekStartDate, loggedInEmployeeId, employees, ]); //dates,  setEmployeeAssignments, setShiftAssignments, 
     
     // Helper function to calculate shift duration in hours
     const calculateShiftDuration = (startTime, endTime) => {
@@ -283,7 +289,6 @@ const ViewSchedulePage = () => {
                                         </View>
                                         {dates.map((date, colIndex) => {
                                             const cellId = `${employee.emp_id}-${colIndex}`;
-                                            //const shiftTime = shiftAssignments[cellId];
                                             const shiftData = shiftAssignments[cellId]; 
 
                                             console.log(`Cell ID: ${cellId}`, "Shift Data:", shiftData);
