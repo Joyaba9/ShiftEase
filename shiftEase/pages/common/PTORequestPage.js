@@ -15,37 +15,53 @@ const PTORequestPage = () => {
     const [requestID, setRequestID] = useState('');
     const [upcomingRequests, setUpcomingRequests] = useState([]);
     const [pastRequests, setPastRequests] = useState([]);
-
+    const [isManager, setIsManager] = useState(false);
 
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
     const businessId = loggedInUser?.employee?.business_id;
     const loggedInEmployeeId = loggedInUser?.employee?.emp_id;
-    const loggedInEmployeeFName = loggedInUser?.employee?.f_Name;
-    const loggedInEmployeeLName = loggedInUser?.employee?.l_Name;
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
         const day = String(date.getDate()).padStart(2, '0');
         const year = date.getFullYear();
-        return `${month}-${day}-${year}`;
+        return `${month}/${day}/${year}`;
     };
 
     useEffect(() => {
         if (activeTab === 'Pending') {
-            getAllRequestStatusByEmployee('Pending');
+            getAllRequestStatusByEmployee('Pending', isManager);
         } else if (activeTab === 'Approved') {
-            getAllRequestStatusByEmployee('Approved');
+            getAllRequestStatusByEmployee('Approved', isManager);
         } else if (activeTab === 'Rejected') {
-            getAllRequestStatusByEmployee('Rejected');
+            getAllRequestStatusByEmployee('Rejected', isManager);
         } else if (activeTab === 'Upcoming') {
-            getAllRequestStatusByEmployee('Upcoming');
+            getAllRequestStatusByEmployee('Upcoming', isManager);
         } else if (activeTab === 'Past') {
-            getAllRequestStatusByEmployee('Past');
+            getAllRequestStatusByEmployee('Past', isManager);
         }
     }, [activeTab]);
 
-    const getAllRequestStatusByEmployee = async (status) => {
+    useEffect(() => {
+        const fetchManagerStatus = async () => {
+            if (!loggedInEmployeeId) return;
+            try {
+                const response = await fetch(`http://localhost:5050/api/employee/checkIfEmployeeIsManager?emp_id=${loggedInEmployeeId}`);
+                const data = await response.json();
+                if (data.success) {
+                    setIsManager(data.isManager);
+                } else {
+                    console.error('Failed to check manager status:', data.message);
+                }
+            } catch (error) {
+                console.error('Error checking manager status:', error);
+            }
+        };
+        fetchManagerStatus();
+    }, [loggedInEmployeeId]);
+
+    const getAllRequestStatusByEmployee = async (status, isManager) => {
         if (!loggedInEmployeeId || !businessId) {
             alert('Error with employee or business ID');
             return;
@@ -57,15 +73,16 @@ const PTORequestPage = () => {
     
             if (status === 'Pending' || status === 'Approved' || status === 'Rejected') {
                 // For Pending, Approved, and Rejected, use the existing route
-                url = `http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}`;
+                url = `http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}&isManager=${isManager}`;
                 setFunction = status === 'Pending' ? setPendingRequests : status === 'Approved' ? setApprovedRequests : setRejectedRequests;
             } else if (status === 'Upcoming') {
                 // For Upcoming, use the getFutureRequests route
-                url = `http://localhost:5050/api/employee/getFutureRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`;
+                url = `http://localhost:5050/api/employee/getFutureRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`;
                 setFunction = setUpcomingRequests;
             } else if (status === 'Past') {
                 // For Past, use the getPastRequests route
-                url = `http://localhost:5050/api/employee/getPastRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`;
+                url = `http://localhost:5050/api/employee/getPastRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`;
+                console.log('isManager that is passed through frontend: ', isManager);
                 setFunction = setPastRequests;
             }
     
@@ -113,10 +130,7 @@ const PTORequestPage = () => {
     };
 
     //Hardcoded test content
-    pulledAccount = [
-        {isBusiness: 'no', BusID: '6', EmpID: '6U27'}
-    ];
-    pulledPastRequest = [];
+    pulledAccount = [{isBusiness: 'no'}];
 
     // Updated setTabContent with a check to ensure pulledRequestArray is an array
     const setTabContent = (pulledRequestArray = []) => {
@@ -137,7 +151,7 @@ const PTORequestPage = () => {
                             <Text style={styles.requestText}>{request.request_id}</Text>
                         </View>
                         <View style={[styles.requestItem, styles.nameColumn]}>
-                            <Text style={styles.requestText}>{loggedInEmployeeFName} {loggedInEmployeeLName}</Text>
+                            <Text style={styles.requestText}>{request.f_name} {request.l_name}</Text>
                         </View>
                         <View style={[styles.requestItem, styles.statusColumn]}>
                             <View style={styles.makeHorizontal}>
@@ -146,10 +160,14 @@ const PTORequestPage = () => {
                             </View>
                         </View>
                         <View style={[styles.requestItem, styles.requestDateColumn]}>
-                            <Text style={styles.requestText}>{formatDate(request.start_date)}</Text>
+                            <Text style={styles.requestText}>{formatDate(request.created_at)}</Text>
                         </View>
                         <View style={[styles.requestItem, styles.createdOnColumn]}>
-                            <Text style={styles.requestText}>{formatDate(request.end_date)}</Text>
+                            <Text style={styles.requestText}>
+                                {request.start_date === request.end_date
+                                ? formatDate(request.start_date)
+                                : `${formatDate(request.start_date)} - ${formatDate(request.end_date)}`}
+                            </Text>
                         </View>
                         <TouchableOpacity style={[styles.bubbleButton, styles.actionColumn]} onPress={() => handleOpenRequest(request.request_id)}>
                             <Text style={styles.requestButtonText}>Open Request</Text>
@@ -227,17 +245,17 @@ const PTORequestPage = () => {
                         <Text style={[styles.requestLabel, styles.idColumn]}>Request ID</Text>
                         <Text style={[styles.requestLabel, styles.nameColumn]}>Employee Name</Text>
                         <Text style={[styles.requestLabel, styles.statusColumn]}>Status</Text>
-                        <Text style={[styles.requestLabel, styles.requestDateColumn]}>Requested Start Date</Text>
-                        <Text style={[styles.requestLabel, styles.createdOnColumn]}>Requested End Date</Text>
+                        <Text style={[styles.requestLabel, styles.requestDateColumn]}>Created On</Text>
+                        <Text style={[styles.requestLabel, styles.createdOnColumn]}>Requested Date(s)</Text>
                         <Text style={[styles.requestLabel, styles.actionColumn]}>Action</Text>
                     </View>
 
                     <View style={styles.HDivider}/>                   
-                    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
-                        <View style={styles.contentContainer}>
-                            {renderTabContent()}
-                        </View>
-                    </ScrollView>
+                    <View style={styles.scrollWrapper}>
+                        <ScrollView contentContainerStyle={styles.scrollContainer}>
+                            <View style={styles.contentContainer}>{renderTabContent()}</View>
+                        </ScrollView>
+                    </View>
                     <View style={styles.HDivider}/>
 
                     <AddPTORequestModal
@@ -249,6 +267,8 @@ const PTORequestPage = () => {
                         requestVisible={requestVisible}
                         setRequestVisible={setRequestVisible}
                         requestID={requestID}
+                        business_id={businessId}
+                        isManager={isManager}
                     />
                 </View>
             </View>
@@ -366,9 +386,15 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         alignItems: 'center',
         width: '100%',
+        paddingBottom: 20,
     },
     scrollView: {
         maxHeight: 500,
+        width: '100%',
+    },
+     scrollWrapper: {
+        flex: 1,
+        maxHeight: 460, 
         width: '100%',
     },
     contentContainer: {
@@ -400,7 +426,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: '100%',
         marginBottom: 10,
-        paddingHorizontal: 5,
+        paddingHorizontal: 40,
     },
     requestLabel: {
         textAlign: 'center',

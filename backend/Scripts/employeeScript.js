@@ -362,7 +362,7 @@ export async function fetchEmployeeAvailability(emp_id) {
  * @param {number} business_id - The ID of the business.
  * @returns {Promise<Array>} - An array of future request records, including day type and times.
  */
-export async function getFutureRequestsByEmployee(emp_id, business_id) {
+export async function getFutureRequestsByEmployee(emp_id, business_id, isManager) {
     const client = await getClient();
     await client.connect();
 
@@ -374,11 +374,35 @@ export async function getFutureRequestsByEmployee(emp_id, business_id) {
 
     // Query to fetch future requests with the new columns
     const futureRequestsQuery = `
-        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
-        FROM requests
-        WHERE emp_id = $1
+        SELECT 
+            r.request_id,
+            e.f_name,
+            e.l_name,  
+            r.created_at,
+            r.start_date, 
+            r.end_date, 
+            r.status 
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE r.emp_id = $1
           AND start_date > CURRENT_DATE
-        ORDER BY start_date ASC;
+        ORDER BY created_at DESC;
+    `;
+
+    const futureRequestsManagerQuery = `
+        SELECT 
+            r.request_id,
+            e.f_name,
+            e.l_name,  
+            r.created_at,
+            r.start_date, 
+            r.end_date, 
+            r.status 
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE business_id = $1
+          AND start_date > CURRENT_DATE
+        ORDER BY created_at DESC;
     `;
 
     try {
@@ -388,9 +412,14 @@ export async function getFutureRequestsByEmployee(emp_id, business_id) {
             throw new Error('Employee is not associated with the specified business or is inactive');
         }
 
-        // Fetch future requests if the association is confirmed
-        const result = await client.query(futureRequestsQuery, [emp_id]);
-        return result.rows;
+        if (isManager === 'true'){
+            const result = await client.query(futureRequestsManagerQuery, [business_id]);
+            return result.rows;
+        } else {
+            // Fetch future requests if the association is confirmed
+            const result = await client.query(futureRequestsQuery, [emp_id]);
+            return result.rows;
+        }
     } catch (err) {
         console.error('Error fetching future requests:', err);
         throw err;
@@ -405,9 +434,10 @@ export async function getFutureRequestsByEmployee(emp_id, business_id) {
  * 
  * @param {number} emp_id - The ID of the employee.
  * @param {number} business_id - The ID of the business.
+ * @param {boolean} isManager - The status of if manager is set
  * @returns {Promise<Array>} - An array of past request records.
  */
-export async function getPastRequestsByEmployee(emp_id, business_id) {
+export async function getPastRequestsByEmployee(emp_id, business_id, isManager) {
     const client = await getClient();
     await client.connect();
 
@@ -419,11 +449,35 @@ export async function getPastRequestsByEmployee(emp_id, business_id) {
 
     // Query to fetch past requests
     const pastRequestsQuery = `
-        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
-        FROM requests
-        WHERE emp_id = $1
+        SELECT 
+            r.request_id,
+            e.f_name,
+            e.l_name,  
+            r.created_at,
+            r.start_date, 
+            r.end_date, 
+            r.status 
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE r.emp_id = $1
           AND end_date < CURRENT_DATE
-        ORDER BY start_date DESC;
+        ORDER BY created_at DESC;
+    `;
+
+    const pastRequestsManagerQuery = `
+        SELECT 
+            r.request_id,
+            e.f_name,
+            e.l_name,
+            r.created_at,  
+            r.start_date, 
+            r.end_date, 
+            r.status 
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE business_id = $1
+          AND end_date < CURRENT_DATE
+        ORDER BY created_at DESC;
     `;
 
     try {
@@ -433,9 +487,14 @@ export async function getPastRequestsByEmployee(emp_id, business_id) {
             throw new Error('Employee is not associated with the specified business or is inactive');
         }
 
-        // Fetch past requests if the association is confirmed
-        const result = await client.query(pastRequestsQuery, [emp_id]);
-        return result.rows;
+        if (isManager === 'true'){
+            const result = await client.query(pastRequestsManagerQuery, [business_id]);
+            return result.rows;
+        } else {
+            // Fetch past requests if the association is confirmed
+            const result = await client.query(pastRequestsQuery, [emp_id]);
+            return result.rows;
+        }
     } catch (err) {
         console.error('Error fetching past requests:', err);
         throw err;
@@ -495,9 +554,10 @@ export async function getAllRequestsByEmployee(emp_id, business_id) {
  * @param {number} emp_id - The ID of the employee.
  * @param {number} business_id - The ID of the business.
  * @param {string} status - The status that is being searched for
+ * @param {boolean} isManager - Manager status
  * @returns {Promise<Array>} - An array of all request records, including day type and times.
  */
-export async function getAllRequestStatusByEmployee(emp_id, business_id, status) {
+export async function getAllRequestStatusByEmployee(emp_id, business_id, status, isManager) {
     const client = await getClient();
     await client.connect();
 
@@ -509,10 +569,33 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status)
 
     // Query to fetch all requests sorted by the latest start date first
     const allRequestsByStatusQuery = `
-        SELECT request_id, request_type, start_date, end_date, day_type, start_time, end_time, status, reason
-        FROM requests
-        WHERE emp_id = $1 AND status = $2
-        ORDER BY start_date DESC;
+        SELECT 
+            r.request_id,
+            e.f_name,
+            e.l_name,  
+            r.created_at,
+            r.start_date, 
+            r.end_date, 
+            r.status   
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE r.emp_id = $1 AND status = $2
+        ORDER BY created_at DESC;
+    `;
+
+    const allRequestsByStatusManagerQuery = `
+        SELECT 
+            r.request_id,
+            e.f_name,
+            e.l_name,
+            r.created_at,
+            r.status,
+            r.start_date,
+            r.end_date
+        FROM requests r
+        JOIN employees e ON r.emp_id = e.emp_id
+        WHERE business_id = $1 AND status = $2
+        ORDER BY created_at DESC;
     `;
 
     try {
@@ -522,9 +605,17 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status)
             throw new Error('Employee is not associated with the specified business or is inactive');
         }
 
-        // Fetch all requests if the association is confirmed
-        const result = await client.query(allRequestsByStatusQuery, [emp_id, status]);
-        return result.rows;
+        console.log('Type of isManager: ', typeof isManager);
+        console.log('isManager in status script: ', isManager);
+
+        if (isManager === 'true') {
+            const result = await client.query(allRequestsByStatusManagerQuery, [business_id, status]);
+            return result.rows;
+        } else {
+             // Fetch all requests if the association is confirmed
+            const result = await client.query(allRequestsByStatusQuery, [emp_id, status]);
+            return result.rows;
+        } 
     } catch (err) {
         console.error('Error fetching all requests:', err);
         throw err;
@@ -726,3 +817,51 @@ export async function updateRequestStatus(request_id, business_id, status, manag
 }
 
 //#endregion
+
+/**
+ * Fetches whether the employee is a manager based on their role.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @returns {Promise<boolean>} - A boolean indicating if the employee is a manager.
+ */
+export async function checkIfEmployeeIsManager(emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to fetch the role_id of the employee
+    const checkRoleQuery = `
+        SELECT role_id FROM employees 
+        WHERE emp_id = $1;
+    `;
+
+    // Query to check if the role has the isManager flag set to true
+    const checkRoleIsManagerQuery = `
+        SELECT is_manager FROM roles 
+        WHERE role_id = $1;
+    `;
+
+    try {
+        // Fetch the employee's role_id
+        const checkRes = await client.query(checkRoleQuery, [emp_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee not found');
+        }
+
+        const role_id = checkRes.rows[0].role_id;
+
+        // Fetch if the role is marked as a manager
+        const roleRes = await client.query(checkRoleIsManagerQuery, [role_id]);
+        if (roleRes.rows.length === 0) {
+            throw new Error('Role not found');
+        }
+
+        const isManager = roleRes.rows[0].is_manager;
+        return isManager; // Return true or false based on the isManager flag
+
+    } catch (err) {
+        console.error('Error checking if employee is a manager:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
