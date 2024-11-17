@@ -5,6 +5,9 @@ import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
+import { getStartOfWeek } from '../../components/schedule_components/useCalendar';
+import { calculateHoursDifference,formatTime } from '../../components/schedule_components/scheduleUtils';
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
@@ -32,6 +35,63 @@ const EmployeePage = () => {
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
 
+    // State for upcoming shifts
+    const [upcomingShift, setUpcomingShift] = useState(null);
+
+    // Fetch upcoming shifts on component mount
+    useEffect(() => {
+        const fetchUpcomingShift = async () => {
+            try {
+                if (!loggedInUser || !employee?.emp_id || !employee?.business_id) {
+                    console.error("Logged-in user or employee data is missing");
+                    return;
+                }
+
+                // Fetch the current week's schedule ID
+                const today = new Date();
+                const weekStartDate = getStartOfWeek(today).toISOString().slice(0, 10); // Format to 'YYYY-MM-DD'
+                const scheduleData = await fetchScheduleAPI(employee.business_id, weekStartDate);
+
+                if (!scheduleData || !scheduleData.schedule) {
+                    console.log("No schedule found for the current week.");
+                    setUpcomingShift(null);
+                    return;
+                }
+
+                const scheduleId = scheduleData.schedule.schedule_id;
+                const shifts = scheduleData.shifts;
+
+                // Filter shifts for the logged-in employee and future dates
+                const now = new Date();
+                const employeeShifts = shifts.filter(
+                    (shift) =>
+                        shift.employeeId === employee.emp_id &&
+                        new Date(shift.date) >= now
+                );
+
+                // Sort the shifts by date to find the most recent upcoming shift
+                employeeShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                if (employeeShifts.length > 0) {
+                    //setUpcomingShift(employeeShifts[0]);
+                    const nextShift = employeeShifts[0];
+                    // Calculate scheduled hours using the provided function
+                    const scheduledHours = calculateHoursDifference(nextShift.startTime, nextShift.endTime);
+
+                    setUpcomingShift({
+                        ...nextShift,
+                        scheduledHours,
+                    });
+                } else {
+                    setUpcomingShift(null);
+                }
+            } catch (error) {
+                console.error("Error fetching upcoming shifts:", error);
+            }
+        };
+
+        fetchUpcomingShift();
+    }, [loggedInUser, employee]);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -102,35 +162,49 @@ const EmployeePage = () => {
                     {/* Right Column */}
                     <View style={styles.rightColumn}>
                         {/* Announcements Section */}
-            <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradientAnnounce}>
-              <View style={styles.announcements}>
-                <View style={styles.topBar}>
-                  <Text style={styles.sectionTitle}>Announcements</Text>
-                  <View style={styles.spacer} />
-                  <Ionicons name="megaphone-outline" size={30} color="black" />
-                </View>
-                <View style={styles.textBox}></View>
-                <TouchableOpacity style={styles.addIconContainer}>
-                  <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
+                        <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradientAnnounce}>
+                            <View style={styles.announcements}>
+                                <View style={styles.topBar}>
+                                <Text style={styles.sectionTitle}>Announcements</Text>
+                                <View style={styles.spacer} />
+                                <Ionicons name="megaphone-outline" size={30} color="black" />
+                                </View>
+                                <View style={styles.textBox}></View>
+                                <TouchableOpacity style={styles.addIconContainer}>
+                                <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
+                                </TouchableOpacity>
+                            </View>
+                        </LinearGradient>
 
                         {/* Upcoming Shifts Section */}
                         <LinearGradient 
                             colors={['#E7E7E7', '#A7CAD8']} 
                             style={styles.gradient}
                         >
-                            <View style={styles.announcements}>
+                            <View style={styles.upcomingShiftsContainer}>
                                 <View style={styles.topBar}>
-                                    <Text style={styles.sectionTitle}>Upcoming Shifts</Text>
+                                    <Text style={styles.sectionTitle}>Upcoming Shift</Text>
 
                                     <View style={styles.spacer} />
 
                                     <Ionicons name="calendar-outline" size={30} color="black" />
                                 </View>
                                 <View style={styles.textBox}>
-                                    {/* Display Upcoming Shifts Logic? */}
+                                    {upcomingShift ? (
+                                        <View style={{height: '100%', justifyContent: 'space-between'}}>
+                                            <Text style={styles.shiftText}>
+                                                Scheduled Hours: {upcomingShift.scheduledHours}
+                                            </Text>
+                                            <Text style={styles.shiftText}>
+                                                Date: {new Date(upcomingShift.date).toLocaleDateString()}
+                                            </Text>
+                                            <Text style={styles.shiftText}>
+                                                Time: {formatTime(upcomingShift.startTime)} - {formatTime(upcomingShift.endTime)}
+                                            </Text>
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.noShiftsText}>No upcoming shifts</Text>
+                                    )}
                                 </View>
                             </View>
                         </LinearGradient>
@@ -253,7 +327,8 @@ const styles = StyleSheet.create({
     },
     gradient: {
         width: '100%',
-        height: 150,
+        //height: 150,
+        flex: 1,
         borderRadius: 10, 
         marginBottom: 30,
         shadowColor: '#000',
@@ -273,7 +348,12 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 2,
         elevation: 4,
-      },
+    },
+    upcomingShiftsContainer: {
+        flex: 1,
+        borderRadius: 10,
+        padding: 20,
+    },
     announcements: {
         borderRadius: 10,
         padding: 20,
@@ -294,10 +374,10 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     textBox: {
-        flex: 1,
+        height: 100,
         backgroundColor: '#fff',
         borderRadius: 10,
-        padding: 20,
+        padding: 15,
         marginTop: 15,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
