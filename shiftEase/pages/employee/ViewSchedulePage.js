@@ -292,16 +292,25 @@ const ViewSchedulePage = () => {
                                             const shiftData = shiftAssignments[cellId]; 
 
                                             console.log(`Cell ID: ${cellId}`, "Shift Data:", shiftData);
-                                            
+                                            // Calculate if the shift date is in the past
+                                            const isPast = new Date(date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+                                            // Determine if this row belongs to the logged-in user
+                                            const isLoggedInUser = employee.emp_id === loggedInEmployeeId;
+
                                             return (
                                                 <TouchableOpacity
                                                     key={colIndex}
                                                     style={[
                                                         styles.scheduleCell,
-                                                        employee.emp_id === loggedInEmployeeId && styles.clickableCell
+                                                        isLoggedInUser && styles.clickableCell,
+                                                        //employee.emp_id === loggedInEmployeeId && styles.clickableCell,
+                                                        isLoggedInUser && isPast && styles.disabledCell,
                                                     ]}
+                                                    disabled={isLoggedInUser && isPast}
                                                     onPress={() => 
-                                                        employee.emp_id === loggedInEmployeeId &&
+                                                        !isPast &&
+                                                        isLoggedInUser && 
+                                                        //employee.emp_id === loggedInEmployeeId &&
                                                         shiftData &&
                                                         handleShiftClick({
                                                             shiftId: shiftData.shiftId,
@@ -537,6 +546,10 @@ const styles = StyleSheet.create({
     },
     highlightRow: { 
         backgroundColor: '#e0f7fa' 
+    },
+    disabledCell: {
+        backgroundColor: '#e0e0e0', // Light gray to indicate disabled
+        opacity: 0.5, // Reduced opacity for clarity
     },
     noScheduleContainer: {
         width: '100%',
