@@ -80,7 +80,7 @@ const EmployeePage = () => {
                         <SidebarButton
                             icon = {require('../../assets/images/calendar_with_gear.png')}
                             label = "Change Availability"
-                            onPress={ () => {{/* Change Availability Page logic */}}}
+                            onPress={ () => {{navigation.navigate('ChangeAvailability')}}}
                         />
                         <SidebarButton
                             icon = {require('../../assets/images/offer_up_icon.png')}
