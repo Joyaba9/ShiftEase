@@ -5,7 +5,7 @@ import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
+import { fetchScheduleAPI, fetchOpenShiftOffers } from '../../../backend/api/scheduleApi';
 import { getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import { calculateHoursDifference,formatTime } from '../../components/schedule_components/scheduleUtils';
 import SidebarButton from '../../components/SidebarButton';
@@ -18,6 +18,7 @@ const { width } = Dimensions.get('window');
 const EmployeePage = () => {
     const isMobile = width < 768; 
     const navigation = useNavigation();
+    const [isLoading, setIsLoading] = useState(true);
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
@@ -37,6 +38,8 @@ const EmployeePage = () => {
 
     // State for upcoming shifts
     const [upcomingShift, setUpcomingShift] = useState(null);
+
+    const [openShiftOffers, setOpenShiftOffers] = useState([]);
 
     // Fetch upcoming shifts on component mount
     useEffect(() => {
@@ -92,6 +95,29 @@ const EmployeePage = () => {
 
         fetchUpcomingShift();
     }, [loggedInUser, employee]);
+
+    useEffect(() => {
+        if (!loggedInUser || !loggedInUser.employee) return;
+
+        const fetchOpenShifts = async () => {
+            const { emp_id, business_id } = loggedInUser.employee;
+
+            setIsLoading(true);
+            try {
+                const shifts = await fetchOpenShiftOffers(emp_id, business_id);
+
+                // Filter out shifts offered by the logged-in user
+                const filteredShifts = shifts.filter(shift => shift.offered_emp_id !== emp_id);
+                setOpenShiftOffers(filteredShifts);
+            } catch (error) {
+                console.error("Error fetching open shift offers:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchOpenShifts();
+    }, [loggedInUser]);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -230,11 +256,28 @@ const EmployeePage = () => {
                                 </View>
 
                                 <View style={styles.shiftCardContainer}>
-                                    {/* Where offered up shifts should be displayed */}
-                                    <ShiftCard />
-                                    
+                                    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
+                                        {/* Check if there are open shift offers */}
+                                        {openShiftOffers.length > 0 ? (
+                                            openShiftOffers.map((offer) => {
+                                                const addedHours = calculateHoursDifference(offer.start_time, offer.end_time);
+                                                const totalHours = loggedInUser.employee.total_hours + addedHours; // Adjust based on how total hours are stored
+                                                
+                                                return (
+                                                    <ShiftCard
+                                                        key={offer.shift_id}
+                                                        date={offer.date}
+                                                        time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
+                                                        addedHours={addedHours}
+                                                        totalHours={totalHours}
+                                                    />
+                                                );
+                                            })
+                                        ) : (
+                                            <Text style={styles.noShiftsText}>No open shift offers available.</Text>
+                                        )}
+                                    </ScrollView>
                                 </View>
-                                
                             </View>
                         </LinearGradient> 
                         <AnnouncementsModal
@@ -420,7 +463,9 @@ const styles = StyleSheet.create({
     shiftCardContainer: {
         alignItems: 'center',
         //backgroundColor: 'black',
-        marginTop: 10
+        marginTop: 10,
+        borderWidth: 2,
+        borderColor: 'green'
     },
     bottomBarContainer: {
         width: '100%',

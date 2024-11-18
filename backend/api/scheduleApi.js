@@ -214,3 +214,25 @@ export async function cancelShiftOfferAPI(shiftId, empId) {
         throw error;
     }
 }
+
+export async function fetchOpenShiftOffers(empId, businessId) {
+    try {
+        const response = await fetch(baseURL + `schedule/searchOpenShiftOffers?emp_id=${empId}&business_id=${businessId}`, 
+            {
+                method: 'GET',
+            }
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+            return data.offers; // Extracting the 'offers' array from the response
+        } else {
+            const errorData = await response.json();
+            console.error("Failed to fetch open shift offers:", errorData);
+            throw new Error(errorData.message || 'Failed to fetch open shift offers');
+        }
+    } catch (error) {
+        console.error("Error in fetchOpenShiftOffers:", error);
+        throw error;
+    }
+}
