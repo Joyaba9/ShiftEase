@@ -87,7 +87,7 @@ const EmployeePage = () => {
 
                 if (futureShifts.length > 0) {
                     //setUpcomingShift(employeeShifts[0]);
-                    const nextShift = employeeShifts[0];
+                    const nextShift = futureShifts[0];
                     // Calculate scheduled hours using the provided function
                     const scheduledHours = calculateHoursDifference(nextShift.startTime, nextShift.endTime);
 
@@ -410,8 +410,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 20,
         marginBottom: 10,
-        borderWidth: 2,
-        borderColor: 'green'
     },
     announcements: {
         borderRadius: 10,
@@ -442,8 +440,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 2,
         elevation: 4,
-        borderWidth: 2,
-        borderColor: 'black'
     },
     availableShifts: {
         flex: 1,
