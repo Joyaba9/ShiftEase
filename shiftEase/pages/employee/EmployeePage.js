@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { fetchScheduleAPI, fetchOpenShiftOffers } from '../../../backend/api/scheduleApi';
 import { getStartOfWeek } from '../../components/schedule_components/useCalendar';
-import { calculateHoursDifference,formatTime } from '../../components/schedule_components/scheduleUtils';
+import { calculateHoursDifference, formatTime } from '../../components/schedule_components/scheduleUtils';
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
@@ -35,11 +35,10 @@ const EmployeePage = () => {
 
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
-
     // State for upcoming shifts
     const [upcomingShift, setUpcomingShift] = useState(null);
-
     const [openShiftOffers, setOpenShiftOffers] = useState([]);
+    const [totalWeeklyHours, setTotalWeeklyHours] = useState(0);
 
     // Fetch upcoming shifts on component mount
     useEffect(() => {
@@ -72,10 +71,21 @@ const EmployeePage = () => {
                         new Date(shift.date) >= now
                 );
 
-                // Sort the shifts by date to find the most recent upcoming shift
-                employeeShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+                // Calculate total weekly hours
+                let totalHours = 0;
+                employeeShifts.forEach((shift) => {
+                    totalHours += calculateHoursDifference(shift.startTime, shift.endTime);
+                });
+                setTotalWeeklyHours(totalHours);
 
-                if (employeeShifts.length > 0) {
+                // Sort the shifts by date to find the most recent upcoming shift
+                //employeeShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                // Find the next upcoming shift
+                const futureShifts = employeeShifts.filter((shift) => new Date(shift.date) >= now);
+                futureShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                if (futureShifts.length > 0) {
                     //setUpcomingShift(employeeShifts[0]);
                     const nextShift = employeeShifts[0];
                     // Calculate scheduled hours using the provided function
@@ -269,7 +279,7 @@ const EmployeePage = () => {
                                                         date={offer.date}
                                                         time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
                                                         addedHours={addedHours}
-                                                        totalHours={totalHours}
+                                                        totalHours={totalWeeklyHours}
                                                     />
                                                 );
                                             })

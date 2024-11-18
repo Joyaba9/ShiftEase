@@ -386,6 +386,18 @@ const ViewSchedulePage = () => {
                     )}
                 </View>
 
+                {/* Bottom Bar with Logo */}
+                <LinearGradient 
+                    colors={['#E7E7E7', '#9DCDCD']} 
+                    style={styles.bottomBarContainer}
+                >
+                    <Image
+                        resizeMode="contain"
+                        source={require('../../assets/images/logo1.png')}
+                        style={styles.desktopLogo}
+                    />
+                </LinearGradient>
+
                 {/* Shift Details Popup */}
                 <Modal
                     visible={popupVisible}
@@ -482,8 +494,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-end',
         paddingRight: 10,
-        //borderWidth: 1,
-        //borderColor: 'red'
     },
     topText: {
         fontSize: 18
@@ -493,6 +503,7 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center',
         backgroundColor: 'white',
+        paddingBottom: 70
     },
     wholeScheduleContainer: {
         width: '95%',
@@ -549,7 +560,7 @@ const styles = StyleSheet.create({
     },
     disabledCell: {
         backgroundColor: '#e0e0e0', // Light gray to indicate disabled
-        opacity: 0.5, // Reduced opacity for clarity
+        opacity: 0.5, 
     },
     noScheduleContainer: {
         width: '100%',
@@ -576,7 +587,10 @@ const styles = StyleSheet.create({
     },
     wholeOfferedShiftsContainer: {
         width: '95%',
-        height: '28%',
+        height: '35%',
+        margin: 50,
+        // borderWidth: 2,
+        // borderColor: 'red'
     },
     offeredShiftsContainer: {
         flexDirection: 'row',
@@ -652,6 +666,20 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 30,
         backgroundColor: 'lightblue'
+    },
+    bottomBarContainer: {
+        width: '100%',
+        height: 100,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+    },
+    desktopLogo: {
+        position: 'relative',
+        left: 40,
+        width: 230,
+        height: 100,
+        alignSelf: 'flex-end',
     },
 });
 
