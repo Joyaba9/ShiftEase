@@ -225,7 +225,7 @@ const EmployeePage = () => {
 
                                     <Ionicons name="calendar-outline" size={30} color="black" />
                                 </View>
-                                <View style={styles.textBox}>
+                                <View style={[styles.textBox, { height: 100 }]}>
                                     {upcomingShift ? (
                                         <View style={{height: '100%', justifyContent: 'space-between'}}>
                                             <Text style={styles.shiftText}>
@@ -248,7 +248,7 @@ const EmployeePage = () => {
                         {/* Available Shifts Section */}
                         <LinearGradient 
                             colors={['#E7E7E7', '#A7CAD8']} 
-                            style={styles.gradient2}
+                            style={[styles.gradient2, { flex: 1 }]}
                         >
                             <View style={styles.availableShifts}>
                                 <View style={styles.topBar}>
@@ -265,13 +265,16 @@ const EmployeePage = () => {
                                     </TouchableOpacity>
                                 </View>
 
-                                <View style={styles.shiftCardContainer}>
-                                    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
+                                <View style={[styles.shiftCardContainer, { flex: 1 }]}>
+                                    <ScrollView 
+                                        style={{ flex: 1 }}
+                                        contentContainerStyle={{ padding: 16 }}
+                                    >
                                         {/* Check if there are open shift offers */}
                                         {openShiftOffers.length > 0 ? (
                                             openShiftOffers.map((offer) => {
                                                 const addedHours = calculateHoursDifference(offer.start_time, offer.end_time);
-                                                const totalHours = loggedInUser.employee.total_hours + addedHours; // Adjust based on how total hours are stored
+                                                const totalHours = totalWeeklyHours + addedHours; // Adjust based on how total hours are stored
                                                 
                                                 return (
                                                     <ShiftCard
@@ -279,7 +282,7 @@ const EmployeePage = () => {
                                                         date={offer.date}
                                                         time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
                                                         addedHours={addedHours}
-                                                        totalHours={totalWeeklyHours}
+                                                        totalHours={totalHours}
                                                     />
                                                 );
                                             })
@@ -381,7 +384,7 @@ const styles = StyleSheet.create({
     gradient: {
         width: '100%',
         //height: 150,
-        flex: 1,
+        //flex: 1,
         borderRadius: 10, 
         marginBottom: 30,
         shadowColor: '#000',
@@ -403,9 +406,12 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     upcomingShiftsContainer: {
-        flex: 1,
+        //flex: 1,
         borderRadius: 10,
         padding: 20,
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: 'green'
     },
     announcements: {
         borderRadius: 10,
@@ -415,11 +421,10 @@ const styles = StyleSheet.create({
         fontSize: 16
     },
     gradient2: {
-        width: '100%',
-        height: 400,
         borderRadius: 10, 
         marginTop: 20, 
         marginBottom: 20,
+        overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
@@ -427,7 +432,7 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     textBox: {
-        height: 100,
+        minheight: 100,
         backgroundColor: '#fff',
         borderRadius: 10,
         padding: 15,
@@ -437,8 +442,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 2,
         elevation: 4,
+        borderWidth: 2,
+        borderColor: 'black'
     },
     availableShifts: {
+        flex: 1,
         borderRadius: 10,
         padding: 20,
     },
@@ -471,11 +479,11 @@ const styles = StyleSheet.create({
         fontSize: 10,
     },
     shiftCardContainer: {
+        flex: 1,
         alignItems: 'center',
-        //backgroundColor: 'black',
-        marginTop: 10,
-        borderWidth: 2,
-        borderColor: 'green'
+        overflow: 'hidden',
+        // borderWidth: 2,
+        // borderColor: 'green'
     },
     bottomBarContainer: {
         width: '100%',
