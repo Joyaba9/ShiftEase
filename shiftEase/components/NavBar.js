@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { store, persistor } from '../redux/store';
@@ -10,7 +10,7 @@ import { auth } from '../../backend/firebase';
 import { signOut } from "firebase/auth";
 import { setPersistence, browserSessionPersistence } from "firebase/auth";
 import SettingsPage from '../pages/business/SettingsPage';
-
+import CurrentUser from '../../backend/CurrentUser.js';
 
 const NavBar = ({ homeRoute }) => {
 
@@ -18,6 +18,8 @@ const NavBar = ({ homeRoute }) => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const [isLoggingOut, setIsLoggingOut] = useState('');
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     // Define the handleLogout function is here temnporarily
     const handleLogout = async () => {
@@ -91,6 +93,45 @@ const NavBar = ({ homeRoute }) => {
         }
     };
 
+    const fetchNotifications = async () => {
+        const userId = CurrentUser.getUserUID();
+        console.log(CurrentUser.getUserUID());
+       // userId = "dpVmWQuuqLcn9QjARwF4Kc5X8Rj2"; // Temporarily use a known ID
+    if (!userId) {
+        console.log("User ID is undefined or null");
+        return;
+    }
+
+    console.log("Fetching notifications for user:", userId);
+
+        try {
+            const response = await fetch(`http://localhost:5050/api/notifications/${userId}`);
+            const result = await response.json();
+
+            if (response.ok && result.notifications) {
+                const notificationsData = result.notifications;
+
+                // Transform object to array
+                const notificationsArray = Object.keys(notificationsData).map(key => ({
+                    id: key,
+                    ...notificationsData[key],
+                })).sort((a, b) => b.timestamp - a.timestamp);
+
+                setNotifications(notificationsArray);
+                console.log("Notifications array:", notificationsArray); // Check structure of notifications
+            } else {
+                console.error("Failed to fetch notifications:", result.error || result);
+            }
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        }
+    };
+
+    const handleNotificationClick = () => {
+        setShowNotifications(!showNotifications);
+        if (!showNotifications) fetchNotifications();
+    };
+
     useEffect(() => {
         const userLoggedIn = store.getState().user.loggedInUser !== null;
         const businessLoggedIn = store.getState().business.businessInfo !== null;
@@ -127,13 +168,36 @@ const NavBar = ({ homeRoute }) => {
                         <Text style={styles.navText}>Account</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => {/* Notification Page logic */}}>
+                    {/* Notification Icon with Dropdown */}
+                <View style={{ position: 'relative', zIndex: 1000 }}>
+                    <TouchableOpacity onPress={handleNotificationClick}>
                         <Image
                             resizeMode="contain"
                             source={require('../assets/images/notification_icon_trans.png')}
                             style={styles.notificationIcon}
                         />
                     </TouchableOpacity>
+
+                    {showNotifications && (
+    <View style={styles.notificationDropdown}>
+        <ScrollView>
+            {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                    <View key={notification.id} style={styles.notificationItem}>
+                        <Text style={styles.notificationText}>{notification.content}</Text>
+                        <Text style={styles.notificationDate}>
+                            {new Date(notification.timestamp).toLocaleString()}
+                        </Text>
+                    </View>
+                ))
+            ) : (
+                <Text style={styles.noNotificationsText}>No notifications</Text>
+            )}
+        </ScrollView>
+    </View>
+)}
+
+                </View>
 
                     <TouchableOpacity style={styles.logOutButton} onPress={handleLogout}>
                     <Text style={styles.buttonText}>Log Out</Text>
@@ -152,7 +216,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20
+        paddingHorizontal: 20,
+        zIndex: 1000,
     },
     desktopLogo: {
         width: 230,
@@ -177,6 +242,42 @@ const styles = StyleSheet.create({
         width: 25,
         height: 25,
         marginRight: 20,
+    },
+    notificationDropdown: {
+        position: 'absolute',
+        top: 35,
+        right: 0,
+        width: 200,
+        maxHeight: 200,
+        backgroundColor: '#ffffff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 5,
+        padding: 10, 
+        zIndex: 1100,
+    },
+    notificationItem: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+        paddingVertical: 8,
+    },
+    notificationText: {
+        fontSize: 14,
+        color: '#333',
+    },
+    notificationDate: {
+        fontSize: 12,
+        color: '#888',
+        marginTop: 2,
+    },
+    noNotificationsText: {
+        textAlign: 'center',
+        fontSize: 14,
+        color: '#888',
+        paddingVertical: 10,
     },
     logOutButton: {
         borderRadius: 30,
