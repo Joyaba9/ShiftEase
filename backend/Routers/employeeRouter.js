@@ -43,28 +43,31 @@ router.put('/update/:emp_id', async (req, res) => {  // Use emp_id here in the U
     }
 });
 
-// Route to add a new employee with specified role, name, email, SSN, and date of birth
+// Route to add a new employee with specified role, name, email, SSN, date of birth, and employment type
 router.post('/add', async (req, res) => {
-    const { role, fName, lName, email, ssn, dob, businessId } = req.body;
+    const { role, fName, lName, email, ssn, dob, businessId, full_time } = req.body;
 
     // Log the received data for tracing and debugging purposes
-    console.log('Add employee request received:', role, fName, lName, email, ssn, dob);
+    console.log('Add employee request received:', { role, fName, lName, email, ssn, dob, businessId, full_time });
 
-    if (!businessId) {
-        return res.status(400).json({ error: 'Business ID is required' });
+    // Validate required fields
+    if (!role || !fName || !lName || !email || !ssn || !dob || full_time === undefined || !businessId) {
+        return res.status(400).json({ error: 'All fields are required, including employment type (full_time).' });
     }
 
     try {
         // Call AddEmployee to create a new employee record
-        const employee = await AddEmployee(role, fName, lName, email, ssn, dob, businessId);
+        const employee = await AddEmployee(role, fName, lName, email, ssn, dob, businessId, full_time);
 
         // Return the new employee data in JSON format on success
         res.status(200).json({ success: true, employee });
     } catch (err) {
         // Log error and return a 400 status with error details if addition fails
+        console.error('Error adding employee:', err);
         res.status(400).json({ success: false, message: err.message });
     }
 });
+
 
 // Route to soft delete an employee
 router.put('/softDeleteEmployee', async (req, res) => {

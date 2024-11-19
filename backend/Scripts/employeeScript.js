@@ -130,7 +130,7 @@ export async function UpdateEmployee(employeeId, newEmployeeInfo) {
  * @param {number} businessId - The unique identifier of the business.
  * @returns {Promise<Object>} - Object containing employee ID, email, role, and other relevant details.
  */
-export async function AddEmployee(roleID, fName, lName, email, ssn, dob, businessId) {
+export async function AddEmployee(roleID, fName, lName, email, ssn, dob, businessId, fullTime) {
     let createdAt = new Date();
     let updatedAt = new Date();
 
@@ -141,8 +141,10 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
     console.log('Connected to Database');
 
     // Define the SQL query to insert employee data into PostgreSQL
-    const insertQuery = `INSERT INTO employees (business_id, role_id, f_name, l_name, email, created_at, updated_at, last4ssn, birthday) 
-                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING emp_id`;
+    const insertQuery = `
+        INSERT INTO employees (business_id, role_id, f_name, l_name, email, created_at, updated_at, last4ssn, birthday, full_time) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+        RETURNING emp_id`;
 
     try {
         // Generate password based on date of birth and last 4 digits of SSN
@@ -155,7 +157,18 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
 
         // Insert employee into PostgreSQL after creating Firebase user
         console.log('Inserting employee into PostgreSQL database');
-        const result = await client.query(insertQuery, [businessId, roleID, fName, lName, email, createdAt, updatedAt, ssn, dob]);
+        const result = await client.query(insertQuery, [
+            businessId, 
+            roleID, 
+            fName, 
+            lName, 
+            email, 
+            createdAt, 
+            updatedAt, 
+            ssn, 
+            dob, 
+            fullTime
+        ]);
         const empId = result.rows[0].emp_id;
         console.log(`Employee added to PostgreSQL with ID: ${empId}`); 
 
@@ -168,6 +181,7 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
             email,
             roleID,
             businessId,
+            fullTime, // Include employment type
             createdAt,
             updatedAt,
         };
@@ -184,6 +198,7 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
             lName,
             roleID,
             businessId,
+            fullTime, // Include employment type in the return object
             password,
         };
     } catch (err) {
@@ -201,6 +216,7 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
         console.log('Database connection closed');
     }
 }
+
 
 //#endregion
 
