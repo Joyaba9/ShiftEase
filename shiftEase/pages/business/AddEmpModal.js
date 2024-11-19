@@ -16,13 +16,23 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
     const [role, setRole] = useState('Select Role');
     const [roles, setRoles] = useState([]); // Store roles fetched from the backend
     const [selectedRoleId, setSelectedRoleId] = useState(null); // Store selected role ID
-
+    const [employmentType, setEmploymentType] = useState('Select Employment Type'); 
+    const [isEmploymentDropdownVisible, setIsEmploymentDropdownVisible] = useState(false);
+ 
 
     const handleAddEmp = async () => {
         if (!fName || !lName || !dob || !email || !ssn || !selectedRoleId) {
             alert('Please make sure all fields are filled in.');
             return;
         }
+        // Check if employment type is selected
+        if (employmentType === 'Select Employment Type') {
+            alert('Please select an Employment Type.');
+            return;
+        }
+
+         // Derive full_time from employmentType
+    const fullTime = employmentType === 'Full-Time';
 
         try {
             console.log('Payload being sent:', {
@@ -33,8 +43,9 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                 ssn,
                 dob,
                 businessId,
+               full_time: fullTime, // true for Full-Time, false for Part-Time
             });
-        
+
             const response = await fetch('http://localhost:5050/api/employee/add', {
                 method: 'POST',
                 headers: {
@@ -48,11 +59,12 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                     ssn,
                     dob,
                     businessId,
+                    full_time: fullTime,
                 }),
             });
-        
+
             const data = await response.json();
-        
+
             if (response.ok) {
                 alert('Added employee successfully');
                 // Clear input fields
@@ -62,7 +74,8 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                 setEmail('');
                 setSSN('');
                 setRole('Select Role');
-                setSelectedRoleId(null); 
+                setSelectedRoleId(null);
+                setEmploymentType('Select Employment Type');
             } else {
                 console.error('Failed to add employee:', data);
                 alert(data.message || 'Failed to add employee');
@@ -240,6 +253,42 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                             </View>
                         )}
                         </View>
+
+                          {/* Employment Type Dropdown */}
+                          <View style={styles.mobileInputGroup}>
+                                            <Text style={styles.label}>Employment Type</Text>
+                                            <TouchableOpacity
+                                                style={styles.mobileDropdownButton}
+                                                onPress={() => setIsEmploymentDropdownVisible((prev) => !prev)}
+                                            >
+                                                <Text style={styles.dropdownText}>
+                                                    {employmentType !== 'Select Employment Type' ? employmentType : 'Select Employment Type'}
+                                                </Text>
+                                            </TouchableOpacity>
+
+                                            {isEmploymentDropdownVisible && (
+                                                <View style={styles.dropdownContainer}>
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownItem}
+                                                        onPress={() => {
+                                                            setEmploymentType('Full-Time');
+                                                            setIsEmploymentDropdownVisible(false);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.dropdownItemText}>Full-Time</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownItem}
+                                                        onPress={() => {
+                                                            setEmploymentType('Part-Time');
+                                                            setIsEmploymentDropdownVisible(false);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.dropdownItemText}>Part-Time</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
+                                        </View>
             
                         {/* SSN Input */}
                         <View style={styles.mobileInputGroup}>
@@ -355,7 +404,7 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                                         </View>
                                     )}
                                 </View>
-
+                                
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Last Four of SSN</Text>
                                     <TextInput 
@@ -365,6 +414,43 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                                         onChangeText={setSSN} 
                                     />
                                 </View>
+
+                        {/* Employment Type Dropdown */}
+                        <View style={styles.employmentTypeContainer}>
+                            <Text style={styles.label}>Employment Type</Text>
+                            <TouchableOpacity
+                                style={styles.mobileDropdownButton}
+                                onPress={() => setIsEmploymentDropdownVisible((prev) => !prev)}
+                            >
+                                <Text style={styles.dropdownText}>
+                                    {employmentType !== 'Select Employment Type' ? employmentType : 'Select Employment Type'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {isEmploymentDropdownVisible && (
+                                <View style={styles.dropdownContainer}>
+                                    <TouchableOpacity
+                                        style={styles.dropdownItem}
+                                        onPress={() => {
+                                            setEmploymentType('Full-Time');
+                                            setIsEmploymentDropdownVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.dropdownItemText}>Full-Time</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.dropdownItem}
+                                        onPress={() => {
+                                            setEmploymentType('Part-Time');
+                                            setIsEmploymentDropdownVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.dropdownItemText}>Part-Time</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+                                
                             </View>
 
                             <View style={styles.buttonRowContainer}>
@@ -622,6 +708,11 @@ const styles = StyleSheet.create ({
   dropdownItemText: {
     fontSize: 16,
   },
+  employmentTypeContainer: {
+    alignSelf: 'flex-start', // Align the dropdown to the left
+    marginLeft: 10,         // Add slight left margin for padding
+    width: '30%',           // Adjust width if necessary
+},
   bubbleButton: {
     borderRadius: 50,
     backgroundColor: "#9FCCF5",
