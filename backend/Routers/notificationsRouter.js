@@ -1,6 +1,7 @@
 import express from 'express';
 import notificationInstance from '../Scripts/notification.js';
 
+
 const router = express.Router();
 
 // Route to send a notification
@@ -34,3 +35,9 @@ router.get('/:recipientId', async (req, res) => {
 });
 
 export default router;
+
+
+
+//13U22 password employee 
+
+// 13 password business
