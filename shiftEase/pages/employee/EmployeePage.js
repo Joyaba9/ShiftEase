@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { fetchEmployeeAvailability } from '../../../backend/api/employeeApi';
 import { fetchScheduleAPI, fetchOpenShiftOffers } from '../../../backend/api/scheduleApi';
 import { getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import { calculateHoursDifference, formatTime } from '../../components/schedule_components/scheduleUtils';
@@ -40,6 +41,7 @@ const EmployeePage = () => {
     // State for upcoming shifts
     const [upcomingShift, setUpcomingShift] = useState(null);
     const [openShiftOffers, setOpenShiftOffers] = useState([]);
+    const [employeeAvailability, setEmployeeAvailability] = useState([]);
     const [totalWeeklyHours, setTotalWeeklyHours] = useState(0);
     const [activeFilter, setActiveFilter] = useState("All Shifts");
 
@@ -81,9 +83,6 @@ const EmployeePage = () => {
                 });
                 setTotalWeeklyHours(totalHours);
 
-                // Sort the shifts by date to find the most recent upcoming shift
-                //employeeShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
-
                 // Find the next upcoming shift
                 const futureShifts = employeeShifts.filter((shift) => new Date(shift.date) >= now);
                 futureShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -110,6 +109,37 @@ const EmployeePage = () => {
     }, [loggedInUser, employee]);
 
     useEffect(() => {
+        const fetchAvailability = async () => {
+            const empId = loggedInUser.employee.emp_id; // Get logged-in employee ID
+        
+            if (!empId) {
+                console.error("No employee ID found for the logged-in user");
+                return;
+            }
+
+            try {
+                // Fetch employee availability
+                const result = await fetchEmployeeAvailability(empId);
+                if (result && result.availability) {
+                    console.log("Fetched Availability:", result.availability);
+                    setEmployeeAvailability(result.availability); // Update state
+                } else {
+                    console.warn("No availability data returned from API");
+                    setEmployeeAvailability([]);
+                }
+            } catch (error) {
+                console.error("Error fetching employee availability:", error);
+            }
+        };
+    
+        fetchAvailability();
+    }, [loggedInUser]);
+
+    useEffect(() => {
+        console.log("Updated Employee Availability:", employeeAvailability);
+    }, [employeeAvailability]);
+
+    useEffect(() => {
         if (!loggedInUser || !loggedInUser.employee) return;
 
         const fetchOpenShifts = async () => {
@@ -132,10 +162,39 @@ const EmployeePage = () => {
         fetchOpenShifts();
     }, [loggedInUser]);
 
-    const filteredShifts =
-        activeFilter === "With Availability"
-            ? openShiftOffers.filter(shift => /* Apply availability filter logic here */ true)
-            : openShiftOffers.filter((shift) => new Date(shift.date) >= today);
+    const filteredShifts = useMemo(() => {
+        if (activeFilter === "With Availability") {
+            console.log('In Filtered With Availability');
+
+            return openShiftOffers.filter((shift) => {
+                const shiftDayIndex = new Date(shift.date).getDay();
+                const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                const shiftDayName = dayNames[shiftDayIndex];
+
+                console.log('Shift day index: ', shiftDayIndex);
+                console.log('Shift day name: ', shiftDayName);
+
+                console.log("Employee Availability in Filter:", employeeAvailability);
+    
+                return employeeAvailability.some((entry) => {
+                    const shiftDate = new Date(shift.date);
+                    const startDate = new Date(entry.start_date);
+                    const endDate = new Date(entry.end_date);
+
+                    console.log('Shift date with availability: ', shiftDate)
+                    console.log('Shift start date: ', startDate)
+                    console.log('Shift end date: ', endDate)
+    
+                    const isDayMatch = entry.day_of_week === shiftDayName;
+                    const isDateWithinRange = shiftDate >= startDate && shiftDate <= endDate;
+                    const isTimeMatch = shift.start_time >= entry.start_time && shift.end_time <= entry.end_time;
+    
+                    return isDayMatch && isDateWithinRange && isTimeMatch;
+                });
+            });
+        }
+        return openShiftOffers.filter((shift) => new Date(shift.date) >= today);
+    }, [activeFilter, openShiftOffers, employeeAvailability]);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -284,27 +343,25 @@ const EmployeePage = () => {
                                         style={{ flex: 1 }}
                                         contentContainerStyle={{ padding: 16 }}
                                     >
-                                        {/* Check if there are open shift offers */}
-                                        {activeFilter === "With Availability" ? (
-                                            <Text style={{marginTop: 50}}>No open shift offers available.</Text>
-                                        ) : filteredShifts.length > 0 ? (
-                                            filteredShifts.map((offer) => {
-                                                const addedHours = calculateHoursDifference(offer.start_time, offer.end_time);
-                                                const totalHours = totalWeeklyHours + addedHours;
                             
-                                                return (
-                                                    <ShiftCard
-                                                        key={offer.shift_id}
-                                                        date={offer.date}
-                                                        time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
-                                                        addedHours={addedHours}
-                                                        totalHours={totalHours}
-                                                    />
-                                                );
-                                            })
-                                        ) : (
-                                            <Text style={{marginTop: 50}}>No open shift offers available.</Text>
-                                        )}
+                                    {filteredShifts.length > 0 ? ( 
+                                        filteredShifts.map((offer) => {
+                                            const addedHours = calculateHoursDifference(offer.start_time, offer.end_time);
+                                            const totalHours = totalWeeklyHours + addedHours;
+                        
+                                            return (
+                                                <ShiftCard
+                                                    key={offer.shift_id}
+                                                    date={offer.date}
+                                                    time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
+                                                    addedHours={addedHours}
+                                                    totalHours={totalHours}
+                                                />
+                                            );
+                                        })
+                                    ) : (
+                                        <Text style={{marginTop: 50}}>No open shift offers available.</Text>
+                                    )}
 
                                     </ScrollView>
                                 </View>

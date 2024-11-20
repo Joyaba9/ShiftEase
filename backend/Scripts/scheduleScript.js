@@ -1,5 +1,41 @@
 import getClient from '../db/dbClient.js';
 
+/**
+ * Fetches all availability for a specific employee, including days and time slots.
+ *
+ * @param {number} empId - The employee ID.
+ * @returns {Promise<Array>} - List of availability entries for the employee.
+ */
+export async function getEmployeeAvailability(empId) {
+    const query = `
+        SELECT
+            a.day_of_week,
+            a.start_time,
+            a.end_time,
+            a.start_date,
+            a.end_date
+        FROM
+            availability a
+        WHERE
+            a.emp_id = $1
+        ORDER BY a.day_of_week;
+    `;
+
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Execute the query to fetch the employee's full availability
+        const result = await client.query(query, [empId]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching employee availability:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 //#region Get Available Employees
 
 /**
