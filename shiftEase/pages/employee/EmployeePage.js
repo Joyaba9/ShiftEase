@@ -19,6 +19,8 @@ const EmployeePage = () => {
     const isMobile = width < 768; 
     const navigation = useNavigation();
     const [isLoading, setIsLoading] = useState(true);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
@@ -133,7 +135,7 @@ const EmployeePage = () => {
     const filteredShifts =
         activeFilter === "With Availability"
             ? openShiftOffers.filter(shift => /* Apply availability filter logic here */ true)
-            : openShiftOffers;
+            : openShiftOffers.filter((shift) => new Date(shift.date) >= today);
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -285,8 +287,8 @@ const EmployeePage = () => {
                                         {/* Check if there are open shift offers */}
                                         {activeFilter === "With Availability" ? (
                                             <Text style={{marginTop: 50}}>No open shift offers available.</Text>
-                                        ) : openShiftOffers.length > 0 ? (
-                                            openShiftOffers.map((offer) => {
+                                        ) : filteredShifts.length > 0 ? (
+                                            filteredShifts.map((offer) => {
                                                 const addedHours = calculateHoursDifference(offer.start_time, offer.end_time);
                                                 const totalHours = totalWeeklyHours + addedHours;
                             
