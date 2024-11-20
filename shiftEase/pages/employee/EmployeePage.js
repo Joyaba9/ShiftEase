@@ -39,6 +39,7 @@ const EmployeePage = () => {
     const [upcomingShift, setUpcomingShift] = useState(null);
     const [openShiftOffers, setOpenShiftOffers] = useState([]);
     const [totalWeeklyHours, setTotalWeeklyHours] = useState(0);
+    const [activeFilter, setActiveFilter] = useState("All Shifts");
 
     // Fetch upcoming shifts on component mount
     useEffect(() => {
@@ -128,6 +129,11 @@ const EmployeePage = () => {
 
         fetchOpenShifts();
     }, [loggedInUser]);
+
+    const filteredShifts =
+        activeFilter === "With Availability"
+            ? openShiftOffers.filter(shift => /* Apply availability filter logic here */ true)
+            : openShiftOffers;
 
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
@@ -256,11 +262,17 @@ const EmployeePage = () => {
 
                                     <View style={styles.spacer} />
 
-                                    <TouchableOpacity style={styles.availabilityButton}>
+                                    <TouchableOpacity 
+                                        style={[styles.availabilityButton, activeFilter === "With Availability" && styles.activeButton]}
+                                        onPress={() => setActiveFilter("With Availability")}s
+                                    >
                                         <Text style={styles.buttonText}>With Availability</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity style={styles.shiftButton}>
+                                    <TouchableOpacity 
+                                        style={[styles.shiftButton, activeFilter === "All Shifts" && styles.activeButton]}
+                                        onPress={() => setActiveFilter("All Shifts")}
+                                    >
                                         <Text style={styles.buttonText}>All Shifts</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -271,11 +283,13 @@ const EmployeePage = () => {
                                         contentContainerStyle={{ padding: 16 }}
                                     >
                                         {/* Check if there are open shift offers */}
-                                        {openShiftOffers.length > 0 ? (
+                                        {activeFilter === "With Availability" ? (
+                                            <Text style={{marginTop: 50}}>No open shift offers available.</Text>
+                                        ) : openShiftOffers.length > 0 ? (
                                             openShiftOffers.map((offer) => {
                                                 const addedHours = calculateHoursDifference(offer.start_time, offer.end_time);
-                                                const totalHours = totalWeeklyHours + addedHours; // Adjust based on how total hours are stored
-                                                
+                                                const totalHours = totalWeeklyHours + addedHours;
+                            
                                                 return (
                                                     <ShiftCard
                                                         key={offer.shift_id}
@@ -287,8 +301,9 @@ const EmployeePage = () => {
                                                 );
                                             })
                                         ) : (
-                                            <Text style={styles.noShiftsText}>No open shift offers available.</Text>
+                                            <Text style={{marginTop: 50}}>No open shift offers available.</Text>
                                         )}
+
                                     </ScrollView>
                                 </View>
                             </View>
@@ -419,6 +434,7 @@ const styles = StyleSheet.create({
         fontSize: 16
     },
     gradient2: {
+        minWidth: '100%',
         borderRadius: 10, 
         marginTop: 20, 
         marginBottom: 20,
@@ -474,10 +490,14 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 10,
     },
+    activeButton: {
+        backgroundColor: '#7FA2B9', 
+    },
     shiftCardContainer: {
         flex: 1,
         alignItems: 'center',
         overflow: 'hidden',
+        minHeight: 150,
         // borderWidth: 2,
         // borderColor: 'green'
     },
