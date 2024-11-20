@@ -176,8 +176,14 @@ const EmployeePage = () => {
 
                 console.log("Employee Availability in Filter:", employeeAvailability);
     
+                // Only consider shifts that are today or in the future
+                const shiftDate = new Date(shift.date);
+                if (shiftDate < today) {
+                    console.log("Skipping past shift:", shift);
+                    return false;
+                }
+
                 return employeeAvailability.some((entry) => {
-                    const shiftDate = new Date(shift.date);
                     const startDate = new Date(entry.start_date);
                     const endDate = new Date(entry.end_date);
 
