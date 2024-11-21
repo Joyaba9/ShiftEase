@@ -97,7 +97,6 @@ router.post('/createShift', async (req, res) => {
     }
 });
 
-
 router.get('/shiftsByScheduleId', async (req, res) => {
     const { scheduleId } = req.body;
 
