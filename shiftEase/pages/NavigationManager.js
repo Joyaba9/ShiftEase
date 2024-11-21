@@ -60,7 +60,7 @@ const NavigationManager = () => {
           setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Landing');
+          setInitialRoute('Login');
         }
 
 

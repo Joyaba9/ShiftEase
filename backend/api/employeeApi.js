@@ -30,6 +30,25 @@ export const fetchEmployeesWithRoles = async (businessId) => {
   }
 };
 
+// Fetch all availability for a specific employee
+export const fetchEmployeeAvailability = async (empId) => {
+    try {
+        const response = await fetch(baseURL + `schedule/employeeAvailability/${empId}`);
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Employee availability fetched:", data);
+            return data;
+        } else {
+            throw new Error('Failed to fetch employee availability');
+        }
+    } catch (error) {
+        console.error('Error fetching employee availability:', error);
+        throw error;
+    }
+};
+
+// Fetch availability for all employees
 export const fetchAvailableEmployees = async (businessId, day, date) => {
     try {
         const response = await fetch(baseURL + `schedule/availableEmployees`, {

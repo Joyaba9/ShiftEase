@@ -194,7 +194,7 @@ const PTORequestPage = () => {
     
     return (
         <>
-            <NavBar homeRoute={'Business'}/>
+            <NavBar homeRoute={'Employee'}/>
             <View style={styles.screenCenter}>
                 <View style={styles.container}>
                     <View style={styles.headerRow}>
