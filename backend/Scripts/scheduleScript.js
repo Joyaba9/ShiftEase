@@ -774,7 +774,8 @@ export async function searchEmployeeShiftOffers(emp_id) {
                 sh.start_time,
                 sh.end_time,
                 e.f_name,
-                e.l_name
+                e.l_name,
+                so.accepted_emp_id
             FROM
                 shift_offers so
             JOIN
@@ -799,6 +800,7 @@ export async function searchEmployeeShiftOffers(emp_id) {
             startTime: row.start_time,
             endTime: row.end_time,
             employeeName: `${row.f_name} ${row.l_name}`,
+            acceptedEmpId: row.accepted_emp_id,
         }));
     } catch (err) {
         console.error('Error searching employee shift offers:', err);

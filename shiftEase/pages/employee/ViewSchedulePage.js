@@ -361,12 +361,18 @@ const ViewSchedulePage = () => {
                             <View style={styles.offeredShiftsContainer}>
                                 {filteredOfferedShifts.filter((shift) => {
                                     const shiftDate = new Date(shift.date);
-                                    return shiftDate >= new Date().setHours(0, 0, 0, 0); // Include today and future dates
+                                    return (
+                                        shiftDate >= new Date().setHours(0, 0, 0, 0) && // Only future or today’s shifts
+                                        !shift.acceptedEmpId // Exclude accepted shifts
+                                    );
                                 }).length > 0 ? (
                                     filteredOfferedShifts
                                         .filter((shift) => {
                                             const shiftDate = new Date(shift.date);
-                                            return shiftDate >= new Date().setHours(0, 0, 0, 0); // Include today and future dates
+                                            return (
+                                                shiftDate >= new Date().setHours(0, 0, 0, 0) && // Only future or today’s shifts
+                                                !shift.acceptedEmpId // Exclude accepted shifts
+                                            );
                                         })
                                         .map((shift) => (
                                             <LinearGradient
@@ -423,12 +429,18 @@ const ViewSchedulePage = () => {
                             <View style={styles.offeredShiftsContainer}>
                                 {filteredOfferedShifts.filter((shift) => {
                                     const shiftDate = new Date(shift.date);
-                                    return shiftDate < new Date().setHours(0, 0, 0, 0); // Include only past dates
+                                    return (
+                                        shiftDate < new Date().setHours(0, 0, 0, 0) || // Include past shifts
+                                        shift.acceptedEmpId // Include accepted shifts even if in the future
+                                    );
                                 }).slice(0, 10).length > 0 ? (
                                     filteredOfferedShifts
                                         .filter((shift) => {
                                             const shiftDate = new Date(shift.date);
-                                            return shiftDate < new Date().setHours(0, 0, 0, 0); // Include only past dates
+                                            return (
+                                                shiftDate < new Date().setHours(0, 0, 0, 0) || // Include past shifts
+                                                shift.acceptedEmpId // Include accepted shifts even if in the future
+                                            );
                                         })
                                         .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort from most recent to oldest
                                         .slice(0, 10) // Limit to the most recent 10
@@ -438,11 +450,22 @@ const ViewSchedulePage = () => {
                                                 style={styles.offeredShiftItem}
                                                 key={shift.shiftOfferId}
                                             >
+                                                {console.log("Shift accepted_emp_id:", shift.acceptedEmpId)}
                                                 <View style={{ flex: 1, justifyContent: 'space-between' }}>
-                                                    <Text>
+                                                    {shift.acceptedEmpId? (
+                                                        <Text style={{ fontStyle: 'italic', color: 'green', fontWeight: 'bold' }}>
+                                                            Accepted
+                                                        </Text>
+                                                    ) : (
+                                                        <Text style={{ fontStyle: 'italic', color: 'red', fontWeight: 'bold' }}>
+                                                            Not accepted
+                                                        </Text>
+                                                    )}
+                                                    
+                                                    <Text style={{ textDecorationLine: shift.accepted_emp_id ? 'none' : 'line-through' }}>
                                                         Status: <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{shift.status.toUpperCase()}</Text>
                                                     </Text>
-
+                                                    
                                                     <Text>Date: {new Date(shift.date).toLocaleDateString()}</Text>
 
                                                     <Text>
@@ -636,7 +659,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#e0f7fa' 
     },
     disabledCell: {
-        backgroundColor: '#e0e0e0', // Light gray to indicate disabled
+        backgroundColor: '#e0e0e0', 
         opacity: 0.5, 
     },
     noScheduleContainer: {
@@ -689,8 +712,8 @@ const styles = StyleSheet.create({
         width: '95%',
         height: '35%',
         marginBottom: 70,
-        borderWidth: 2,
-        borderColor: 'red'
+        // borderWidth: 2,
+        // borderColor: 'red'
     },
     offeredShiftsContainer: {
         flexDirection: 'row',
