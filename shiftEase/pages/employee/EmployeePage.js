@@ -62,33 +62,31 @@ const EmployeePage = () => {
                 if (!scheduleData || !scheduleData.schedule) {
                     console.log("No schedule found for the current week.");
                     setUpcomingShift(null);
+                    setTotalWeeklyHours(0);
                     return;
                 }
 
                 const scheduleId = scheduleData.schedule.schedule_id;
                 const shifts = scheduleData.shifts;
 
-                // Filter shifts for the logged-in employee and future dates
-                const now = new Date();
-                const employeeShifts = shifts.filter(
-                    (shift) =>
-                        shift.employeeId === employee.emp_id &&
-                        new Date(shift.date) >= now
-                );
-
-                // Calculate total weekly hours
+                // Calculate total weekly hours for the logged-in employee
                 let totalHours = 0;
-                employeeShifts.forEach((shift) => {
+                const loggedInEmployeeShifts = shifts.filter(shift => shift.employeeId === employee.emp_id);
+
+                loggedInEmployeeShifts.forEach((shift) => {
                     totalHours += calculateHoursDifference(shift.startTime, shift.endTime);
                 });
-                setTotalWeeklyHours(totalHours);
+
+                setTotalWeeklyHours(totalHours); // Set total weekly hours
 
                 // Find the next upcoming shift
-                const futureShifts = employeeShifts.filter((shift) => new Date(shift.date) >= now);
+                const now = new Date();
+
+                // Find the next upcoming shift
+                const futureShifts = loggedInEmployeeShifts.filter((shift) => new Date(shift.date) >= now);
                 futureShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
 
                 if (futureShifts.length > 0) {
-                    //setUpcomingShift(employeeShifts[0]);
                     const nextShift = futureShifts[0];
                     // Calculate scheduled hours using the provided function
                     const scheduledHours = calculateHoursDifference(nextShift.startTime, nextShift.endTime);
