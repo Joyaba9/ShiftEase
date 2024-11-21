@@ -3,13 +3,21 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { formatDate, formatTime } from './schedule_components/scheduleUtils';
 
 const ShiftCard = ({ date, time, addedHours, totalHours, onAddShift, shiftId }) => {
+    
+    // Function to get the day name from a date
+    const getDayName = (dateString) => {
+        const dateObject = new Date(dateString);
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        return dayNames[dateObject.getDay()];
+    };
+    
     return (
         <View style={styles.shiftCard}>
             {/* Individual Shift Cards */}
             <View style = {styles.leftsideShiftCard}>
-                <Text style={styles.shiftText}>{formatDate(date)}</Text>
+                <Text style={styles.shiftText}>{`${getDayName(date)}, ${formatDate(date)}`}</Text>
                 <Text style={styles.shiftText}>{time}</Text>
-                <Text style={styles.shiftText}>Front of House</Text>
+                {/*<Text style={styles.shiftText}>Front of House</Text>*/}
             </View>
                                     
             <View style = {styles.rightsideShiftCard}>
@@ -36,7 +44,7 @@ const styles = StyleSheet.create({
     },
     leftsideShiftCard: {
         flex: 1,
-        justifyContent: 'space-between',
+        //justifyContent: 'space-between',
     },
     shiftText: {
         fontSize: 16,
