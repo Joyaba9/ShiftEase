@@ -342,14 +342,14 @@ const ViewSchedulePage = () => {
                     <View style={{width: '100%', flexDirection: 'row', justifyContent: 'center', marginBottom: 20}}>
                         <TouchableOpacity 
                             style={[styles.inactiveButton, activeFilter === "Inactive Shift Offers" && styles.activeButton]}
-                            //onPress={() => setActiveFilter("With Availability")}
+                            onPress={() => setActiveFilter("Inactive Shift Offers")}
                         >
                             <Text style={styles.buttonText}>Inactive Shift Offers</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
                             style={[styles.activeShiftButton, activeFilter === "Active Shift Offers" && styles.activeButton]}
-                            //onPress={() => setActiveFilter("All Shifts")}
+                            onPress={() => setActiveFilter("Active Shift Offers")}
                         >
                             <Text style={styles.buttonText}>Active Shift Offers</Text>
                         </TouchableOpacity>
@@ -357,7 +357,7 @@ const ViewSchedulePage = () => {
 
                     {activeFilter === "Active Shift Offers" && (
                         <View style={styles.wholeOfferedShiftsContainer}>
-                            <Text style={styles.sectionHeader}>Active Offered Shifts</Text>
+                            <Text style={styles.sectionHeader}>Active Shift Offers</Text>
                             <View style={styles.offeredShiftsContainer}>
                                 {filteredOfferedShifts.filter((shift) => {
                                     const shiftDate = new Date(shift.date);
@@ -411,6 +411,51 @@ const ViewSchedulePage = () => {
                                 ) : (
                                     <Text style={styles.noOffersText}>
                                         You don't have any active shift offers.
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+                    )}
+
+                    {activeFilter === "Inactive Shift Offers" && (
+                        <View style={styles.wholeOfferedShiftsContainer}>
+                            <Text style={styles.sectionHeader}>Inactive Shift Offers</Text>
+                            <View style={styles.offeredShiftsContainer}>
+                                {filteredOfferedShifts.filter((shift) => {
+                                    const shiftDate = new Date(shift.date);
+                                    return shiftDate < new Date().setHours(0, 0, 0, 0); // Include only past dates
+                                }).slice(0, 10).length > 0 ? (
+                                    filteredOfferedShifts
+                                        .filter((shift) => {
+                                            const shiftDate = new Date(shift.date);
+                                            return shiftDate < new Date().setHours(0, 0, 0, 0); // Include only past dates
+                                        })
+                                        .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort from most recent to oldest
+                                        .slice(0, 10) // Limit to the most recent 10
+                                        .map((shift) => (
+                                            <LinearGradient
+                                                colors={['#F5F5F5', '#D3D3D3']}
+                                                style={styles.offeredShiftItem}
+                                                key={shift.shiftOfferId}
+                                            >
+                                                <View style={{ flex: 1, justifyContent: 'space-between' }}>
+                                                    <Text>
+                                                        Status: <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{shift.status.toUpperCase()}</Text>
+                                                    </Text>
+
+                                                    <Text>Date: {new Date(shift.date).toLocaleDateString()}</Text>
+
+                                                    <Text>
+                                                        Time: {shift.startTime && shift.endTime ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}` : 'Invalid time'}
+                                                    </Text>
+
+                                                    <Text>Offered At: {shift.offeredAt ? formatDate(shift.offeredAt) : 'N/A'}</Text>
+                                                </View>
+                                            </LinearGradient>
+                                        ))
+                                ) : (
+                                    <Text style={styles.noOffersText}>
+                                        You don't have any inactive shift offers.
                                     </Text>
                                 )}
                             </View>
