@@ -236,3 +236,31 @@ export async function fetchOpenShiftOffers(empId, businessId) {
         throw error;
     }
 }
+
+export async function acceptShiftOfferAPI(shiftId, empId) {
+    try {
+        const response = await fetch(baseURL + `schedule/acceptShiftOffer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                shift_id: shiftId,
+                emp_id: empId,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Shift offer accepted successfully:', data);
+            return data;
+        } else {
+            const errorData = await response.json();
+            console.error('Failed to accept shift offer:', errorData);
+            throw new Error(errorData.message || 'Failed to accept shift offer');
+        }
+    } catch (error) {
+        console.error('Error in acceptShiftOfferAPI:', error);
+        throw error;
+    }
+}

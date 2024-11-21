@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { fetchEmployeeAvailability } from '../../../backend/api/employeeApi';
-import { fetchScheduleAPI, fetchOpenShiftOffers } from '../../../backend/api/scheduleApi';
+import { fetchScheduleAPI, fetchOpenShiftOffers, acceptShiftOfferAPI } from '../../../backend/api/scheduleApi';
 import { getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import { calculateHoursDifference, formatTime } from '../../components/schedule_components/scheduleUtils';
 import SidebarButton from '../../components/SidebarButton';
@@ -202,6 +202,29 @@ const EmployeePage = () => {
         return openShiftOffers.filter((shift) => new Date(shift.date) >= today);
     }, [activeFilter, openShiftOffers, employeeAvailability]);
 
+    const handleAcceptShift = async (shiftId) => {
+        console.log('Trying to accept shift', shiftId)
+        try {
+            if (!employee || !employee.emp_id) {
+                console.error('Employee ID is missing');
+                return;
+            }
+    
+            // Call the API
+            const result = await acceptShiftOfferAPI(shiftId, employee.emp_id);
+            console.log('Shift accepted:', result);
+    
+            // Optionally, update state to reflect changes (e.g., remove the accepted shift from openShiftOffers)
+            setOpenShiftOffers((prevOffers) => prevOffers.filter((offer) => offer.shift_id !== shiftId));
+    
+            // Show success message or take additional actions
+            alert('Shift accepted successfully!');
+        } catch (error) {
+            console.error('Error accepting shift:', error);
+            alert('Failed to accept the shift. Please try again.');
+        }
+    };
+
     // Render the mobile layout if it's a mobile screen
     if (isMobile) {
         return <EmployeePageMobile />;
@@ -358,10 +381,12 @@ const EmployeePage = () => {
                                             return (
                                                 <ShiftCard
                                                     key={offer.shift_id}
+                                                    shiftId={offer.shift_id}
                                                     date={offer.date}
                                                     time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
                                                     addedHours={addedHours}
                                                     totalHours={totalHours}
+                                                    onAddShift={handleAcceptShift}
                                                 />
                                             );
                                         })

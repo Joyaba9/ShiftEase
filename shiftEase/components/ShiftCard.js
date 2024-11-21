@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { formatDate, formatTime } from './schedule_components/scheduleUtils';
 
-const ShiftCard = ({ date, time, addedHours, totalHours, onAddShift }) => {
+const ShiftCard = ({ date, time, addedHours, totalHours, onAddShift, shiftId }) => {
     return (
         <View style={styles.shiftCard}>
             {/* Individual Shift Cards */}
@@ -16,7 +16,7 @@ const ShiftCard = ({ date, time, addedHours, totalHours, onAddShift }) => {
                 <Text style={styles.hourText}>+ {addedHours} hr</Text>
                 <Text style={styles.totalHourText}>Total hrs: {totalHours}</Text>
 
-                <TouchableOpacity style={styles.addButton}>
+                <TouchableOpacity style={styles.addButton} onPress={() => onAddShift(shiftId)}>
                     <Text style={styles.addButtonText}>Add Shift</Text>
                 </TouchableOpacity>
             </View>    
