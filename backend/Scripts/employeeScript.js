@@ -18,7 +18,9 @@ export async function fetchEmployees(businessId) {
     console.log('Connected to Database');
 
     // SQL query to fetch all employees associated with the business ID
-    const query = `SELECT * FROM employees WHERE business_id = $1`;
+    const query = `SELECT * FROM employees 
+                   WHERE business_id = $1
+                   AND is_active = TRUE`;
 
     try {
         const res = await client.query(query, [businessId]); // Execute query
@@ -47,6 +49,7 @@ export async function fetchEmployeesWithRoles(businessId) {
         FROM employees e
         JOIN roles r ON e.role_id = r.role_id
         WHERE e.business_id = $1
+        AND e.is_active = TRUE
     `;
 
     try {
