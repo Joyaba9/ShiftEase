@@ -223,7 +223,7 @@ export async function AddEmployee(roleID, fName, lName, email, ssn, dob, busines
 //#region Soft Delete Employee
 
 /**
- * "Deletes" an employee by setting them inactive and removing future requests,
+ * "Deletes" an employee by setting them inactive, removing future requests, and deleting availability records
  * only if the employee is associated with the specified business ID.
  *
  * @param {number} businessId - The ID of the business.
@@ -267,13 +267,22 @@ export async function SoftDeleteEmployee(businessId, employeeId) {
         const deleteResult = await client.query(deleteFutureRequestsQuery, [employeeId]);
         const deletedRequestCount = deleteResult.rowCount;
 
+        // Delete availability for the employee
+        const deleteAvailabilityQuery = `
+            DELETE FROM availability
+            WHERE emp_id = $1;
+        `;
+        const deleteAResult = await client.query(deleteAvailabilityQuery, [employeeId]);
+        const deletedARequestCount = deleteAResult.rowCount;
+
         // Commit transaction
         await client.query('COMMIT');
 
         return {
             success: true,
             message: 'Employee set as inactive and future requests deleted.',
-            deletedRequests: deletedRequestCount
+            deletedRequests: deletedRequestCount,
+            deletedAvailability: deletedARequestCount
         };
     } catch (err) {
         // Rollback transaction in case of error
