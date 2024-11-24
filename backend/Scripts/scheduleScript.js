@@ -72,6 +72,7 @@ export async function getAvailableEmployees(businessId, day, date) {
             roles r ON e.role_id = r.role_id
         WHERE
             e.business_id = $1
+            AND e.is_active = TRUE
             AND a.day_of_week = $2
             AND $3 BETWEEN a.start_date AND a.end_date
             AND req.request_id IS NULL;

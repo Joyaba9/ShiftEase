@@ -97,9 +97,26 @@ const ManageEmployeePage = () => {
           console.error('Error fetching availability:', error);
       }
   };
-  
-    
 
+  const handleDeleteEmployee = async (emp_id) => {
+    try {
+      const response = await fetch(`http://localhost:5050/api/employee/softDeleteEmployee`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: businessId,
+          employeeId: emp_id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete employee');
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      Alert.alert('Error', 'Failed to delete employee.');
+    }
+  };
 
   const handleEdit = async () => {
     try {
