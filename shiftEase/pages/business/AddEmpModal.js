@@ -368,12 +368,12 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                             </View>
 
                             <View style={styles.buttonRowContainer}>
-                                <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
-                                    <Text style={styles.buttonText}>Cancel</Text>
-                                </TouchableOpacity>
-
                                 <TouchableOpacity style={styles.bubbleButton} onPress={handleAddEmp}>
                                     <Text style={styles.buttonText}>Add User</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
+                                    <Text style={styles.buttonText}>Cancel</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -391,13 +391,15 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
         >
             <View style={!isMobile ? styles.modalOverlay : styles.mobileModalOverlay}>
                 <View style={styles.modalContainer}>
-                    <Text style={styles.modalText}>Are you sure you want to cancel?</Text>
+                    <Text style={styles.addEmpHeader}>Are you sure you want to cancel?</Text>
+                    <View style={styles.addEmpHDivider}/>
                     <Text style={styles.modalText}>All information inputted will be lost.</Text>
+                    <View style={styles.addEmpHDivider}/>
                     <View style={styles.modalButtonContainer}>
-                        <TouchableOpacity style={styles.modalButton} onPress={confirmCancel}>
+                        <TouchableOpacity style={styles.bubbleButton} onPress={confirmCancel}>
                             <Text style={styles.optionText}>Yes</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButton} onPress={cancelCancel}>
+                        <TouchableOpacity style={styles.bubbleButton} onPress={cancelCancel}>
                             <Text style={styles.optionText}>No</Text>
                         </TouchableOpacity>
                     </View>
@@ -657,7 +659,7 @@ const styles = StyleSheet.create ({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', 
   },
   modalContainer: {
-    width: '80%',
+    width: '50%',
     padding: 20,
     backgroundColor: 'white',
     borderRadius: 10,
@@ -670,7 +672,7 @@ const styles = StyleSheet.create ({
   modalButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '100%',
+    width: '50%',
   },
   modalButton: {
     padding: 10,
