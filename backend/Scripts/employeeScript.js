@@ -893,3 +893,137 @@ export async function checkIfEmployeeIsManager(emp_id) {
         await client.end();
     }
 }
+
+//#region Save Employee Data
+
+/**
+ * Saves or updates business location details in the database.
+ *
+ * @param {Object} employeeData - Data object containing employee details such as address and contact information.
+ * @returns {Promise<number>} - The unique ID of the saved or updated employee info.
+ */
+export async function saveEmployeeData(employeeData) {
+    const client = await getClient(); // Initialize the database client
+    console.log("===================");
+    console.log('Database Client Obtained by saveEmployeeData');
+
+    await client.connect(); // Establish connection with the database
+    console.log('Connected to Database');
+
+    // SQL query to check if location with the specified emp ID exist
+    const checkQuery = `SELECT emp_id FROM employee_info WHERE emp_id = $1`;
+
+    try {
+        // Execute query to check for existing location
+        const checkRes = await client.query(checkQuery, [employeeData.emp_id]);
+
+        console.log(checkRes.rows.length);
+        console.log(checkRes.rows[0]);
+        if (checkRes.rows.length > 0) {
+            const updateQuery = `
+                UPDATE employee_info
+                SET
+                    street_address = $1,
+                    city = $2,
+                    state = $3,
+                    zipcode = $4,
+                    phone_number = $5,
+                    updated_at = NOW()
+                WHERE emp_id = $6;
+            `;
+
+            const updateParams = [
+                employeeData.street_address,
+                employeeData.city,
+                employeeData.state,
+                employeeData.zipcode,
+                employeeData.phone_number,
+                employeeData.emp_id,
+            ];
+
+            const updateRes = await client.query(updateQuery, updateParams);
+            console.log('Employee Updated Successfully');
+
+        } else {
+            // Insert new location if it does not exist
+            const insertQuery = `
+                INSERT INTO employee_info (
+                    emp_id,
+                    street_address,
+                    city,
+                    state,
+                    zipcode,
+                    phone_number,
+                    created_at,
+                    updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+            `;
+
+            const insertParams = [
+                employeeData.emp_id,
+                employeeData.street_address,
+                employeeData.city,
+                employeeData.state,
+                employeeData.zipcode,
+                employeeData.phone_number,
+            ];
+
+            const insertRes = await client.query(insertQuery, insertParams);
+            console.log('New Employee Info Saved Successfully');
+        }
+    } catch (err) {
+        console.error('Error saving or updating employee data:', err); // Log any errors
+        throw err; // Rethrow for higher-level error handling
+    } finally {
+        await client.end(); // Ensure the database connection is closed
+        console.log('Database connection closed');
+    }
+}
+
+//#endregion
+
+
+/**
+ * Saves or updates business location details in the database.
+ *
+ * @param {number} emp_id - The unique identifier of the employee.
+ * 
+ */
+export async function getEmployeeData(emp_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Fetching business location including business hours (JSON)
+    const query = `
+        SELECT
+            ei.emp_id,
+            ei.street_address,
+            ei.city,
+            ei.state,
+            ei.zipcode,
+            ei.phone_number,
+            b.business_name
+        FROM
+            employee_info AS ei
+        JOIN
+            employees AS e ON ei.emp_id = e.emp_id
+        JOIN
+            businesses AS b ON e.business_id = b.business_id
+        WHERE
+            ei.emp_id = $1;
+    `;
+    
+    try {
+        const res = await client.query(query, [emp_id]);
+        if (res.rows.length > 0) {
+            return res.rows[0];
+        } else {
+            return null; // No data found
+        }
+    } catch (err) {
+        console.error('Error fetching business location:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}

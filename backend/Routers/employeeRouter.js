@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager, getEmployeeData, saveEmployeeData } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -308,5 +308,40 @@ router.get('/checkIfEmployeeIsManager', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+router.get('/getEmployeeData', async (req, res) => {
+    const { emp_id } = req.query; 
+
+    try {
+        const EmployeeData = await getEmployeeData(emp_id); // Fetch business location from database
+
+        if (EmployeeData) {
+            res.status(200).json({ EmployeeData });
+        } else {
+            res.status(404).json({ error: 'Employee data not found' });
+        }
+    } catch (err) {
+        console.error('Error fetching Employee Data:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.post('/saveEmployeeData', async (req, res) => {
+    const employeeData = req.body; // Extract employee data from the request
+
+    try {
+        // Call saveEmployeeData to save or update the employee location info
+        await saveEmployeeData(employeeData); // Wait for the function to complete
+
+        // Return the employee ID (emp_id) after saving or updating the data
+        console.log("Employee data saved or updated for emp_id:", employeeData.emp_id);
+        res.status(201).json({ emp_id: employeeData.emp_id }); 
+    } catch (err) {
+        // Log error and respond with 500 status if saving fails
+        console.error('Error saving employee data:', err);
+        res.status(500).json({ error: 'Internal server error while saving employee data' });
+    }
+});
+
 
 export default router; // Export the router to be used in server.js
