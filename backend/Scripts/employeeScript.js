@@ -66,40 +66,6 @@ export async function fetchEmployeesWithRoles(businessId) {
     }
 }
 
-export async function getAllEmployeeAvailability(businessId) {
-    const query = `
-        SELECT
-            a.emp_id,
-            a.day_of_week,
-            a.start_time,
-            a.end_time,
-            a.start_date,
-            a.end_date
-        FROM
-            availability a
-        JOIN
-            employees e ON a.emp_id = e.emp_id
-        WHERE
-            e.business_id = $1
-        ORDER BY
-            a.emp_id, a.day_of_week;
-    `;
-
-    const client = await getClient();
-    await client.connect();
-
-    try {
-        // Execute the query to fetch availability for all employees in the business
-        const result = await client.query(query, [businessId]);
-        return result.rows;
-    } catch (err) {
-        console.error('Error fetching all employees availability:', err);
-        throw err;
-    } finally {
-        await client.end();
-    }
-}
-
 //#endregion
 
 //#region Update Employee

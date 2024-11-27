@@ -14,12 +14,15 @@ import ScheduleGrid from '../../components/ScheduleGrid';
 import ShiftControls from '../../components/schedule_components/ShiftControls';
 
 const SchedulePage = () => {
-    // Get businessId from Redux store
-    const loggedInUser = useSelector((state) => state.business.businessInfo);
-    const businessId = loggedInUser?.business?.business_id;
-    //console.log(loggedInUser);
-    //console.log(businessId);
 
+    // Get loggedInUser from Redux store for both business and employee
+    const businessInfo = useSelector((state) => state.business.businessInfo);
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+
+    // Determine businessId based on user type
+    const businessId = businessInfo?.business?.business_id || loggedInUser?.employee?.business_id;
+    const homeRoute = businessInfo?.business ? 'Business' : loggedInUser?.employee ? 'Employee' : 'Login';
+    
     const [maxHours, setMaxHours] = useState(500);  // Set initial max hours
     const [totalHours, setTotalHours] = useState(0);
 
@@ -33,9 +36,9 @@ const SchedulePage = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
 
-    console.log("Today's date:", new Date().toISOString().slice(0, 10));
-    console.log("Current date state:", currentDate);
-    console.log("Start of the week:", getStartOfWeek(currentDate));
+    // console.log("Today's date:", new Date().toISOString().slice(0, 10));
+    // console.log("Current date state:", currentDate);
+    // console.log("Start of the week:", getStartOfWeek(currentDate));
 
     // Reference for the schedule grid (used for handling drag-and-drop)
     const scheduleGridRef = useRef(null);
@@ -57,6 +60,14 @@ const SchedulePage = () => {
     const [shiftsData, setShiftsData] = useState([]);
     const [buttonText, setButtonText] = useState("Create Schedule");
     const [isLoading, setIsLoading] = useState(true);
+    const [tempMessage, setTempMessage] = useState(null);
+    
+    //console.log("Computed dates:", dates);
+
+    const showTemporaryMessage = (message) => {
+        setTempMessage(message);
+        setTimeout(() => setTempMessage(null), 5000);
+    };
     
     // Custom hook to handle employee and schedule-related data
     const { 
@@ -71,7 +82,7 @@ const SchedulePage = () => {
         setShiftTimes,
         setEmployeeAssignments,
         setShiftAssignments
-    } = useEmployeeData(businessId);
+    } = useEmployeeData(businessId, scheduleId, dates, showTemporaryMessage);//view, currentDate
 
     // Load the existing schedule and shifts when the component mounts
     useEffect(() => {
@@ -128,9 +139,9 @@ const SchedulePage = () => {
     }, [businessId, currentDate]);
 
     // Verify that dates are consistent and not changing unexpectedly
-    useEffect(() => {
-        console.log("Dates in useMemo:", dates);
-    }, [dates]);
+    // useEffect(() => {
+    //     console.log("Dates in useMemo:", dates);
+    // }, [dates]);
 
     // Map shifts to assignments whenever shiftsData changes
     useEffect(() => {
@@ -447,7 +458,7 @@ const SchedulePage = () => {
                 showsHorizontalScrollIndicator={false}
         >
             <View style={styles.container}>
-                <NavBar homeRoute={'Business'}/>
+                <NavBar homeRoute={homeRoute}/>
 
                 {/* Dropdown menu for role filter */}
                 {isDropdownVisible && (
@@ -471,6 +482,11 @@ const SchedulePage = () => {
                 
                 {/* Section to display and set max hours and total hours */}
                 <View style={styles.mainHoursContainer}>
+                    {tempMessage && (
+                        <Text style={{color: 'red', fontSize: 15, marginRight: 10}}>{tempMessage}</Text>
+                        
+                    )}
+
                     <Text style={styles.hrTitle}>Max Desired Hours:</Text>
                     <TextInput
                         style={styles.maxHoursInput}
