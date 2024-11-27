@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchEmployeesWithRoles, fetchAvailableEmployees } from '../../../backend/api/employeeApi';
-import { calculateHoursDifference } from './scheduleUtils';
+import { fetchEmployeesWithRoles, fetchAvailableEmployees, fetchAllEmployeeAvailability } from '../../../backend/api/employeeApi';
+import { formatTime, calculateHoursDifference, convertTo24HourFormat } from './scheduleUtils';
 import { Animated } from 'react-native';
 
-const useEmployeeData = (businessId, scheduleId) => {
+const useEmployeeData = (businessId, scheduleId, dates, showTemporaryMessage) => { //view, currentDate
+  
     const [employees, setEmployees] = useState([]);
     // State to store filtered employees based on selection criteria
     const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -14,6 +15,7 @@ const useEmployeeData = (businessId, scheduleId) => {
     // Assignments of shifts and employees to specific cells in the schedule
     const [shiftAssignments, setShiftAssignments] = useState({});
     const [employeeAssignments, setEmployeeAssignments] = useState({});
+    const [employeeAvailability, setEmployeeAvailability] = useState([]);
     
     // State to store shift times that are added by the user
     const [shiftTimes, setShiftTimes] = useState([]);
@@ -24,41 +26,40 @@ const useEmployeeData = (businessId, scheduleId) => {
       setError(null);
 
       try {
-        // Fetch employees and add properties for animations and shift hours
-        const data = await fetchEmployeesWithRoles(businessId);
-
-        // If scheduleId exists, load shift hours from storage; otherwise, initialize to 0
-        const savedHours = scheduleId 
-        ? JSON.parse(localStorage.getItem(`employeeShiftHours_${businessId}_${scheduleId}`) || "{}")
-        : {};
-
-        const employeesWithPan = data.map((employee) => ({
-          ...employee,
-          pan: new Animated.ValueXY(), // Add animated pan position
-          shiftHours: savedHours[employee.emp_id] || 0, // Initialize shift hours for each employee
-        }));
         
-        setEmployees(employeesWithPan); // Set fetched employees
-        setFilteredEmployees(employeesWithPan); // Initialize filtered employees
+        // Fetch employees and their availability
+        const [data, availability] = await Promise.all([
+          fetchEmployeesWithRoles(businessId),
+          fetchAllEmployeeAvailability(businessId),
+        ]);
+
+        console.log("Fetched employees data:", data);
+        console.log("Fetched availability data:", availability);
+
+        const availabilityData = availability.availability || [];
+
+        const updatedEmployees = data.map((employee) => {
+          const existingEmployee = employees.find(emp => emp.emp_id === employee.emp_id);
+          const employeeAvailability = availabilityData.filter(avail => avail.emp_id === employee.emp_id);
+          
+          return {
+              ...employee,
+              pan: existingEmployee?.pan || new Animated.ValueXY(),
+              shiftHours: existingEmployee?.shiftHours || 0, // Preserve shiftHours
+              availability: employeeAvailability || [],
+          };
+        });
+        
+        setEmployees(updatedEmployees); // Set fetched employees
+        setFilteredEmployees(updatedEmployees); // Initialize filtered employees
+
+        console.log('Employees with availability:', updatedEmployees);
       } catch (err) {
         setError('Error fetching employees');
       } finally {
         setLoading(false);
       }
     }, [businessId, scheduleId]);
-
-    // Save shift hours only if scheduleId is defined
-    useEffect(() => {
-      if (!scheduleId) return;
-
-      const employeeHours = employees.reduce((acc, emp) => {
-          acc[emp.emp_id] = emp.shiftHours;
-          return acc;
-      }, {});
-
-      localStorage.setItem(`employeeShiftHours_${businessId}_${scheduleId}`, JSON.stringify(employeeHours));
-      console.log(`Saved employeeShiftHours for schedule ${scheduleId} to storage:`, employeeHours);
-    }, [employees, businessId, scheduleId]);
 
     // Helper function to filter employees by role only (Managers or Employees)
     const filterByRoleOnly = (titleOption, employees) => {
@@ -84,10 +85,15 @@ const useEmployeeData = (businessId, scheduleId) => {
               // Map additional fields (shiftHours, pan) for each available employee
               const employeesWithDetails = availableEmployees.map((employee) => {
                   const existingEmployee = employees.find((emp) => emp.emp_id === employee.emp_id);
+
                   return {
                       ...employee,
                       shiftHours: existingEmployee ? existingEmployee.shiftHours : 0,
                       pan: employee.pan || new Animated.ValueXY(),
+
+                      // Keep the full availability from the existing employee
+                      availability: existingEmployee ? existingEmployee.availability : employee.availability,
+                    
                   };
               });
   
@@ -128,31 +134,122 @@ const useEmployeeData = (businessId, scheduleId) => {
     // Handle drop events for assigning shifts or employees
     const onDrop = (cellId, item, type) => {
       console.log("onDrop called with:", cellId, item, type);
-    
-      // Assign shift or employee based on type
-      assignShiftOrEmployee(cellId, item, type);
-    
-      // Calculate shift hours if employee is assigned to a shift
-      if (type === 'shift' && employeeAssignments[cellId]) {
-        const [start, end] = item.time.split(' - ');
-        const hours = calculateHoursDifference(start, end);
-        setEmployees((prev) =>
-          prev.map((emp) =>
-            emp.emp_id === employeeAssignments[cellId].emp_id
-              ? { ...emp, shiftHours: emp.shiftHours + hours }
-              : emp
-          )
-        );
-      } else if (type === 'employee' && shiftAssignments[cellId]) {
-        const [start, end] = shiftAssignments[cellId].split(' - ');
-        const hours = calculateHoursDifference(start, end);
-        setEmployees((prev) =>
-          prev.map((emp) =>
-            emp.emp_id === item.emp_id
-              ? { ...emp, shiftHours: emp.shiftHours + hours }
-              : emp
-          )
-        );
+      //console.log("Dates in onDrop:", dates);
+
+      const normalizeTime = (time) => time.slice(0, 5);
+  
+      if (!dates || !dates.length) {
+          console.error("Dates are undefined or empty.");
+          return;
+      }
+  
+      // Extract the column index (day) from the cellId
+      const colIndex = parseInt(cellId.split('-')[1], 10);
+      const assignedDay = dates[colIndex].toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  
+      if (type === 'employee') {
+        if (!item || !item.availability || !Array.isArray(item.availability)) {
+          console.error("Invalid item or availability in onDrop:", item);
+          return;
+        }
+
+          const employeeAvailability = item.availability.filter(
+              (avail) => avail.day_of_week === assignedDay
+          );
+  
+          if (employeeAvailability.length === 0) {
+              showTemporaryMessage(
+                  `${item.f_name} ${item.l_name} is not available on ${dates[colIndex].toDateString()}`
+              );
+          } else if (shiftAssignments[cellId]) {
+              const [shiftStart, shiftEnd] = shiftAssignments[cellId]
+                  .split(' - ')
+                  .map((time) => convertTo24HourFormat(time));
+  
+              // Check if the shift is entirely within the availability range
+              const isTimeSlotValid = employeeAvailability.some((avail) => {
+                const availabilityStart = normalizeTime(avail.start_time);
+                const availabilityEnd = normalizeTime(avail.end_time);
+            
+                return shiftStart >= availabilityStart && shiftEnd <= availabilityEnd;
+              });
+  
+              if (!isTimeSlotValid) {
+                  showTemporaryMessage(
+                      `${item.f_name} ${item.l_name} is not available during ${shiftAssignments[cellId]}`
+                  );
+              }
+          }
+  
+          assignShiftOrEmployee(cellId, item, type);
+  
+          if (shiftAssignments[cellId]) {
+              const [start, end] = shiftAssignments[cellId]
+                  .split(' - ')
+                  .map((time) => convertTo24HourFormat(time));
+              const hours = calculateHoursDifference(start, end);
+              setEmployees((prev) =>
+                  prev.map((emp) =>
+                      emp.emp_id === item.emp_id
+                          ? { ...emp, shiftHours: (emp.shiftHours || 0) + hours }
+                          : emp
+                  )
+              );
+          }
+      } else if (type === 'shift') {
+          const assignedEmployee = employeeAssignments[cellId];
+          if (assignedEmployee) {
+              const employeeAvailability = assignedEmployee.availability.filter(
+                  (avail) => avail.day_of_week === assignedDay
+              );
+  
+              if (employeeAvailability.length === 0) {
+                  showTemporaryMessage(
+                      `${assignedEmployee.f_name} ${assignedEmployee.l_name} is not available on ${dates[colIndex].toDateString()}`
+                  );
+              }
+  
+              const [shiftStart, shiftEnd] = item.time
+                  .split(' - ')
+                  .map((time) => convertTo24HourFormat(time));
+  
+              const isTimeSlotValid = employeeAvailability.some((avail) => {
+                const availabilityStart = normalizeTime(avail.start_time);
+                const availabilityEnd = normalizeTime(avail.end_time);
+            
+                return shiftStart >= availabilityStart && shiftEnd <= availabilityEnd;
+              });
+              console.log('Is time slot valid:', isTimeSlotValid);
+            
+              if (!isTimeSlotValid) {
+                const availabilityTimes = employeeAvailability.map((avail) => {
+                    const availabilityStart = formatTime(avail.start_time);
+                    const availabilityEnd = formatTime(avail.end_time);
+                    return `${availabilityStart} - ${availabilityEnd}`;
+                }).join(', '); // Join multiple availability periods if they exist
+            
+                showTemporaryMessage(
+                    `${assignedEmployee.f_name} ${assignedEmployee.l_name} is not available during ${item.time}. ` +
+                    `They are available during: ${availabilityTimes}`
+                );
+              }
+          }
+  
+          assignShiftOrEmployee(cellId, item, type);
+  
+          if (assignedEmployee) {
+              const [start, end] = item.time
+                  .split(' - ')
+                  .map((time) => convertTo24HourFormat(time));
+              const hours = calculateHoursDifference(start, end);
+              setEmployees((prev) =>
+                  prev.map((emp) =>
+                      emp.emp_id === assignedEmployee.emp_id
+                          ? { ...emp, shiftHours: (emp.shiftHours || 0) + hours }
+                          : emp
+                  )
+              );
+          }
       }
     };
 
