@@ -236,7 +236,7 @@ const EmployeePage = () => {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style = {styles.container}>
         
-                <NavBar />
+                <NavBar homeRoute={'Employee'}/>
 
                 <View style = {styles.topContainer}>
                     <Text style={styles.dashboardText}> Employee Dashboard</Text>
@@ -257,6 +257,14 @@ const EmployeePage = () => {
                 <View style = {styles.dashboardContainer}>
                     {/* Left Column */}
                     <View style={styles.leftColumn}>
+                        {loggedInUser?.employee?.is_manager && (
+                            <SidebarButton
+                                icon={require('../../assets/images/calendar_with_gear.png')}
+                                label="Manage Schedule"
+                                onPress={() => navigation.navigate('ManageSchedule')}
+                                customContainerStyle={{ right: -10 }}
+                            />
+                        )}
                         <SidebarButton
                             icon = {require('../../assets/images/view_calendar_icon.png')}
                             label = "View Schedule"

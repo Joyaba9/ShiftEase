@@ -1,8 +1,32 @@
 // File: employeeRouter.js
 import express from 'express';
-import { createShift, createWeeklySchedule, getAvailableEmployees, getEmployeeAvailability, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer, cancelShiftOffer, searchOpenShiftOffers, searchEmployeeShiftOffers, updateShift, removeShift } from '../Scripts/scheduleScript.js';
+import { createShift, createWeeklySchedule, getAvailableEmployees, getAllEmployeeAvailability, getEmployeeAvailability, getShiftsByScheduleId, getScheduleByBusinessIdAndDate, createShiftOffer, acceptShiftOffer, cancelShiftOffer, searchOpenShiftOffers, searchEmployeeShiftOffers, updateShift, removeShift } from '../Scripts/scheduleScript.js';
 
 const router = express.Router();
+
+// Route to fetch all employee availability for a business
+router.get('/allEmployeeAvailability/:businessId', async (req, res) => {
+    const { businessId } = req.params;
+
+    // Validate the input
+    if (!businessId) {
+        return res.status(400).json({ error: 'Business ID is required.' });
+    }
+
+    try {
+        // Fetch all employee availability for the business
+        const availability = await getAllEmployeeAvailability(businessId);
+
+        if (availability.length > 0) {
+            res.status(200).json({ success: true, availability });
+        } else {
+            res.status(404).json({ success: false, message: 'No availability found for employees in this business.' });
+        }
+    } catch (err) {
+        console.error('Error fetching all employee availability:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 // Route to fetch an individual employee's availability
 router.get('/employeeAvailability/:empId', async (req, res) => {
