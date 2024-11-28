@@ -108,6 +108,7 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
         if (addEmpVisible) {
         fetchRoles();
         }
+        console.log('Roles: ', roles);
     }, [addEmpVisible]);
     
     const handleSelectRole = (selectedRole) => {

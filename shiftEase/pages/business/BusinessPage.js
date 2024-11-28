@@ -137,34 +137,43 @@ const BusinessPage = () => {
                   <View style={styles.spacer} />
                   <Ionicons name="megaphone-outline" size={30} color="black" />
                 </View>
-                <View style={styles.textBox}></View>
+                {/*<View style={styles.textBox}></View>*/}
                 <TouchableOpacity style={styles.addIconContainer}>
                   <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
                 </TouchableOpacity>
               </View>
             </LinearGradient>
   
+            {/* Requests Section */}
+            <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradient}>
+              <View style={styles.sideContainer}>
+                <View style={styles.topBar}>
+                  <Text style={styles.sectionTitle}>Requests</Text>
+                  <View style={styles.spacer} />
+                  <Ionicons name="hourglass-outline" size={30} color="black" />
+                </View>
+                <View style={[styles.textBox, { height: 150 }]}>
+                  <Text style={{alignSelf: 'center'}}>No requests at the moment.</Text>
+                </View>
+                <View style={{width: '100%', alignSelf: 'flex-end', marginTop: 10,}}>
+                  <TouchableOpacity>
+                    <Text style={{alignSelf: 'flex-end'}}>View All Requests</Text>
+                  </TouchableOpacity>
+                </View>  
+              </View>
+            </LinearGradient>
+  
             {/* Reports Section */}
             <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradient}>
-              <View style={styles.reportsContainer}>
+              <View style={styles.sideContainer}>
                 <View style={styles.topBar}>
                   <Text style={styles.sectionTitle}>Daily Reports</Text>
                   <View style={styles.spacer} />
                   <Ionicons name="document-text-outline" size={30} color="black" />
                 </View>
-                <View style={styles.textBox}></View>
-              </View>
-            </LinearGradient>
-  
-            {/* Key Performance Section */}
-            <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradient}>
-              <View style={styles.performanceContainer}>
-                <View style={styles.topBar}>
-                  <Text style={styles.sectionTitle}>Key Performance Overview</Text>
-                  <View style={styles.spacer} />
-                  <Ionicons name="bar-chart-outline" size={30} color="black" />
+                <View style={styles.textBox}>
+                  <Text>This feature is not yet implemented. Coming soon!</Text>
                 </View>
-                <View style={styles.textBox}></View>
               </View>
             </LinearGradient>
           </View>
@@ -303,16 +312,24 @@ const styles = StyleSheet.create({
     right: 10,
     zIndex: 1,
   },
-  reportsContainer: {
+  sideContainer: {
     borderRadius: 10,
     padding: 20,
   },
   sectionTitle: {
     fontSize: 16
   },
-  performanceContainer: {
+  textBox: {
+    minheight: 150,
+    backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 20,
+    padding: 15,
+    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
   button: {
     backgroundColor: '#ffffff',
