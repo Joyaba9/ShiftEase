@@ -212,7 +212,6 @@ const EmployeePage = () => {
             const result = await acceptShiftOfferAPI(shiftId, employee.emp_id);
             console.log('Shift accepted:', result);
     
-            // Optionally, update state to reflect changes (e.g., remove the accepted shift from openShiftOffers)
             setOpenShiftOffers((prevOffers) => prevOffers.filter((offer) => offer.shift_id !== shiftId));
     
             // Show success message or take additional actions
@@ -239,7 +238,9 @@ const EmployeePage = () => {
                 <NavBar homeRoute={'Employee'}/>
 
                 <View style = {styles.topContainer}>
-                    <Text style={styles.dashboardText}> Employee Dashboard</Text>
+                    <Text style={styles.dashboardText}> 
+                        {loggedInUser?.employee?.is_manager ? 'Manager Dashboard' : 'Employee Dashboard'}
+                    </Text>
 
                     <View style={styles.spacer} />
 
@@ -280,12 +281,6 @@ const EmployeePage = () => {
                             label = "Change Availability"
                             onPress={ () => {{navigation.navigate('ChangeAvailability')}}}
                         />
-                        {/*<SidebarButton
-                            //icon = {require('../../assets/images/offer_up_icon.png')}
-                            //label = "Offer Up Shift"
-                            //onPress={ () => {{/* Offer Up Shift Page logic }}}
-                            //customContainerStyle={{ right: -10 }}
-                        />*/}
                         <SidebarButton
                             icon = {require('../../assets/images/time_card_icon.png')}
                             label = "Time Card History"
@@ -307,12 +302,38 @@ const EmployeePage = () => {
                                 <View style={styles.spacer} />
                                 <Ionicons name="megaphone-outline" size={30} color="black" />
                                 </View>
-                                <View style={styles.textBox}></View>
-                                <TouchableOpacity style={styles.addIconContainer}>
-                                <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
-                                </TouchableOpacity>
+                                <View style={styles.textBox}>
+                                    <Text style={{alignSelf: 'center'}}>No announcements at the moment.</Text>
+                                </View>
+                                {loggedInUser?.employee?.is_manager && (
+                                    <TouchableOpacity style={styles.addIconContainer}>
+                                        <Ionicons name="add-circle" size={35} color="black" onPress={() => setAnnouncementsVisible(true)}/>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </LinearGradient>
+
+                        {/* Requests Section */}
+                        {loggedInUser?.employee?.is_manager && (
+                            <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradient}>
+                                <View style={{borderRadius: 10, padding: 20,}}>
+                                    <View style={styles.topBar}>
+                                        <Text style={styles.sectionTitle}>Requests</Text>
+                                    <View style={styles.spacer} />
+                                        <Ionicons name="hourglass-outline" size={30} color="black" />
+                                    </View>
+                                    <View style={[styles.textBox, { height: 150 }]}>
+                                        <Text style={{alignSelf: 'center'}}>No requests at the moment.</Text>
+                                    </View>
+                                    <View style={{width: '100%', alignSelf: 'flex-end', marginTop: 10,}}>
+                                    <TouchableOpacity>
+                                        <Text style={{alignSelf: 'flex-end'}}>View All Requests</Text>
+                                    </TouchableOpacity>
+                                    </View>  
+                                </View>
+                            </LinearGradient>
+                        )}
+  
 
                         {/* Upcoming Shifts Section */}
                         <LinearGradient 
@@ -552,6 +573,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 2,
         elevation: 4,
+    },
+    addIconContainer: {
+        width: '100%',
+        alignItems: 'flex-end',
+        marginTop: 10,
     },
     availableShifts: {
         flex: 1,

@@ -40,7 +40,6 @@ const LoginPage = ({ isLoggingOut }) => {
   // Access the business login state from Redux
   const { loading: businessLoading, error: businessError, businessInfo } = useSelector((state) => state.business);
   
-
   const handleLogin = async () => {
     // Determine which login mode is active
     const loginMode = isBusinessLogin ? 'Business' : 'Employee';
@@ -84,11 +83,13 @@ const LoginPage = ({ isLoggingOut }) => {
           navigation.navigate('ChangePass', { employee: loggedInUser });
         } else {
           // If the login is successful, show an alert and navigate to either Business or Employee page based on the login mode
-          alert('Login successful');
+          //alert('Login successful');
+          console.log('Login successful');
           navigation.navigate(isBusinessLogin ? 'Business' : 'Employee');
         }
       } else if (businessInfo) {
-        alert('Business login successful');
+        //alert('Business login successful');
+        console.log('Business login successful');
         navigation.navigate('Business');
       } else {
         // No logged-in user or business, ensure staying on Login page
@@ -117,7 +118,6 @@ const LoginPage = ({ isLoggingOut }) => {
           formContainer: !isMobile ? { paddingLeft: 40, paddingRight: 40 } : {},
         }}
       >
-
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={[styles.employeeButton, isBusinessLogin ? styles.inactiveButton : styles.activeButton,]} onPress={() => switchLogin('Employee')}>
