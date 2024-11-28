@@ -12,6 +12,7 @@ import { calculateHoursDifference, formatTime } from '../../components/schedule_
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
+import AddEmpModal from '../business/AddEmpModal';
 import AnnouncementsModal from '../business/AnnouncementsModal';
 
 const { width } = Dimensions.get('window');
@@ -38,6 +39,8 @@ const EmployeePage = () => {
 
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
+    const [addEmpVisible, setAddEmpVisible] = useState(false);
+
     // State for upcoming shifts
     const [upcomingShift, setUpcomingShift] = useState(null);
     const [openShiftOffers, setOpenShiftOffers] = useState([]);
@@ -271,6 +274,14 @@ const EmployeePage = () => {
                             label = "View Schedule"
                             onPress={ () => navigation.navigate('ViewSchedule')}
                         />
+                        {loggedInUser?.employee?.is_manager && (
+                            <SidebarButton
+                                icon={require('../../assets/images/add_employee_icon.png')}
+                                label="Add Employee"
+                                onPress={() => setAddEmpVisible(true)} // Open the Add Employee Modal
+                                customContainerStyle={{ right: -10 }}
+                            />
+                        )}
                         <SidebarButton
                             icon = {require('../../assets/images/clipboard_with_checkmark.png')}
                             label = "Submit Request"
@@ -281,13 +292,13 @@ const EmployeePage = () => {
                             label = "Change Availability"
                             onPress={ () => {{navigation.navigate('ChangeAvailability')}}}
                         />
-                        <SidebarButton
+                        {/* <SidebarButton
                             icon = {require('../../assets/images/time_card_icon.png')}
                             label = "Time Card History"
-                            onPress={ () => {{/* Time Card History Page logic */}}}
+                            onPress={ () => {{/* Time Card History Page logic }}}
                             customContainerStyle={{ right: 5 }}
                             customIconStyle = {{width: 100, height: 100}}
-                        />
+                        /> */}
                     </View>
 
                     <View style={styles.spacer} />
@@ -318,7 +329,7 @@ const EmployeePage = () => {
                             <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradient}>
                                 <View style={{borderRadius: 10, padding: 20,}}>
                                     <View style={styles.topBar}>
-                                        <Text style={styles.sectionTitle}>Requests</Text>
+                                        <Text style={styles.sectionTitle}>Manage Requests</Text>
                                     <View style={styles.spacer} />
                                         <Ionicons name="hourglass-outline" size={30} color="black" />
                                     </View>
@@ -425,6 +436,12 @@ const EmployeePage = () => {
                                 </View>
                             </View>
                         </LinearGradient> 
+
+                        <AddEmpModal 
+                            addEmpVisible={addEmpVisible} 
+                            setAddEmpVisible={setAddEmpVisible}
+                            businessId={loggedInUser?.employee?.business_id}
+                        />
                         <AnnouncementsModal
                             announcementsVisible={announcementsVisible}
                             setAnnouncementsVisible={setAnnouncementsVisible}
