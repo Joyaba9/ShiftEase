@@ -168,15 +168,17 @@ const EmployeeAccountDetails = () => {
             {/* Left column with profile photo and account overview */}
             <View style={!isMobile ? styles.leftColumn : styles.mobileTopPortion}>
                 <View style={styles.topContainer}>
-                    <TouchableOpacity style={styles.addIconContainer}>
+                    {/* <TouchableOpacity style={styles.addIconContainer}>
                         <Ionicons name="add-circle" size={35} color="#9FCCF5" />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
 
-                    <Image
-                        resizeMode="contain"
-                        source={require('../../assets/images/default_profile.png')}
-                        style={styles.profilePhoto}
-                    />
+                    <TouchableOpacity>
+                        <Image
+                            resizeMode="contain"
+                            source={require('../../assets/images/default_profile.png')}
+                            style={styles.profilePhoto}
+                        />
+                    </TouchableOpacity>
 
                     {/* Display the employee name */}
                     <Text style={styles.userNameText}>
@@ -192,7 +194,6 @@ const EmployeeAccountDetails = () => {
                     </TouchableOpacity>
                 </View> : ""
                 }
-
             </View>
 
             {/* Right column with editable Employee details */}

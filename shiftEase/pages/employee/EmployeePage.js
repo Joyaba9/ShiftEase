@@ -3,6 +3,7 @@ import { ScrollView, Image, View, StyleSheet, Text, TouchableOpacity, Dimensions
 import { useSelector } from 'react-redux';
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
+import CurrentUser from '../../../backend/CurrentUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { fetchEmployeeAvailability } from '../../../backend/api/employeeApi';
@@ -27,6 +28,15 @@ const EmployeePage = () => {
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
     console.log('Logged in user:', loggedInUser);
+
+    const userInfo = CurrentUser.getUserInfo();
+    if (userInfo) {
+        console.log('Current User:', userInfo);
+        console.log('UID:', CurrentUser.getUserUID());
+        console.log('Email:', CurrentUser.getUserEmail());
+    } else {
+        console.log('No user logged in');
+    }
 
     useEffect(() => {
         if (!loggedInUser) {
