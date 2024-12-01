@@ -23,6 +23,8 @@ const EmployeePage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const [pulledGeneralAnnouncement, setPulledGeneralAnnouncement] = useState([]);
+    const [openAddForm, setOpenAddForm] = useState(false);
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
@@ -40,6 +42,42 @@ const EmployeePage = () => {
     // State to control the visibility of the announcements modal
     const [announcementsVisible, setAnnouncementsVisible] = useState(false);
     const [addEmpVisible, setAddEmpVisible] = useState(false);
+
+    // Pulls the latest general announcement to be displayed in announcement card
+    const fetchLatestGeneralAnnouncements = async () => {
+        try {
+            const response = await fetch(`http://localhost:5050/api/announcements/general/latest/${loggedInUser.employee.business_id}`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Latest General Announcement Data:", data);
+    
+                // Check if data is null or an object
+                if (data) {
+                    // Transform data to expected format (if necessary)
+                    const transformedData = {
+                        id: data.id,
+                        Title: data.title || 'No Title',
+                        Content: data.content || 'No Content'
+                    };
+    
+                    setPulledGeneralAnnouncement([transformedData]); // Wrap the transformed data in an array for consistent state management
+                } else {
+                    console.log('No announcement found for the provided business ID.');
+                    setPulledGeneralAnnouncement([]); // Set to empty array if no data found
+                }
+            } else {
+                console.error('Failed to fetch general announcements');
+                setPulledGeneralAnnouncement([]);
+            }
+        } catch (error) {
+            console.error('Error fetching general announcements:', error);
+            setPulledGeneralAnnouncement([]);
+        }
+    };
+
+    useEffect(() => {
+        fetchLatestGeneralAnnouncements();
+    }, []);
 
     // State for upcoming shifts
     const [upcomingShift, setUpcomingShift] = useState(null);
@@ -311,16 +349,32 @@ const EmployeePage = () => {
                                 <View style={styles.topBar}>
                                 <Text style={styles.sectionTitle}>Announcements</Text>
                                 <View style={styles.spacer} />
-                                <Ionicons name="megaphone-outline" size={30} color="black" />
-                                </View>
-                                <View style={styles.textBox}>
-                                    <Text style={{alignSelf: 'center'}}>No announcements at the moment.</Text>
-                                </View>
-                                {loggedInUser?.employee?.is_manager && (
-                                    <TouchableOpacity style={styles.addIconContainer}>
-                                        <Ionicons name="add-circle" size={35} color="black" onPress={() => setAnnouncementsVisible(true)}/>
-                                    </TouchableOpacity>
+
+                                <View style={styles.topBarIcons}>
+                                {loggedInUser?.employee?.is_manager ? (
+                                    <>
+                                        <TouchableOpacity style={styles.addIconContainer}>
+                                            <Ionicons name="add-circle" size={28} color="black" onPress={() => {setAnnouncementsVisible(true); setOpenAddForm(true);}} />
+                                        </TouchableOpacity>
+                                        <Ionicons name="megaphone-outline" size={25} color="black" />
+                                    </>
+                                ) : (
+                                    <Ionicons name="megaphone-outline" size={25} color="black" style={{ left: 23 }} />
                                 )}
+                                </View>
+
+                                </View>
+                                <TouchableOpacity style={styles.announcementBox} onPress={() => setAnnouncementsVisible(true)}>
+                                {pulledGeneralAnnouncement.length === 0 ? (
+                                        <Text style={{alignSelf: 'center'}}>No announcements at the moment.</Text>
+                                    ) : (
+                                        <View>
+                                            <Text style={styles.announcementTitle}>{pulledGeneralAnnouncement[0].Title}</Text>
+                                            <View style={styles.HDivider}/>
+                                            <Text style={styles.announcementContent}>{pulledGeneralAnnouncement[0].Content}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
                             </View>
                         </LinearGradient>
 
@@ -444,8 +498,13 @@ const EmployeePage = () => {
                         />
                         <AnnouncementsModal
                             announcementsVisible={announcementsVisible}
-                            setAnnouncementsVisible={setAnnouncementsVisible}
+                            setAnnouncementsVisible={(visible) => {
+                                setAnnouncementsVisible(visible);
+                                if (!visible) setOpenAddForm(false); // Reset the state when the modal is closed
+                            }}
                             businessId={loggedInUser.employee.business_id}
+                            isManager={loggedInUser.employee.is_manager}
+                            openAddForm={openAddForm}
                         />   
                     </View>
                 </View>
@@ -591,10 +650,44 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 4,
     },
+    announcementBox: {
+        minheight: 100,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 15,
+        marginTop: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 4,
+    },
+    announcementTitle: {
+        left: 10,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    announcementContent: {
+        left: 10,
+        fontSize: 14,
+    },
+    HDivider: {
+        borderBottomColor: 'lightgray',
+        borderBottomWidth: 2,
+        marginBottom: 10,
+        marginTop: 5,
+        width: '98%',
+        alignSelf: 'center',
+    },
+    topBarIcons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingRight: 20,
+    },
     addIconContainer: {
         width: '100%',
         alignItems: 'flex-end',
-        marginTop: 10,
+        right: 10,
     },
     availableShifts: {
         flex: 1,
