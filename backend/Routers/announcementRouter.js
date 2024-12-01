@@ -21,14 +21,14 @@ const authenticate = (req, res, next) => {
 */
 // Route to send an announcement to all in the business
 router.post('/send', async (req, res) => {
-  const { businessId, messageContent, isBroadcast } = req.body;
+  const { businessId, messageTitle, messageContent, isBroadcast } = req.body;
 
-  if (!businessId || !messageContent) {
-    return res.status(400).json({ message: 'businessId and messageContent are required' });
+  if (!businessId || !messageTitle || !messageContent) {
+    return res.status(400).json({ message: 'businessId, messageTitle and messageContent are required' });
   }
 
   try {
-    await announcementInstance.sendAnnouncementToBusiness(businessId, messageContent, isBroadcast);
+    await announcementInstance.sendAnnouncementToBusiness(businessId, messageTitle, messageContent, isBroadcast);
     res.status(200).json({ message: 'Announcement sent successfully!' });
   } catch (err) {
     console.error('Error sending announcement:', err);
@@ -37,13 +37,15 @@ router.post('/send', async (req, res) => {
 });
 
 // Route to retrieve all general announcements
-router.get('/general', async (req, res) => {
+router.get('/general/:businessId', async (req, res) => {
+  const { businessId } = req.params;
+
   try {
-    const announcements = await announcementInstance.getGeneralAnnouncements();
-    res.status(200).json(announcements);
+      const announcements = await announcementInstance.getGeneralAnnouncements(businessId);
+      res.status(200).json(announcements);
   } catch (err) {
-    console.error('Error retrieving general announcements:', err);
-    res.status(500).json({ message: 'Failed to retrieve general announcements' });
+      console.error('Error retrieving general announcements:', err);
+      res.status(500).json({ message: 'Failed to retrieve general announcements' });
   }
 });
 
@@ -61,6 +63,22 @@ router.get('/business/:businessId', async (req, res) => {
   } catch (err) {
     console.error('Error retrieving business announcements:', err);
     res.status(500).json({ message: 'Failed to retrieve business announcements' });
+  }
+});
+
+router.get('/general/latest/:businessId', async (req, res) => {
+  const { businessId } = req.params;
+
+  try {
+      const latestAnnouncement = await announcementInstance.getLatestAnnouncement(businessId);
+      if (latestAnnouncement) {
+          res.status(200).json(latestAnnouncement);
+      } else {
+          res.status(404).json({ message: 'No announcements found for the provided business ID' });
+      }
+  } catch (err) {
+      console.error('Error retrieving the latest general announcement:', err);
+      res.status(500).json({ message: 'Failed to retrieve the latest general announcement' });
   }
 });
 

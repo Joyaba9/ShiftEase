@@ -15,6 +15,8 @@ const { width } = Dimensions.get('window');
 const BusinessPage = () => {
   const navigation = useNavigation();
   const [isManagerDashboard, setIsManagerDashboard] = useState(false);
+  const [pulledGeneralAnnouncement, setPulledGeneralAnnouncement] = useState([]);
+  const [openAddForm, setOpenAddForm] = useState(false);
   const isMobile = width < 768; 
 
   // Access the logged-in business information from Redux
@@ -39,6 +41,42 @@ const BusinessPage = () => {
   const goToManageEmployeePage = () => {
     navigation.navigate('ManageEmployee'); // Navigate to ManageEmployeePage
   };
+
+  // Pulls the latest general announcement to be displayed in announcement card
+  const fetchLatestGeneralAnnouncements = async () => {
+    try {
+        const response = await fetch(`http://localhost:5050/api/announcements/general/latest/${loggedInBusiness.business.business_id}`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Latest General Announcement Data:", data);
+
+            // Check if data is null or an object
+            if (data) {
+                // Transform data to expected format (if necessary)
+                const transformedData = {
+                    id: data.id,
+                    Title: data.title || 'No Title',
+                    Content: data.content || 'No Content'
+                };
+
+                setPulledGeneralAnnouncement([transformedData]); // Wrap the transformed data in an array for consistent state management
+            } else {
+                console.log('No announcement found for the provided business ID.');
+                setPulledGeneralAnnouncement([]); // Set to empty array if no data found
+            }
+        } else {
+            console.error('Failed to fetch general announcements');
+            setPulledGeneralAnnouncement([]);
+        }
+    } catch (error) {
+        console.error('Error fetching general announcements:', error);
+        setPulledGeneralAnnouncement([]);
+    }
+};
+
+useEffect(() => {
+    fetchLatestGeneralAnnouncements();
+}, []);
 
   // Early loading check (non-hook related) to avoid return early
   if (!loggedInBusiness) {
@@ -133,13 +171,27 @@ const BusinessPage = () => {
             <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradientAnnounce}>
               <View style={styles.announcements}>
                 <View style={styles.topBar}>
-                  <Text style={styles.sectionTitle}>Announcements</Text>
-                  <View style={styles.spacer} />
-                  <Ionicons name="megaphone-outline" size={30} color="black" />
-                </View>
-                {/*<View style={styles.textBox}></View>*/}
-                <TouchableOpacity style={styles.addIconContainer}>
-                  <Ionicons name="add-circle" size={50} color="black" onPress={() => setAnnouncementsVisible(true)}/>
+                <Text style={styles.sectionTitle}>Announcements</Text>
+                <View style={styles.spacer} />
+
+                  <View style={styles.topBarIcons}>
+                      <TouchableOpacity style={styles.addIconContainer}>
+                        <Ionicons name="add-circle" size={28} color="black" onPress={() => {setAnnouncementsVisible(true); setOpenAddForm(true);}} />
+                      </TouchableOpacity>
+                      <Ionicons name="megaphone-outline" size={25} color="black" />
+                  </View>
+
+                  </View>
+                  <TouchableOpacity style={styles.announcementBox} onPress={() => setAnnouncementsVisible(true)}>
+                  {pulledGeneralAnnouncement.length === 0 ? (
+                    <Text style={{alignSelf: 'center'}}>No announcements at the moment.</Text>
+                  ) : (
+                    <View>
+                        <Text style={styles.announcementTitle}>{pulledGeneralAnnouncement[0].Title}</Text>
+                        <View style={styles.HDivider}/>
+                        <Text style={styles.announcementContent}>{pulledGeneralAnnouncement[0].Content}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               </View>
             </LinearGradient>
@@ -192,9 +244,14 @@ const BusinessPage = () => {
 
         <AnnouncementsModal
           announcementsVisible={announcementsVisible}
-          setAnnouncementsVisible={setAnnouncementsVisible}
+          setAnnouncementsVisible={(visible) => {
+            setAnnouncementsVisible(visible);
+            if (!visible) setOpenAddForm(false); // Reset the state when the modal is closed
+          }}
           businessId={loggedInBusiness.business.business_id}
-        />
+          isManager={true}
+          openAddForm={openAddForm}
+        />;
       </View>
     </ScrollView>
   );
@@ -301,10 +358,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   addIconContainer: {
-    position: 'absolute',
-    bottom: -120,
+    width: '100%',
+    alignItems: 'flex-end',
     right: 10,
-    zIndex: 1,
   },
   addIconContainer2: {
     position: 'absolute',
@@ -377,6 +433,40 @@ const styles = StyleSheet.create({
     height: 100,
     alignSelf: 'flex-end',
   },
+  announcementBox: {
+    minheight: 100,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
+},
+announcementTitle: {
+    left: 10,
+    fontSize: 16,
+    fontWeight: '600',
+},
+announcementContent: {
+    left: 10,
+    fontSize: 14,
+},
+HDivider: {
+    borderBottomColor: 'lightgray',
+    borderBottomWidth: 2,
+    marginBottom: 10,
+    marginTop: 5,
+    width: '98%',
+    alignSelf: 'center',
+},
+topBarIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingRight: 20,
+},
 });
 
 export default BusinessPage;
