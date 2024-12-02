@@ -1,5 +1,39 @@
 import getClient from '../db/dbClient.js';
 
+export async function getAllEmployeeAvailability(businessId) {
+    const query = `
+        SELECT
+            a.emp_id,
+            a.day_of_week,
+            a.start_time,
+            a.end_time,
+            a.start_date,
+            a.end_date
+        FROM
+            availability a
+        JOIN
+            employees e ON a.emp_id = e.emp_id
+        WHERE
+            e.business_id = $1
+        ORDER BY
+            a.emp_id, a.day_of_week;
+    `;
+
+    const client = await getClient();
+    await client.connect();
+
+    try {
+        // Execute the query to fetch availability for all employees in the business
+        const result = await client.query(query, [businessId]);
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching all employees availability:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
 /**
  * Fetches all availability for a specific employee, including days and time slots.
  *
@@ -479,9 +513,9 @@ export async function createShiftOffer(shift_id, emp_id) {
             throw new Error(`Shift ID ${shift_id} is not associated with Employee ID ${emp_id}`);
         }
 
-        // Check if a shift offer for this shift_id and emp_id already exists, if it does, throw an error
+        // Check if a shift offer for this shift_id and emp_id already exists (and is not cancelled), if it does, throw an error
         const offerExistsQuery = `
-            SELECT 1 FROM shift_offers WHERE shift_id = $1 AND offered_emp_id = $2
+            SELECT 1 FROM shift_offers WHERE shift_id = $1 AND offered_emp_id = $2 AND offer_status != 'cancelled';
         `;
         const offerExistsResult = await client.query(offerExistsQuery, [shift_id, emp_id]);
 

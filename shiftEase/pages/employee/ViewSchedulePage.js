@@ -426,62 +426,64 @@ const ViewSchedulePage = () => {
                     {activeFilter === "Inactive Shift Offers" && (
                         <View style={styles.wholeOfferedShiftsContainer}>
                             <Text style={styles.sectionHeader}>Inactive Shift Offers</Text>
-                            <View style={styles.offeredShiftsContainer}>
-                                {filteredOfferedShifts.filter((shift) => {
-                                    const shiftDate = new Date(shift.date);
-                                    return (
-                                        shiftDate < new Date().setHours(0, 0, 0, 0) || // Include past shifts
-                                        shift.acceptedEmpId // Include accepted shifts even if in the future
-                                    );
-                                }).slice(0, 10).length > 0 ? (
-                                    filteredOfferedShifts
-                                        .filter((shift) => {
-                                            const shiftDate = new Date(shift.date);
-                                            return (
-                                                shiftDate < new Date().setHours(0, 0, 0, 0) || // Include past shifts
-                                                shift.acceptedEmpId // Include accepted shifts even if in the future
-                                            );
-                                        })
-                                        .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort from most recent to oldest
-                                        .slice(0, 10) // Limit to the most recent 10
-                                        .map((shift) => (
-                                            <LinearGradient
-                                                colors={['#F5F5F5', '#D3D3D3']}
-                                                style={styles.offeredShiftItem}
-                                                key={shift.shiftOfferId}
-                                            >
-                                                {console.log("Shift accepted_emp_id:", shift.acceptedEmpId)}
-                                                <View style={{ flex: 1, justifyContent: 'space-between' }}>
-                                                    {shift.acceptedEmpId? (
-                                                        <Text style={{ fontStyle: 'italic', color: 'green', fontWeight: 'bold' }}>
-                                                            Accepted
+                            <ScrollView horizontal={true} contentContainerStyle={{flex: 1}}>
+                                <View style={styles.offeredShiftsContainer}>
+                                    {filteredOfferedShifts.filter((shift) => {
+                                        const shiftDate = new Date(shift.date);
+                                        return (
+                                            shiftDate < new Date().setHours(0, 0, 0, 0) || // Include past shifts
+                                            shift.acceptedEmpId // Include accepted shifts even if in the future
+                                        );
+                                    }).slice(0, 10).length > 0 ? (
+                                        filteredOfferedShifts
+                                            .filter((shift) => {
+                                                const shiftDate = new Date(shift.date);
+                                                return (
+                                                    shiftDate < new Date().setHours(0, 0, 0, 0) || // Include past shifts
+                                                    shift.acceptedEmpId // Include accepted shifts even if in the future
+                                                );
+                                            })
+                                            .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort from most recent to oldest
+                                            .slice(0, 10) // Limit to the most recent 10
+                                            .map((shift) => (
+                                                <LinearGradient
+                                                    colors={['#F5F5F5', '#D3D3D3']}
+                                                    style={styles.offeredShiftItem}
+                                                    key={shift.shiftOfferId}
+                                                >
+                                                    {console.log("Shift accepted_emp_id:", shift.acceptedEmpId)}
+                                                    <View style={{ flex: 1, justifyContent: 'space-between' }}>
+                                                        {shift.acceptedEmpId? (
+                                                            <Text style={{ fontStyle: 'italic', color: 'green', fontWeight: 'bold' }}>
+                                                                Accepted
+                                                            </Text>
+                                                        ) : (
+                                                            <Text style={{ fontStyle: 'italic', color: 'red', fontWeight: 'bold' }}>
+                                                                Not accepted
+                                                            </Text>
+                                                        )}
+                                                        
+                                                        <Text style={{ textDecorationLine: shift.accepted_emp_id ? 'none' : 'line-through' }}>
+                                                            Status: <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{shift.status.toUpperCase()}</Text>
                                                         </Text>
-                                                    ) : (
-                                                        <Text style={{ fontStyle: 'italic', color: 'red', fontWeight: 'bold' }}>
-                                                            Not accepted
+                                                        
+                                                        <Text>Date: {new Date(shift.date).toLocaleDateString()}</Text>
+
+                                                        <Text>
+                                                            Time: {shift.startTime && shift.endTime ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}` : 'Invalid time'}
                                                         </Text>
-                                                    )}
-                                                    
-                                                    <Text style={{ textDecorationLine: shift.accepted_emp_id ? 'none' : 'line-through' }}>
-                                                        Status: <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{shift.status.toUpperCase()}</Text>
-                                                    </Text>
-                                                    
-                                                    <Text>Date: {new Date(shift.date).toLocaleDateString()}</Text>
 
-                                                    <Text>
-                                                        Time: {shift.startTime && shift.endTime ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}` : 'Invalid time'}
-                                                    </Text>
-
-                                                    <Text>Offered At: {shift.offeredAt ? formatDate(shift.offeredAt) : 'N/A'}</Text>
-                                                </View>
-                                            </LinearGradient>
-                                        ))
-                                ) : (
-                                    <Text style={styles.noOffersText}>
-                                        You don't have any inactive shift offers.
-                                    </Text>
-                                )}
-                            </View>
+                                                        <Text>Offered At: {shift.offeredAt ? formatDate(shift.offeredAt) : 'N/A'}</Text>
+                                                    </View>
+                                                </LinearGradient>
+                                            ))
+                                    ) : (
+                                        <Text style={styles.noOffersText}>
+                                            You don't have any inactive shift offers.
+                                        </Text>
+                                    )}
+                                </View>
+                            </ScrollView>
                         </View>
                     )}
                 </View>

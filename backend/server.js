@@ -11,6 +11,7 @@ import messageRouter from './Routers/messageRouter.js';
 import announcementRouter from './Routers/announcementRouter.js';
 import scheduleRouter from './Routers/scheduleRouter.js';
 import preferencesRouter from './Routers/preferencesRouter.js';
+import imageRouter from './Routers/imageRouter.js';
 
 
 
@@ -33,6 +34,7 @@ app.use('/api/message', messageRouter);
 app.use ('/api/announcements', announcementRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/preferences', preferencesRouter);
+app.use('/api/image', imageRouter);
 
 
 // Start the server

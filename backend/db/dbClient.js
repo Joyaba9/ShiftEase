@@ -33,4 +33,3 @@ async function getClient() {
 }
 
 export default getClient;
-

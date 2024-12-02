@@ -186,6 +186,9 @@ const ManageEmployeePage = () => {
           { role_id: 1, role_name: 'Business' },
           { role_id: 2, role_name: 'Manager' },
           { role_id: 3, role_name: 'Employee' }
+          { role_id: 1, role_name: 'Business' },
+          { role_id: 2, role_name: 'Manager' },
+          { role_id: 3, role_name: 'Employee' }
         ];
 
         // Combine default roles with fetched roles, ensuring no duplicates

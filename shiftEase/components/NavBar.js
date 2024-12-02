@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { store, persistor } from '../redux/store';
 import { useDispatch } from 'react-redux';
@@ -18,6 +19,8 @@ const NavBar = ({ homeRoute }) => {
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const [isLoggingOut, setIsLoggingOut] = useState('');
+
+    const loggedInBusiness = useSelector((state) => state.business.businessInfo);
 
     // Define the handleLogout function is here temnporarily
     const handleLogout = async () => {
@@ -119,9 +122,11 @@ const NavBar = ({ homeRoute }) => {
                         <Text style={styles.navText}>Home</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                    {loggedInBusiness && (
+                        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
                         <Text style={styles.navText}>Settings</Text>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    )}
 
                     <TouchableOpacity onPress={() => navigation.navigate('Account')}>
                         <Text style={styles.navText}>Account</Text>
@@ -131,6 +136,14 @@ const NavBar = ({ homeRoute }) => {
                         <Image
                             resizeMode="contain"
                             source={require('../assets/images/notification_icon_trans.png')}
+                            style={styles.notificationIcon}
+                        />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => {/* Messages logic */}}>
+                        <Image
+                            resizeMode="contain"
+                            source={require('../assets/images/messagesNav.png')}
                             style={styles.notificationIcon}
                         />
                     </TouchableOpacity>

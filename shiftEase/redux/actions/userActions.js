@@ -1,5 +1,6 @@
 import { loginRequest, loginSuccess, loginFailure } from '../reducers/userReducer';
 import { businessRequest, businessSuccess, businessFailure } from '../reducers/businessReducer';
+import CurrentUser from '../../../backend/CurrentUser';
 
 // The loginUser function is an asynchronous action that handles the login process for an employee.
 // It dispatches actions to update the global state depending on whether the login is successful or fails.
