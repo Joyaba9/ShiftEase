@@ -196,7 +196,6 @@ const NavBar = ({ homeRoute }) => {
         </ScrollView>
     </View>
 )}
-
                 </View>
 
                     <TouchableOpacity style={styles.logOutButton} onPress={handleLogout}>
