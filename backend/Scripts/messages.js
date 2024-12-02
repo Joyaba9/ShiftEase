@@ -1,104 +1,82 @@
-// messages.js
-import { getDatabase, ref, push, get, update, child } from 'firebase/database';
-import { v4 as uuidv4 } from 'uuid';
+import { getDatabase, ref, push, onValue } from "firebase/database";
+import CurrentUser from '../CurrentUser.js';
 
-class Messaging {
+// current user is the authenticated user that is logged in
+
+
+// Handles sending and retrieving messages
+class Message {
+  
   constructor() {
     this.db = getDatabase();
   }
 
-  // Create a new conversation
-  async createConversation(participantIds) {
-    if (!participantIds || participantIds.length < 2) {
-      throw new Error('At least two participants are required to create a conversation.');
+  // Send a message for the current user to specified recipient
+  sendMessage(toUID, messageContent) {
+    const fromUID = CurrentUser.getUserUID();
+    
+    // Check if there is an authenticated user
+    if (!fromUID) {
+      console.error("No authenticated user. Cannot send a message."); // Log error if no authenticated user
+      return;
     }
-
-    const conversationId = uuidv4(); // Generate a unique conversation ID
-
-    // Create the conversation object
-    const conversation = {
-      id: conversationId,
-      participants: participantIds,
-      lastUpdated: Date.now(),
-    };
-
-    const conversationRef = ref(this.db, `conversations/${conversationId}`); // Reference to the conversation in Firebase
-
-    // Add the conversation to the database
-    try {
-      await update(conversationRef, conversation);
-      console.log('Conversation created successfully:', conversation);
-      return conversationId;
-    } catch (error) {
-      console.error('Error creating conversation:', error);
-      throw error;
-    }
-  }
-
-  // Send a message in a specific conversation
-  async sendMessage(conversationId, senderId, content) {
-    if (!content || !conversationId || !senderId) {
-      throw new Error('Missing required fields: conversationId, senderId, or content');
-    }
-    // Create the message object
+    // Create a message object
     const message = {
-      senderId,
-      content,
-      timestamp: Date.now(),
+      fromUID,
+      toUID,
+      content: messageContent,
+      timestamp: Date.now()
     };
 
-    const messagesRef = ref(this.db, `messages/${conversationId}`); // Reference to the messages in Firebase
-    const conversationRef = ref(this.db, `conversations/${conversationId}`);// Reference to the conversation in Firebase
+    // Create a reference for the sender and recipient
+    const senderRef = ref(this.db, `messages/${fromUID}/sent`);
+    const recipientRef = ref(this.db, `messages/${toUID}/received`);
 
-    // Add the message to the database
-    try {
-      await push(messagesRef, message);
-      // Update the conversation's lastUpdated timestamp
-      await update(conversationRef, { lastUpdated: Date.now() });
-      console.log('Message sent successfully:', message);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
+    // Push the message to both the sender's "sent" and recipient's "received" nodes
+    push(senderRef, message);
+    push(recipientRef, message);
   }
 
-  // Retrieve messages for a specific conversation
-  async getMessages(conversationId) {
-    const messagesRef = ref(this.db, `messages/${conversationId}`);
+  // Retrieve messages sent to the current user
+  getReceivedMessages(callback) {
+    const userUID = CurrentUser.getUserUID();
 
-    try {
-      const snapshot = await get(messagesRef);
-      return snapshot.exists() ? snapshot.val() : {};
-    } catch (error) {
-      console.error('Error retrieving messages:', error);
-      throw error;
+// Check if there is an authenticated user
+    if (!userUID) {
+      console.error("No authenticated user. Cannot retrieve messages.");
+      return;
     }
+      // Create a reference for the received messages
+    const receivedRef = ref(this.db, `messages/${userUID}/received`);
+    
+    // Retrieve the received messages and call the callback function with the messages
+    onValue(receivedRef, (snapshot) => {
+      const messages = snapshot.val();
+      callback(messages);
+    });
   }
 
-  // Retrieve conversations for a specific user
-  async getUserConversations(userId) {
-    const conversationsRef = ref(this.db, 'conversations');
+  // Retrieve messages sent by the current user
+  getSentMessages(callback) {
+    const userUID = CurrentUser.getUserUID();
 
-    try {
-      const snapshot = await get(conversationsRef);
-
-      if (snapshot.exists()) {
-        const allConversations = snapshot.val();
-        // Filter conversations where the user is a participant
-        const userConversations = Object.values(allConversations).filter((conversation) =>
-          conversation.participants.includes(userId)
-        );
-
-        return userConversations;
-      }
-
-      return [];
-    } catch (error) {
-      console.error('Error retrieving conversations:', error);
-      throw error;
+    // Check if there is an authenticated user
+    if (!userUID) {
+      console.error("No authenticated user. Cannot retrieve messages.");
+      return;
     }
+
+    // Create a reference for the sent messages
+    const sentRef = ref(this.db, `messages/${userUID}/sent`);
+    
+    // Retrieve the sent messages and call the callback function with the messages
+    onValue(sentRef, (snapshot) => {
+      const messages = snapshot.val();
+      callback(messages);
+    });
   }
 }
 
-const messagingInstance = new Messaging(); // Create a new instance of the Messaging class
-export default messagingInstance;
+// Export an instance of the Message class
+const messages = new Message();
+export default messages;
