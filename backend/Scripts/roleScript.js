@@ -58,6 +58,17 @@ export async function CreateRoleWithPermissions(businessId, roleName, permission
         // Begin transaction
         await client.query('BEGIN');
 
+        // Check if the role name already exists for the same business_id
+        const checkRoleQuery = `
+            SELECT role_id FROM roles
+            WHERE role_name = $1 AND business_id = $2;
+        `;
+        const checkRoleRes = await client.query(checkRoleQuery, [roleName, businessId]);
+
+        if (checkRoleRes.rows.length > 0) {
+            throw new Error(`Role name "${roleName}" already exists for this business.`);
+        }
+
         // Insert new role into the roles table with the is_manager flag
         const roleInsertQuery = `
             INSERT INTO roles (role_name, business_id, is_manager)
@@ -99,6 +110,7 @@ export async function CreateRoleWithPermissions(businessId, roleName, permission
         await client.end();
     }
 }
+
 
 //#endregion
 
