@@ -183,9 +183,12 @@ const ManageEmployeePage = () => {
         
         // Define default roles
         const defaultRoles = [
-            { role_id: 1, role_name: 'Business' },
-            { role_id: 2, role_name: 'Manager' },
-            { role_id: 3, role_name: 'Employee' }
+          { role_id: 1, role_name: 'Business' },
+          { role_id: 2, role_name: 'Manager' },
+          { role_id: 3, role_name: 'Employee' }
+          { role_id: 1, role_name: 'Business' },
+          { role_id: 2, role_name: 'Manager' },
+          { role_id: 3, role_name: 'Employee' }
         ];
 
         // Combine default roles with fetched roles, ensuring no duplicates
@@ -211,6 +214,7 @@ const getRoleName = (role_id) => {
 };
 
 
+
   const handleAvailabilityChange = (index, field, value) => {
     setAvailability((prev) => {
       const newAvailability = [...prev];
@@ -223,12 +227,16 @@ const getRoleName = (role_id) => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
         for (let min = 0; min < 60; min += 30) {
-            const formattedTime = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:00`; // Include seconds
-            times.push(formattedTime);
+            const value = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:00`; // 24-hour format value
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
+            const displayTime = `${displayHour}:${min.toString().padStart(2, '0')} ${period}`; // 12-hour display format
+            times.push({ value, displayTime });
         }
     }
     return times;
 };
+
 
   const timeOptions = generateTimeOptions();
 
@@ -264,16 +272,17 @@ const getRoleName = (role_id) => {
                {/* Role Picker Dropdown */}
               <Text style={styles.inputLabel}>Role</Text>
               <Picker
-              selectedValue={editedEmployee.role_id}
-              style={styles.picker}
-              onValueChange={(value) => 
-                setEditedEmployee((prev) => ({ ...prev, role_id: value }))
-            }
-        >
-            {roles.map((role) => (
+                 selectedValue={editedEmployee.role_id}
+                 style={styles.picker}
+                 onValueChange={(value) => 
+                   setEditedEmployee((prev) => ({ ...prev, role_id: value }))
+                 }
+                   >
+                  {roles.map((role) => (
                 <Picker.Item key={role.role_id} label={role.role_name} value={role.role_id} />
-            ))}
-        </Picker>
+                   ))}
+              </Picker>
+
               <TextInput
                 style={styles.input}
                 placeholder="First Name"
@@ -315,23 +324,23 @@ const getRoleName = (role_id) => {
               {availability.map((avail, index) => (
                 <View key={index} style={styles.availabilityRow}>
                   <Text style={styles.dayText}>{avail.day_of_week}</Text>
-                  <Picker
-                    style={styles.availabilityInput}
-                    selectedValue={avail.start_time}
-                    onValueChange={(value) => handleAvailabilityChange(index, 'start_time', value)}
-                  >
-                    {timeOptions.map((time) => (
-                      <Picker.Item key={time} label={time} value={time} />
-                    ))}
+                    <Picker
+                      style={styles.availabilityInput}
+                      selectedValue={avail.start_time}
+                      onValueChange={(value) => handleAvailabilityChange(index, 'start_time', value)}
+                     >
+                      {timeOptions.map((time) => (
+                          <Picker.Item key={time.value} label={time.displayTime} value={time.value} />
+                      ))}
                   </Picker>
                   <Picker
-                    style={styles.availabilityInput}
-                    selectedValue={avail.end_time}
-                    onValueChange={(value) => handleAvailabilityChange(index, 'end_time', value)}
+                      style={styles.availabilityInput}
+                      selectedValue={avail.end_time}
+                      onValueChange={(value) => handleAvailabilityChange(index, 'end_time', value)}
                   >
-                    {timeOptions.map((time) => (
-                      <Picker.Item key={time} label={time} value={time} />
-                    ))}
+                      {timeOptions.map((time) => (
+                          <Picker.Item key={time.value} label={time.displayTime} value={time.value} />
+                      ))}
                   </Picker>
                   <TextInput
                     style={styles.dateInput}
@@ -371,6 +380,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
     minHeight: '100%',
+    alignItems: 'center',
     height: 200,
     minWidth: 950,
   },
@@ -378,9 +388,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     paddingBottom: 20,
+    height: 200,
+    minWidth: 950,
   },
   gradient: {
-    width: '95%',
+    width: '90%',            // Reduce width to ensure centering works better
+    alignSelf: 'center',     // Center the gradient within the container
     borderRadius: 10,
     padding: 20,
     shadowColor: '#000',
@@ -399,7 +412,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 4,
-    width: '90%',
+    width: '100%',
     marginTop: 20,
   },
   topBar: {

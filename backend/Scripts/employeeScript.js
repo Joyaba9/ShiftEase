@@ -576,16 +576,17 @@ export async function getAllRequestsByEmployee(emp_id, business_id) {
 }
 
 /**
- * Fetches all requests for an employee, sorted by the latest start date first,
+ * Fetches all requests (PTO or availability) for an employee or manager, sorted by the latest start date first,
  * ensuring the employee belongs to the specified business.
  * 
  * @param {number} emp_id - The ID of the employee.
  * @param {number} business_id - The ID of the business.
- * @param {string} status - The status that is being searched for
- * @param {boolean} isManager - Manager status
+ * @param {string} status - The status that is being searched for.
+ * @param {boolean} isManager - Manager status.
+ * @param {string} requestType - Type of request: 'pto' or 'availability'.
  * @returns {Promise<Array>} - An array of all request records, including day type and times.
  */
-export async function getAllRequestStatusByEmployee(emp_id, business_id, status, isManager) {
+export async function getAllRequestStatusByEmployee(emp_id, business_id, status, isManager, requestType = 'pto') {
     const client = await getClient();
     await client.connect();
 
@@ -595,12 +596,12 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
         WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
     `;
 
-    // Query to fetch all requests sorted by the latest start date first
-    const allRequestsByStatusQuery = `
+    // Query to fetch PTO requests
+    const allPTORequestsQuery = `
         SELECT 
             r.request_id,
             e.f_name,
-            e.l_name,  
+            e.l_name,
             r.created_at,
             r.start_date, 
             r.end_date, 
@@ -611,7 +612,7 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
         ORDER BY created_at DESC;
     `;
 
-    const allRequestsByStatusManagerQuery = `
+    const allPTORequestsManagerQuery = `
         SELECT 
             r.request_id,
             e.f_name,
@@ -626,6 +627,37 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
         ORDER BY created_at DESC;
     `;
 
+    // Query to fetch availability requests
+    const allAvailabilityRequestsQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date,
+            ar.end_date,
+            ar.status
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.emp_id = $1 AND status = $2
+        ORDER BY created_at DESC;
+    `;
+
+    const allAvailabilityRequestsManagerQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.status,
+            ar.start_date,
+            ar.end_date
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE business_id = $1 AND status = $2
+        ORDER BY created_at DESC;
+    `;
+
     try {
         // Check if the employee is associated with the business
         const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
@@ -636,14 +668,24 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
         console.log('Type of isManager: ', typeof isManager);
         console.log('isManager in status script: ', isManager);
 
-        if (isManager === 'true') {
-            const result = await client.query(allRequestsByStatusManagerQuery, [business_id, status]);
-            return result.rows;
+        // Determine which query to use based on request type and manager status
+        let result;
+        if (requestType === 'availability') {
+            if (isManager === 'true') {
+                result = await client.query(allAvailabilityRequestsManagerQuery, [business_id, status]);
+            } else {
+                result = await client.query(allAvailabilityRequestsQuery, [emp_id, status]);
+            }
         } else {
-             // Fetch all requests if the association is confirmed
-            const result = await client.query(allRequestsByStatusQuery, [emp_id, status]);
-            return result.rows;
-        } 
+            // Default to PTO requests
+            if (isManager === 'true') {
+                result = await client.query(allPTORequestsManagerQuery, [business_id, status]);
+            } else {
+                result = await client.query(allPTORequestsQuery, [emp_id, status]);
+            }
+        }
+
+        return result.rows;
     } catch (err) {
         console.error('Error fetching all requests:', err);
         throw err;
@@ -697,6 +739,51 @@ export async function getRequestById(request_id) {
 }
 
 //#endregion
+
+
+/**
+ * Fetches details of a specific availability request based on the request ID, including employee information.
+ * 
+ * @param {number} request_id - The ID of the availability request to fetch.
+ * @returns {Promise<Object|null>} - An object containing all availability request details, or null if not found.
+ */
+export async function getAvailabilityRequestById(request_id) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to fetch availability request details along with employee first name and last name
+    const getAvailabilityRequestByIdQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name AS first_name,
+            e.l_name AS last_name,
+            ar.created_at,
+            ar.start_date,
+            ar.end_date,
+            ar.availability,
+            ar.reason, 
+            ar.status AS request_status
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.request_id = $1;
+    `;
+
+    try {
+        // Fetch the availability request details
+        const result = await client.query(getAvailabilityRequestByIdQuery, [request_id]);
+
+        // Return the availability request details or null if not found
+        return result.rows.length > 0 ? result.rows[0] : null;
+    } catch (err) {
+        console.error('Error fetching availability request by ID:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+//#endregion
+
 
 //#region Add Request For Employee
 
@@ -1027,3 +1114,139 @@ export async function getEmployeeData(emp_id) {
         await client.end();
     }
 }
+
+/**
+ * Adds a new availability change request for an employee.
+ * 
+ * @param {Object} requestData - The request data, including emp_id, business_id, start_date, end_date, availability details, and reason.
+ * @returns {Promise<Object>} - The created availability request record.
+ */
+export async function addAvailabilityRequestForEmployee(requestData) {
+    const client = await getClient();
+    await client.connect();
+
+    const { emp_id, business_id, start_date, end_date, availability, reason } = requestData;
+    const startDate = new Date(start_date);
+    const endDate = end_date ? new Date(end_date) : null;
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id, full_time, created_at 
+        FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to insert the new availability request with a default status of 'Pending'
+    const addAvailabilityQuery = `
+        INSERT INTO availability_requests (emp_id, business_id, start_date, end_date, availability, reason, status, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, 'Pending', CURRENT_TIMESTAMP)
+        RETURNING request_id, start_date, end_date, availability, reason, status;
+    `;
+
+    try {
+        // Verify employee association
+        const employeeCheck = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (employeeCheck.rows.length === 0) {
+            throw new Error('Employee is not associated with the business or is inactive.');
+        }
+
+        // Insert availability request
+        const result = await client.query(addAvailabilityQuery, [
+            emp_id,
+            business_id,
+            startDate,
+            endDate || startDate,
+            JSON.stringify(availability),
+            reason,
+        ]);
+
+        return result.rows[0]; // Return the new request data
+    } catch (error) {
+        console.error('Error inserting availability request:', error);
+        throw new Error('Failed to add availability request.');
+    } finally {
+        await client.end();
+    }
+}
+
+
+/**
+ * Fetches all future availability requests for an employee, sorted by start date,
+ * ensuring the employee belongs to the specified business.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @param {number} business_id - The ID of the business.
+ * @returns {Promise<Array>} - An array of future availability request records.
+ */
+export async function getFutureAvailabilityRequests(emp_id, business_id, isManager) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch future availability requests
+    const futureAvailabilityRequestsQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,  
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.availability
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.emp_id = $1
+          AND ar.start_date > CURRENT_DATE
+        ORDER BY ar.created_at DESC;
+    `;
+
+    // Manager-level query for future availability requests
+    const futureAvailabilityRequestsManagerQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,  
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.availability
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.business_id = $1
+          AND ar.start_date > CURRENT_DATE
+        ORDER BY ar.created_at DESC;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        let result;
+
+        if (isManager === 'true') {
+            // Fetch future availability requests for the manager
+            result = await client.query(futureAvailabilityRequestsManagerQuery, [business_id]);
+        } else {
+            // Fetch future availability requests for the employee
+            result = await client.query(futureAvailabilityRequestsQuery, [emp_id]);
+        }
+
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching future availability requests:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+

@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager, getEmployeeData, saveEmployeeData } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager, getEmployeeData, saveEmployeeData, addAvailabilityRequestForEmployee, getAvailabilityRequestById, getFutureAvailabilityRequests } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -187,10 +187,10 @@ router.get('/getAllRequests', async (req, res) => {
     }
 });
 
-// Route to fetch all requests for a specifric employee, sorted by status
+// Route to fetch all requests for a specific employee, sorted by status
 router.get('/getAllRequestsByStatus', async (req, res) => {
     console.log('Function being called');
-    const { emp_id, business_id, status, isManager } = req.query; // Extract emp_id and business_id from query parameters
+    const { emp_id, business_id, status, isManager, requestType } = req.query; // Extract parameters from query
 
     // Validate input
     if (!emp_id || !business_id || !status) {
@@ -198,11 +198,11 @@ router.get('/getAllRequestsByStatus', async (req, res) => {
     }
 
     console.log('isManager in status router: ', isManager);
-    console.log('Type of isManager: ', typeof isManager);
+    console.log('requestType in status router: ', requestType);
 
     try {
         // Fetch all requests for the given employee and business
-        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status, isManager);
+        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status, isManager, requestType || 'pto'); // Default to PTO if requestType is not provided
 
         // Return the list of all requests in JSON format
         res.status(200).json({ success: true, allRequestsByStatus });
@@ -211,6 +211,7 @@ router.get('/getAllRequestsByStatus', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 // ROute for displaying the request by requestid
 router.get('/getRequestInfo', async (req, res) => {
@@ -232,6 +233,28 @@ router.get('/getRequestInfo', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// Route to fetch details of an availability request by ID
+router.get('/getAvailabilityRequestInfo', async (req, res) => {
+    const { request_id } = req.query;
+
+    if (!request_id) {
+        return res.status(400).json({ success: false, message: 'Request ID is required.' });
+    }
+
+    try {
+        const requestInfo = await getAvailabilityRequestById(request_id);
+        if (!requestInfo) {
+            return res.status(404).json({ success: false, message: 'Availability request not found.' });
+        }
+        res.status(200).json({ success: true, requestInfo });
+    } catch (error) {
+        console.error('Error fetching availability request info:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch availability request info.' });
+    }
+});
+
+
 
 // Route to add a new request for a specific employee
 router.post('/addRequest', async (req, res) => {
@@ -266,11 +289,78 @@ router.post('/addRequest', async (req, res) => {
     }
 });
 
+// Route to add a new availability change request
+router.post('/addAvailabilityRequest', async (req, res) => {
+    const requestData = req.body;
+
+    // Validate required fields in the request data
+    const requiredFields = ['emp_id', 'business_id', 'start_date', 'availability', 'reason'];
+    for (const field of requiredFields) {
+        if (!requestData[field]) {
+            return res.status(400).json({ success: false, message: `Field ${field} is required.` });
+        }
+    }
+
+    // Convert dates from string format to Date format for validation
+    const startDate = new Date(requestData.start_date);
+    const endDate = requestData.end_date ? new Date(requestData.end_date) : null;
+
+    // Check if start_date is before or the same as end_date
+    if (endDate && startDate > endDate) {
+        return res.status(400).json({ success: false, message: 'Start date must be before or equal to the end date.' });
+    }
+
+    try {
+        // Call the function to handle database insertion
+        const newRequest = await addAvailabilityRequestForEmployee(requestData);
+
+        // Return the new request data in JSON format
+        res.status(201).json({ success: true, newRequest });
+    } catch (err) {
+        console.error('Error adding availability request:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+
+
 // Route to update the status of a request (Approve or Reject) and add manager comments
 router.put('/updateRequestStatus', async (req, res) => {
     const { request_id, business_id, status, manager_comments } = req.body;
 
-    console.log("Received Payload:", req.body);
+    console.log("Received Payload:", req.body);// Route to add a new availability change request
+    router.post('/addAvailabilityRequest', async (req, res) => {
+        const requestData = req.body;
+    
+        // Validate required fields in the request data
+        const requiredFields = ['emp_id', 'business_id', 'start_date', 'availability'];
+        for (const field of requiredFields) {
+            if (!requestData[field]) {
+                return res.status(400).json({ success: false, message: `Field ${field} is required.` });
+            }
+        }
+    
+        // Convert dates from string format to Date format for validation
+        const startDate = new Date(requestData.start_date);
+        const endDate = requestData.end_date ? new Date(requestData.end_date) : null;
+    
+        // Check if start_date is before or the same as end_date
+        if (endDate && startDate > endDate) {
+            return res.status(400).json({ success: false, message: 'Start date must be before or equal to the end date.' });
+        }
+    
+        try {
+            // Function to handle the actual insertion into the database
+            const newRequest = await addAvailabilityRequestForEmployee(requestData);
+    
+            // Return the new request data in JSON format
+            res.status(201).json({ success: true, newRequest });
+        } catch (err) {
+            console.error('Error adding availability request:', err);
+            res.status(500).json({ success: false, message: err.message });
+        }
+    });
+
 
     // Validate input
     if (!request_id || !business_id || !status) {
@@ -340,6 +430,27 @@ router.post('/saveEmployeeData', async (req, res) => {
         // Log error and respond with 500 status if saving fails
         console.error('Error saving employee data:', err);
         res.status(500).json({ error: 'Internal server error while saving employee data' });
+    }
+});
+
+//Router to get Future Availability Requests
+router.get('/getFutureAvailabilityRequests', async (req, res) => {
+    const { emp_id, business_id, isManager } = req.query;
+
+    // Validate required fields
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ success: false, message: 'Employee ID and Business ID are required.' });
+    }
+
+    try {
+        // Call the function to fetch future availability requests
+        const futureAvailabilityRequests = await getFutureAvailabilityRequests(emp_id, business_id, isManager);
+
+        // Return the fetched requests in JSON format
+        res.status(200).json({ success: true, futureAvailabilityRequests });
+    } catch (err) {
+        console.error('Error fetching future availability requests:', err);
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 

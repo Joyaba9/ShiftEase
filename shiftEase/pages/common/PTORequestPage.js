@@ -4,64 +4,57 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Dimensions } from
 import NavBar from '../../components/NavBar';
 import AddPTORequestModal from './AddPTORequestModal';
 import OpenPTORequestModal from './OpenPTORequestModal';
+import ChangeAvailabilityModal from './ChangeAvailabilityModal'; 
+import OpenAvailabilityRequestModal from './OpenAvailabilityRequestModal';
 
 const PTORequestPage = () => {
     const [activeTab, setActiveTab] = useState('Upcoming');
     const [addRequestVisible, setAddRequestVisible] = useState(false);
+    const [changeAvailabilityVisible, setChangeAvailabilityVisible] = useState(false);
     const [pendingRequests, setPendingRequests] = useState([]);
+    const [pendingAvailabilityRequests, setPendingAvailabilityRequests] = useState([]);
     const [approvedRequests, setApprovedRequests] = useState([]);
     const [rejectedRequests, setRejectedRequests] = useState([]);
     const [requestVisible, setRequestVisible] = useState(false);
     const [requestID, setRequestID] = useState('');
     const [upcomingRequests, setUpcomingRequests] = useState([]);
+    const [futureAvailabilityRequests, setFutureAvailabilityRequests] = useState([]);
     const [pastRequests, setPastRequests] = useState([]);
-    const [isManager, setIsManager] = useState(false);
+    const [availabilityRequestVisible, setAvailabilityRequestVisible] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+
 
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
     const businessId = loggedInUser?.employee?.business_id;
     const loggedInEmployeeId = loggedInUser?.employee?.emp_id;
+    const loggedInEmployeeFName = loggedInUser?.employee?.f_Name;
+    const loggedInEmployeeLName = loggedInUser?.employee?.l_Name;
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
         const day = String(date.getDate()).padStart(2, '0');
         const year = date.getFullYear();
-        return `${month}/${day}/${year}`;
+        return `${month}-${day}-${year}`;
     };
 
     useEffect(() => {
         if (activeTab === 'Pending') {
-            getAllRequestStatusByEmployee('Pending', isManager);
+            getAllRequestStatusByEmployee('Pending');
+            fetchPendingAvailabilityRequests();
         } else if (activeTab === 'Approved') {
-            getAllRequestStatusByEmployee('Approved', isManager);
+            getAllRequestStatusByEmployee('Approved');
         } else if (activeTab === 'Rejected') {
-            getAllRequestStatusByEmployee('Rejected', isManager);
+            getAllRequestStatusByEmployee('Rejected');
         } else if (activeTab === 'Upcoming') {
-            getAllRequestStatusByEmployee('Upcoming', isManager);
+            getAllRequestStatusByEmployee('Upcoming');
+            fetchFutureAvailabilityRequests();
         } else if (activeTab === 'Past') {
-            getAllRequestStatusByEmployee('Past', isManager);
+            getAllRequestStatusByEmployee('Past');
         }
     }, [activeTab]);
 
-    useEffect(() => {
-        const fetchManagerStatus = async () => {
-            if (!loggedInEmployeeId) return;
-            try {
-                const response = await fetch(`http://localhost:5050/api/employee/checkIfEmployeeIsManager?emp_id=${loggedInEmployeeId}`);
-                const data = await response.json();
-                if (data.success) {
-                    setIsManager(data.isManager);
-                } else {
-                    console.error('Failed to check manager status:', data.message);
-                }
-            } catch (error) {
-                console.error('Error checking manager status:', error);
-            }
-        };
-        fetchManagerStatus();
-    }, [loggedInEmployeeId]);
-
-    const getAllRequestStatusByEmployee = async (status, isManager) => {
+    const getAllRequestStatusByEmployee = async (status) => {
         if (!loggedInEmployeeId || !businessId) {
             alert('Error with employee or business ID');
             return;
@@ -73,16 +66,15 @@ const PTORequestPage = () => {
     
             if (status === 'Pending' || status === 'Approved' || status === 'Rejected') {
                 // For Pending, Approved, and Rejected, use the existing route
-                url = `http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}&isManager=${isManager}`;
+                url = `http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}`;
                 setFunction = status === 'Pending' ? setPendingRequests : status === 'Approved' ? setApprovedRequests : setRejectedRequests;
             } else if (status === 'Upcoming') {
                 // For Upcoming, use the getFutureRequests route
-                url = `http://localhost:5050/api/employee/getFutureRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`;
+                url = `http://localhost:5050/api/employee/getFutureRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`;
                 setFunction = setUpcomingRequests;
             } else if (status === 'Past') {
                 // For Past, use the getPastRequests route
-                url = `http://localhost:5050/api/employee/getPastRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`;
-                console.log('isManager that is passed through frontend: ', isManager);
+                url = `http://localhost:5050/api/employee/getPastRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`;
                 setFunction = setPastRequests;
             }
     
@@ -101,13 +93,62 @@ const PTORequestPage = () => {
         }
     };
 
+
+    const fetchFutureAvailabilityRequests = async () => {
+    
+        try {
+            const response = await fetch(
+                `http://localhost:5050/api/employee/getFutureAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`
+            );
+    
+            if (!response.ok) {
+                throw new Error('Failed to fetch future availability requests');
+            }
+    
+            const data = await response.json();
+    
+            if (data.success) {
+                setFutureAvailabilityRequests(data.futureAvailabilityRequests || []);
+                console.log('Future availability requests fetched successfully:', data.futureAvailabilityRequests);
+            } else {
+                console.error('Error fetching future availability requests:', data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching future availability requests:', error);
+        }
+    };
+    
+
+    
+    const fetchPendingAvailabilityRequests = async () => {
+        try {
+            const response = await fetch(`http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=Pending&requestType=availability`);
+            const data = await response.json();
+            if (response.ok && data.success) {
+                setPendingAvailabilityRequests(data.allRequestsByStatus);
+            }
+        } catch (error) {
+            console.error('Error fetching pending availability requests:', error);
+        }
+    };
+    
     // Add a log in renderTabContent to check if pendingRequests contains data
     const renderTabContent = () => {
         switch (activeTab) {
             case 'Upcoming':
-                return setTabContent(upcomingRequests || []);
-            case 'Pending':
-                return setTabContent(pendingRequests || []);
+                return (
+                    <>
+                      {setTabContent(upcomingRequests || [])}
+                       {renderFutureAvailabilityRequests()}
+                       </>
+                );
+                case 'Pending':
+                    return (
+                        <>
+                            {setTabContent(pendingRequests || [])}
+                            {renderAvailabilityRequests()}
+                        </>
+                    );
             case 'Approved':
                 return setTabContent(approvedRequests || []);
             case 'Rejected':
@@ -119,18 +160,102 @@ const PTORequestPage = () => {
         }
     };
 
+    const renderAvailabilityRequests = () => {
+         return pendingAvailabilityRequests.map((request) => (
+            <View key={request.request_id} style={styles.requestBox}>
+                <View style={styles.requestRow}>
+                    <View style={[styles.requestItem, styles.idColumn]}>
+                        <Text style={styles.requestText}>{request.request_id}</Text>
+                    </View>
+                    <View style={[styles.requestItem, styles.nameColumn]}>
+                        <Text style={styles.requestText}>{loggedInEmployeeFName} {loggedInEmployeeLName}</Text>
+                    </View>
+                    <View style={[styles.requestItem, styles.statusColumn]}>
+                        <View style={styles.makeHorizontal}>
+                            <View style={[styles.statusCircle, { backgroundColor: '#F5C242' }]} />
+                            <Text style={styles.requestText}>Pending</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.requestItem, styles.requestDateColumn]}>
+                        <Text style={styles.requestText}>{formatDate(request.start_date)}</Text>
+                    </View>
+                    <View style={[styles.requestItem, styles.createdOnColumn]}>
+                        <Text style={styles.requestText}>{formatDate(request.end_date)}</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={[styles.bubbleButton, styles.actionColumn]}
+                        onPress={() => handleOpenRequest(request, true)} 
+                    >
+                        <Text style={styles.requestButtonText}>Open Request</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        ));
+    };
+
+
+    const renderFutureAvailabilityRequests = () => {
+        return futureAvailabilityRequests.map((request) => (
+            <View key={request.request_id} style={styles.requestBox}>
+                <View style={styles.requestRow}>
+                    <View style={[styles.requestItem, styles.idColumn]}>
+                        <Text style={styles.requestText}>{request.request_id}</Text>
+                    </View>
+                    <View style={[styles.requestItem, styles.nameColumn]}>
+                        <Text style={styles.requestText}>{loggedInEmployeeFName} {loggedInEmployeeLName}</Text>
+                    </View>
+                    <View style={[styles.requestItem, styles.statusColumn]}>
+                        <View style={styles.makeHorizontal}>
+                            <View style={[styles.statusCircle, { backgroundColor: '#F5C242' }]} />
+                            <Text style={styles.requestText}>Pending</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.requestItem, styles.requestDateColumn]}>
+                        <Text style={styles.requestText}>{formatDate(request.start_date)}</Text>
+                    </View>
+                    <View style={[styles.requestItem, styles.createdOnColumn]}>
+                        <Text style={styles.requestText}>{formatDate(request.end_date)}</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={[styles.bubbleButton, styles.actionColumn]}
+                        onPress={() => handleOpenRequest(request, true)} 
+                    >
+                        <Text style={styles.requestButtonText}>Open Request</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        ));
+    };
+    
     const handleAddRequestVis = () => {
         setAddRequestVisible(true);
     };
 
-    const handleOpenRequest = (requestId) => {
-        console.log("Opening request with ID:", requestId); // Log the ID being passed
-        setRequestID(requestId);
-        setRequestVisible(true);
+    const handleOpenRequest = (request, isAvailabilityRequest = false) => {
+        if (isAvailabilityRequest) {
+            setSelectedRequest(request); 
+            setAvailabilityRequestVisible(true); 
+        } else {
+            if (typeof request === 'object') {
+                setSelectedRequest(request); 
+                setRequestID(request.request_id); 
+            } else {
+                setRequestID(request); 
+            }
+            setRequestVisible(true);
+        }
+    };
+    
+
+    const handleChangeAvailabilityVis = () => {
+        setChangeAvailabilityVisible(true); 
     };
 
     //Hardcoded test content
-    pulledAccount = [{isBusiness: 'no'}];
+    pulledAccount = [
+        {isBusiness: 'no', BusID: '6', EmpID: '6U27'}
+    ];
+    pulledPastRequest = [];
 
     // Updated setTabContent with a check to ensure pulledRequestArray is an array
     const setTabContent = (pulledRequestArray = []) => {
@@ -138,6 +263,7 @@ const PTORequestPage = () => {
             console.error("Expected an array but received:", pulledRequestArray);
             return null;
         }
+
     
         return pulledRequestArray.length === 0 ? (
             <View>
@@ -151,7 +277,7 @@ const PTORequestPage = () => {
                             <Text style={styles.requestText}>{request.request_id}</Text>
                         </View>
                         <View style={[styles.requestItem, styles.nameColumn]}>
-                            <Text style={styles.requestText}>{request.f_name} {request.l_name}</Text>
+                            <Text style={styles.requestText}>{loggedInEmployeeFName} {loggedInEmployeeLName}</Text>
                         </View>
                         <View style={[styles.requestItem, styles.statusColumn]}>
                             <View style={styles.makeHorizontal}>
@@ -160,14 +286,10 @@ const PTORequestPage = () => {
                             </View>
                         </View>
                         <View style={[styles.requestItem, styles.requestDateColumn]}>
-                            <Text style={styles.requestText}>{formatDate(request.created_at)}</Text>
+                            <Text style={styles.requestText}>{formatDate(request.start_date)}</Text>
                         </View>
                         <View style={[styles.requestItem, styles.createdOnColumn]}>
-                            <Text style={styles.requestText}>
-                                {request.start_date === request.end_date
-                                ? formatDate(request.start_date)
-                                : `${formatDate(request.start_date)} - ${formatDate(request.end_date)}`}
-                            </Text>
+                            <Text style={styles.requestText}>{formatDate(request.end_date)}</Text>
                         </View>
                         <TouchableOpacity style={[styles.bubbleButton, styles.actionColumn]} onPress={() => handleOpenRequest(request.request_id)}>
                             <Text style={styles.requestButtonText}>Open Request</Text>
@@ -194,7 +316,7 @@ const PTORequestPage = () => {
     
     return (
         <>
-            <NavBar homeRoute={'Employee'}/>
+            <NavBar homeRoute={'Business'} />
             <View style={styles.screenCenter}>
                 <View style={styles.container}>
                     <View style={styles.headerRow}>
@@ -204,37 +326,39 @@ const PTORequestPage = () => {
                                 <Text style={styles.buttonText}>Add Request</Text>
                             </TouchableOpacity>
                         )}
+                        <TouchableOpacity style={styles.headerBubbleButton} onPress={handleChangeAvailabilityVis}>
+                            <Text style={styles.buttonText}>Change Availability</Text>
+                        </TouchableOpacity>
                     </View>
 
                     <View style={styles.tabContainer}>
                         {/* Tabs */}
-
-                        <TouchableOpacity 
-                            style={[styles.tabButton, activeTab === 'Upcoming' && styles.activeTab]} 
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === 'Upcoming' && styles.activeTab]}
                             onPress={() => setActiveTab('Upcoming')}
                         >
                             <Text style={styles.tabText}>Upcoming</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.tabButton, activeTab === 'Pending' && styles.activeTab]} 
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === 'Pending' && styles.activeTab]}
                             onPress={() => setActiveTab('Pending')}
                         >
                             <Text style={styles.tabText}>Pending</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.tabButton, activeTab === 'Approved' && styles.activeTab]} 
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === 'Approved' && styles.activeTab]}
                             onPress={() => setActiveTab('Approved')}
                         >
                             <Text style={styles.tabText}>Approved</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.tabButton, activeTab === 'Rejected' && styles.activeTab]} 
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === 'Rejected' && styles.activeTab]}
                             onPress={() => setActiveTab('Rejected')}
                         >
                             <Text style={styles.tabText}>Rejected</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.tabButton, activeTab === 'Past' && styles.activeTab]} 
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === 'Past' && styles.activeTab]}
                             onPress={() => setActiveTab('Past')}
                         >
                             <Text style={styles.tabText}>Past</Text>
@@ -245,30 +369,36 @@ const PTORequestPage = () => {
                         <Text style={[styles.requestLabel, styles.idColumn]}>Request ID</Text>
                         <Text style={[styles.requestLabel, styles.nameColumn]}>Employee Name</Text>
                         <Text style={[styles.requestLabel, styles.statusColumn]}>Status</Text>
-                        <Text style={[styles.requestLabel, styles.requestDateColumn]}>Created On</Text>
-                        <Text style={[styles.requestLabel, styles.createdOnColumn]}>Requested Date(s)</Text>
+                        <Text style={[styles.requestLabel, styles.requestDateColumn]}>Requested Start Date</Text>
+                        <Text style={[styles.requestLabel, styles.createdOnColumn]}>Requested End Date</Text>
                         <Text style={[styles.requestLabel, styles.actionColumn]}>Action</Text>
                     </View>
 
-                    <View style={styles.HDivider}/>                   
-                    <View style={styles.scrollWrapper}>
-                        <ScrollView contentContainerStyle={styles.scrollContainer}>
-                            <View style={styles.contentContainer}>{renderTabContent()}</View>
-                        </ScrollView>
-                    </View>
-                    <View style={styles.HDivider}/>
+                    <View style={styles.HDivider} />
+                    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
+                        <View style={styles.contentContainer}>{renderTabContent()}</View>
+                    </ScrollView>
+                    <View style={styles.HDivider} />
 
                     <AddPTORequestModal
                         addRequestVisible={addRequestVisible}
                         setAddRequestVisible={setAddRequestVisible}
-                        //businessId={loggedInBusiness.business.business_id}
                     />
                     <OpenPTORequestModal
                         requestVisible={requestVisible}
                         setRequestVisible={setRequestVisible}
                         requestID={requestID}
-                        business_id={businessId}
-                        isManager={isManager}
+                    />
+                    <ChangeAvailabilityModal
+                        isVisible={changeAvailabilityVisible}
+                        onClose={() => setChangeAvailabilityVisible(false)}
+                        empId={loggedInEmployeeId}
+                        businessId={businessId}
+                    />
+                    <OpenAvailabilityRequestModal
+                        requestVisible={availabilityRequestVisible}
+                        setRequestVisible={setAvailabilityRequestVisible}
+                        requestID={selectedRequest?.request_id}
                     />
                 </View>
             </View>
@@ -386,15 +516,9 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         alignItems: 'center',
         width: '100%',
-        paddingBottom: 20,
     },
     scrollView: {
         maxHeight: 500,
-        width: '100%',
-    },
-     scrollWrapper: {
-        flex: 1,
-        maxHeight: 460, 
         width: '100%',
     },
     contentContainer: {
@@ -426,7 +550,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: '100%',
         marginBottom: 10,
-        paddingHorizontal: 40,
+        paddingHorizontal: 5,
     },
     requestLabel: {
         textAlign: 'center',
@@ -440,7 +564,15 @@ const styles = StyleSheet.create({
     requestText: {
         fontWeight: 600,
     },
-
+    sectionHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    availabilityColumn: {
+        width: '40%',
+    },
     idColumn: { width: '10%' },
     nameColumn: { width: '20%' },
     statusColumn: { width: '20%' },
