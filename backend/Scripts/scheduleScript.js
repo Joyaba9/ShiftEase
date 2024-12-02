@@ -513,9 +513,9 @@ export async function createShiftOffer(shift_id, emp_id) {
             throw new Error(`Shift ID ${shift_id} is not associated with Employee ID ${emp_id}`);
         }
 
-        // Check if a shift offer for this shift_id and emp_id already exists, if it does, throw an error
+        // Check if a shift offer for this shift_id and emp_id already exists (and is not cancelled), if it does, throw an error
         const offerExistsQuery = `
-            SELECT 1 FROM shift_offers WHERE shift_id = $1 AND offered_emp_id = $2
+            SELECT 1 FROM shift_offers WHERE shift_id = $1 AND offered_emp_id = $2 AND offer_status != 'cancelled';
         `;
         const offerExistsResult = await client.query(offerExistsQuery, [shift_id, emp_id]);
 
