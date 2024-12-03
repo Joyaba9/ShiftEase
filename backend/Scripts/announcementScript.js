@@ -40,40 +40,68 @@ class Announcement {
         console.log("getGeneralAnnouncements called with:", businessId);
     
         try {
-            const snapshot = await get(generalRef);
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                console.log('Raw data from general announcements:', data);
+            // Fetch general announcements
+            const generalSnapshot = await get(generalRef);
+            let generalAnnouncements = [];
+            if (generalSnapshot.exists()) {
+                const generalData = generalSnapshot.val();
+                console.log('Raw data from general announcements:', generalData);
     
-                // Filter announcements by businessId
-                const filteredData = Object.keys(data)
-                    .filter(key => data[key].businessId && String(data[key].businessId) === String(businessId))
-                    .sort((a, b) => b.localeCompare(a)) // Sort in reverse order
-                    .reduce((result, key) => {
-                        result[key] = data[key];
-                        return result;
-                    }, {});
-    
-                console.log('Filtered general announcements:', filteredData);
-                return filteredData;
+                // Convert and filter general announcements, then sort by timestamp
+                generalAnnouncements = Object.entries(generalData)
+                    .filter(([key, value]) => value.businessId && String(value.businessId) === String(businessId))
+                    .map(([key, value]) => ({
+                        ...value,
+                        id: key,
+                    }))
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by timestamp in descending order
             } else {
                 console.log('No general announcements found.');
-                return {};
             }
+    
+            // Fetch business announcements
+            const businessRef = ref(this.db, `announcements/business/${businessId}`);
+            const businessSnapshot = await get(businessRef);
+            let businessAnnouncements = [];
+            if (businessSnapshot.exists()) {
+                const businessData = businessSnapshot.val();
+                // Convert business announcements to an array and sort by timestamp
+                businessAnnouncements = Object.entries(businessData)
+                    .map(([key, value]) => ({
+                        ...value,
+                        id: key,
+                    }))
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by timestamp in descending order
+            } else {
+                console.log('No business announcements found.');
+            }
+    
+            // Combine and sort general and business announcements
+            const combinedAnnouncements = [...generalAnnouncements, ...businessAnnouncements]
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+            console.log('Combined and sorted announcements:', combinedAnnouncements);
+            return combinedAnnouncements;
         } catch (error) {
-            console.error('Error retrieving general announcements:', error);
+            console.error('Error retrieving combined announcements:', error);
             throw error;
         }
-    }    
+    }
 
     // Retrieve announcements for a specific business
     async getAnnouncementsForBusiness(businessId) {
-        
         const businessRef = ref(this.db, `announcements/business/${businessId}`);
-
+    
         try {
             const snapshot = await get(businessRef);
-            return snapshot.exists() ? snapshot.val() : {};
+            if (snapshot.exists()) {
+                const announcements = snapshot.val();
+                // Convert object to an array of entries, sort in reverse order, and return it
+                return Object.entries(announcements)
+                    .sort((a, b) => b[0].localeCompare(a[0])) // Reverse based on keys (e.g., timestamps)
+                    .map(([key, value]) => value); // Extract the values only
+            }
+            return [];
         } catch (error) {
             console.error('Error retrieving business announcements:', error);
             throw error;
@@ -85,23 +113,51 @@ class Announcement {
         console.log("getLatestAnnouncement called with:", businessId);
     
         try {
-            const snapshot = await get(generalRef);
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                console.log('Raw data from general announcements:', data);
+            // Fetch general announcements
+            const generalSnapshot = await get(generalRef);
+            let generalAnnouncements = [];
+            if (generalSnapshot.exists()) {
+                const generalData = generalSnapshot.val();
+                console.log('Raw data from general announcements:', generalData);
     
-                // Filter and find the latest announcement by businessId
-                const latestAnnouncement = Object.keys(data)
-                    .filter(key => data[key].businessId && String(data[key].businessId) === String(businessId))
-                    .map(key => ({ id: key, ...data[key] }))
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Sort by timestamp descending
-    
-                console.log('Latest general announcement:', latestAnnouncement);
-                return latestAnnouncement || null; // Return the latest announcement or null if none found
+                // Convert and filter general announcements by businessId, then sort by timestamp
+                generalAnnouncements = Object.keys(generalData)
+                    .filter(key => generalData[key].businessId && String(generalData[key].businessId) === String(businessId))
+                    .map(key => ({
+                        id: key,
+                        ...generalData[key],
+                    }))
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by timestamp descending
             } else {
                 console.log('No general announcements found.');
-                return null;
             }
+    
+            // Fetch business announcements
+            const businessRef = ref(this.db, `announcements/business/${businessId}`);
+            const businessSnapshot = await get(businessRef);
+            let businessAnnouncements = [];
+            if (businessSnapshot.exists()) {
+                const businessData = businessSnapshot.val();
+                // Convert business announcements to an array and sort by timestamp
+                businessAnnouncements = Object.keys(businessData)
+                    .map(key => ({
+                        id: key,
+                        ...businessData[key],
+                    }))
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by timestamp descending
+            } else {
+                console.log('No business announcements found.');
+            }
+    
+            // Combine both general and business announcements
+            const combinedAnnouncements = [...generalAnnouncements, ...businessAnnouncements]
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by timestamp descending
+    
+            // Get the latest announcement (first in the sorted array)
+            const latestAnnouncement = combinedAnnouncements[0];
+    
+            console.log('Latest combined announcement:', latestAnnouncement);
+            return latestAnnouncement || null; // Return the latest announcement or null if none found
         } catch (error) {
             console.error('Error retrieving the latest announcement:', error);
             throw error;

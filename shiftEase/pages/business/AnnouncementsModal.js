@@ -1,5 +1,6 @@
 import React, { useState,useEffect } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal} from 'react-native';
+import { useSelector } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 
@@ -14,6 +15,11 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
     const [pulledGeneralAnnouncement, setPulledGeneralAnnouncement] = useState([]);
     const [pulledBusinessAnnouncement, setPulledBusinessAnnouncement] = useState([]);
 
+    const businessInfo = useSelector((state) => state.business.businessInfo);
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+    const isBroadcast = businessInfo?.business ? false : loggedInUser?.employee ? true : null;
+    console.log("Is an employee or business logged in:", isBroadcast);
+
     useEffect(() => {
         if (announcementsVisible && openAddForm) {
             setShowAddForm(true); // Open the add form when the modal is opened with `openAddForm` true
@@ -21,7 +27,7 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
     }, [announcementsVisible, openAddForm]);
 
     // send an announcement to a specific business or general broadcast
-    const sendAnnouncementToBusiness = async (businessId, messageTitle ,messageContent, isBroadcast = false) => {
+    const sendAnnouncementToBusiness = async (businessId, messageTitle ,messageContent, isBroadcast) => {
         try {
             const response = await fetch('http://localhost:5050/api/announcements/send', {
                 method: 'POST',
@@ -135,7 +141,6 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
     const handleAdd = () => {
         console.log('Announcement Title:', addAnnouncementTitle);
         console.log('Announcement Text:', addAnnouncementText);
-        const isBroadcast = activeTab === 'General';
 
         sendAnnouncementToBusiness(businessId, addAnnouncementTitle, addAnnouncementText, isBroadcast);
 
