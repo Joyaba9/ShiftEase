@@ -1,36 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, Picker } from 'react-native';
 
+// getRequestById - function to get request details from your backend
+const getRequestById = async (requestID) => {
+    try {
+        const response = await fetch(`http://localhost:5050/api/employee/getRequestInfo?request_id=${requestID}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch request details');
+        }
+        const data = await response.json();
+        console.log('Data received from API:', data);
+
+        if (data.success) {
+            console.log('Request info returned from API:', data.requestInfo);
+            return data.requestInfo;
+        } else {
+            throw new Error('Request not found');
+        }
+    } catch (error) {
+        console.error('Error fetching request details:', error);
+        return null;
+    }
+};
 const { width } = Dimensions.get('window');
 
-const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
-
-    //Hardcoded Test Data
-    pulledOpenRequest = [
-        {id: 1, EmpFName: 'John', EmpLName: 'Doe', Status: 'Approved', PTOType: 'Personal',startRequestDate: '2024-12-12', 
-            endRequestDate: '2024-12-12', CreatedAt: '2024-11-05', startTime: '9:00AM', endTime: '5:00PM', role: 'manager',
-            Comment: 'This comment is just to help with formatting and to see if everything works This comment is just to help with formatting and to see if everything works This comment is just to help with formatting and to see if everything works This comment is just to help with formatting and to see if everything works This comment is just to help with formatting and to see if everything works This comment is just to help with formatting and to see if everything work'
-        }
-    ];
-
+const OpenPTORequest = ({ requestVisible, setRequestVisible, requestID, business_id, isManager}) => {
+    const [pulledOpenRequest, setPulledOpenRequest] = useState(null);
     const [canEdit, setCanEdit] = useState(false);
     const [managerComments, setManagerComments] = useState('');
-    const [selectedStatus, setSelectedStatus] = useState(pulledOpenRequest[0].Status);
+    const [selectedStatus, setSelectedStatus] = useState('');
 
     useEffect(() => {
-        if (pulledOpenRequest[0].role === 'manager') {
-            setCanEdit(true);
+        if (requestID) {
+            getRequestById(requestID).then((requestData) => {
+                if (requestData) {
+                    setPulledOpenRequest(requestData);
+                    setManagerComments(requestData.manager_comments || '');
+                    setSelectedStatus(requestData.request_status || ''); // Update to use request_status
+
+                    console.log('Pulled Open Request:', requestData);
+
+                    if (isManager) {
+                        setCanEdit(true);
+                    }
+                }
+            });
         }
-    }, []);
+    }, [requestID]);
+
 
     const handleCancel = () => {
         setRequestVisible(false);
     };
 
-    const handleSubmit = () => {
-        console.log("Submit pressed")
-        //Enter Logic...
+    const handleSubmit = async () => {
+        console.log("Submit pressed");
+        if (!pulledOpenRequest || !selectedStatus) {
+            alert("Request details or status are missing.");
+            return;
+        }
+    
+        console.log("Payload:", {
+            request_id: pulledOpenRequest.request_id,
+            business_id: business_id,
+            status: selectedStatus,
+            manager_comments: managerComments,
+        });
+
+        try {
+            const response = await fetch('http://localhost:5050/api/employee/updateRequestStatus', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    request_id: pulledOpenRequest.request_id,
+                    business_id: business_id,
+                    status: selectedStatus,
+                    manager_comments: managerComments,
+                }),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok && data.success) {
+                alert("Request status updated successfully.");
+                console.log("Updated Request:", data.updatedRequest);
+    
+                setRequestVisible(false);
+            } else {
+                console.error("Failed to update request:", data.message);
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error("Error while updating request:", error);
+            alert("An error occurred while updating the request.");
+        }
     };
+    
 
     return (
         <Modal
@@ -41,7 +108,7 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
         >
             <View style={styles.screenGray}>
                 <View style={styles.OpenRequestContainer}>
-                    <Text style={styles.modalHeader}>Manage a Request</Text>
+                    <Text style={styles.modalHeader}>View a Request</Text>
                     <View style={styles.HDivider} />
 
                     <View style={styles.mainContainer}>
@@ -53,24 +120,24 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
                                 <Text style={styles.sectionLabel}>First Name</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].EmpFName}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.first_name || ''}
+                                    editable={false}
                                 />
                             </View>
                             <View style={styles.empInfoItem}>
                                 <Text style={styles.sectionLabel}>Last Name</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].EmpLName}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.last_name || ''}
+                                    editable={false}
                                 />
                             </View>
                             <View style={styles.empInfoItem}>
                                 <Text style={styles.sectionLabel}>Created At</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].CreatedAt}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? new Date(pulledOpenRequest.created_at).toLocaleDateString() : ''}
+                                    editable={false}
                                 />
                             </View>
                         </View>
@@ -83,8 +150,8 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
                                 <Text style={styles.sectionLabel}>Request Comments</Text>
                                 <TextInput
                                     style={styles.inputComment}
-                                    value={pulledOpenRequest[0].Comment}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.request_comments || ''} // Use request_comments
+                                    editable={false}
                                     multiline
                                 />
 
@@ -94,7 +161,7 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
                                     placeholder="Enter any additional comments"
                                     value={managerComments}
                                     onChangeText={setManagerComments}
-                                    readOnly={!canEdit}
+                                    editable={canEdit}
                                     multiline
                                 />
                             </View>
@@ -103,29 +170,29 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
                                 <Text style={styles.sectionLabel}>Start Date</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].startRequestDate}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? new Date(pulledOpenRequest.start_date).toLocaleDateString() : ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>End Date</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].endRequestDate}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? new Date(pulledOpenRequest.end_date).toLocaleDateString() : ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>Start Time</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].startTime}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.start_time || ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>End Time</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].endTime}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.end_time || ''}
+                                    editable={false}
                                 />
                             </View>
 
@@ -133,8 +200,8 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
                                 <Text style={styles.sectionLabel}>Request ID</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].id}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest ? String(pulledOpenRequest.request_id) : ''}
+                                    editable={false}
                                 />
 
                                 <Text style={styles.sectionLabel}>Request Status</Text>
@@ -146,26 +213,25 @@ const OpenPTORequest = ({ requestVisible, setRequestVisible, businessId }) => {
                                 >
                                     <Picker.Item label="Pending" value="Pending" />
                                     <Picker.Item label="Approved" value="Approved" />
-                                    <Picker.Item label="Denied" value="Denied" />
+                                    <Picker.Item label="Rejected" value="Rejected" />
                                 </Picker>
 
                                 <Text style={styles.sectionLabel}>Time-Off Type</Text>
                                 <TextInput
                                     style={styles.input}
-                                    value={pulledOpenRequest[0].PTOType}
-                                    readOnly={true} 
+                                    value={pulledOpenRequest?.time_off_type || ''} // Use time_off_type
+                                    editable={false}
                                 />
                             </View>
                         </View>
-
-                        
                     </View>
                     
                     <View style={styles.buttonRowContainer}>
+                        { isManager && (
                         <TouchableOpacity style={styles.bubbleButton} onPress={handleSubmit}>
                             <Text style={styles.buttonText}>Submit</Text>
                         </TouchableOpacity>
-
+                        )}
                         <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
                             <Text style={styles.buttonText}>Cancel</Text>
                         </TouchableOpacity>

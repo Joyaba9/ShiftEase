@@ -85,9 +85,15 @@ export async function LoginEmployee(employeeString, password) {
     console.log('Connected to Database');
 
     // SQL query to retrieve employee data
-    const query = `SELECT * FROM employees
-                    WHERE business_id = $1
-                    AND emp_id = $2`;
+        const query = `
+                SELECT 
+                    e.*,
+                    r.is_manager
+                FROM employees e
+                JOIN roles r ON e.role_id = r.role_id
+                WHERE e.business_id = $1
+                AND e.emp_id = $2
+            `;
 
     // Try to execute the query and authenticate with Firebase
     try {

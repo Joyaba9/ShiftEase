@@ -20,6 +20,7 @@ import SchedulePage from './common/ManageSchedule.js';
 import ManageBusinessPage from './business/ManageBusinessPage.js';
 import EditRolesPage from './business/EditRolesPage.js';
 import ViewSchedulePage from './employee/ViewSchedulePage.js';
+import ChangeAvailabilityPage from './employee/ChangeAvailabilityPage.js';
 //import ManagePTORequestPage from './common/ManagePTORequestPage.js';
 import PTORequestPage from './common/PTORequestPage.js';
 
@@ -59,7 +60,7 @@ const NavigationManager = () => {
           setInitialRoute('Welcome');
         } else {
           // If it's desktop, set initial route to LoginPage
-          setInitialRoute('Landing');
+          setInitialRoute('Login');
         }
 
 
@@ -91,6 +92,7 @@ const NavigationManager = () => {
             <Stack.Screen name="ViewSchedule" component={ViewSchedulePage} options={{ headerShown: false }}/>
             {/* <Stack.Screen name="ManagePTORequest" component={ManagePTORequestPage} options={{ headerShown: false }}/> */}
             <Stack.Screen name="PTORequest" component={PTORequestPage} options={{ headerShown: false }}/>
+            <Stack.Screen name="ChangeAvailability" component={ChangeAvailabilityPage} options={{ headerShown: false }}/>
             </Stack.Navigator>
             <Stack.Screen name="LogOut" component={LogOut} options={{ headerShown: false }} />
         </NavigationContainer>

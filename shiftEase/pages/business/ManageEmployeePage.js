@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const ManageEmployeePage = () => {
   const [employees, setEmployees] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [editedEmployee, setEditedEmployee] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [availability, setAvailability] = useState([]);
@@ -16,6 +17,7 @@ const ManageEmployeePage = () => {
 
   useEffect(() => {
     fetchEmployees();
+    fetchRoles();
   }, [businessId]);
 
   const fetchEmployees = async () => {
@@ -95,9 +97,26 @@ const ManageEmployeePage = () => {
           console.error('Error fetching availability:', error);
       }
   };
-  
-    
 
+  const handleDeleteEmployee = async (emp_id) => {
+    try {
+      const response = await fetch(`http://localhost:5050/api/employee/softDeleteEmployee`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: businessId,
+          employeeId: emp_id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete employee');
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      Alert.alert('Error', 'Failed to delete employee.');
+    }
+  };
 
   const handleEdit = async () => {
     try {
@@ -153,6 +172,46 @@ const ManageEmployeePage = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+        const response = await fetch(`http://localhost:5050/api/role/getBusinessRoles?businessId=${businessId}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch roles');
+        }
+
+        const data = await response.json();
+        
+        // Define default roles
+        const defaultRoles = [
+          { role_id: 1, role_name: 'Business' },
+          { role_id: 2, role_name: 'Manager' },
+          { role_id: 3, role_name: 'Employee' },
+        ];
+
+        // Combine default roles with fetched roles, ensuring no duplicates
+        const uniqueRoles = [...defaultRoles, ...data.roles].filter((role, index, self) =>
+            index === self.findIndex((r) => r.role_id === role.role_id)
+        );
+
+        // Set the combined list of roles
+        setRoles(uniqueRoles);
+        console.log("Roles with defaults included:", uniqueRoles); // Debugging log
+    } catch (error) {
+        console.error('Error fetching roles:', error);
+    }
+};
+
+
+
+const getRoleName = (role_id) => {
+  console.log("Finding role for role_id:", role_id); // Debugging line
+  const role = roles.find(r => r.role_id === role_id);
+  console.log("Matched role:", role); // Debugging line
+  return role ? role.role_name : 'Unknown Role';
+};
+
+
+
   const handleAvailabilityChange = (index, field, value) => {
     setAvailability((prev) => {
       const newAvailability = [...prev];
@@ -165,12 +224,16 @@ const ManageEmployeePage = () => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
         for (let min = 0; min < 60; min += 30) {
-            const formattedTime = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:00`; // Include seconds
-            times.push(formattedTime);
+            const value = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:00`; // 24-hour format value
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
+            const displayTime = `${displayHour}:${min.toString().padStart(2, '0')} ${period}`; // 12-hour display format
+            times.push({ value, displayTime });
         }
     }
     return times;
 };
+
 
   const timeOptions = generateTimeOptions();
 
@@ -203,12 +266,20 @@ const ManageEmployeePage = () => {
           {isEditing && editedEmployee && (
             <ScrollView contentContainerStyle={styles.editFormContent} style={styles.editForm}>
               <Text style={styles.editTitle}>Edit Employee</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Role ID"
-                value={editedEmployee.role_id?.toString()}
-                onChangeText={(value) => setEditedEmployee((prev) => ({ ...prev, role_id: value }))}
-              />
+               {/* Role Picker Dropdown */}
+              <Text style={styles.inputLabel}>Role</Text>
+              <Picker
+                 selectedValue={editedEmployee.role_id}
+                 style={styles.picker}
+                 onValueChange={(value) => 
+                   setEditedEmployee((prev) => ({ ...prev, role_id: value }))
+                 }
+                   >
+                  {roles.map((role) => (
+                <Picker.Item key={role.role_id} label={role.role_name} value={role.role_id} />
+                   ))}
+              </Picker>
+
               <TextInput
                 style={styles.input}
                 placeholder="First Name"
@@ -236,31 +307,37 @@ const ManageEmployeePage = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Birthday (YYYY-MM-DD)"
-                value={editedEmployee.birthday}
-                onChangeText={(value) => setEditedEmployee((prev) => ({ ...prev, birthday: value }))}
+                value={editedEmployee.birthday ? editedEmployee.birthday.split('T')[0] : ''}
+                onChangeText={(value) => 
+                setEditedEmployee((prev) => ({ 
+                ...prev, 
+                birthday: value.split('T')[0] // Restrict input to date only
+              }))
+              }
               />
+
 
               <Text style={styles.availabilityTitle}>Availability</Text>
               {availability.map((avail, index) => (
                 <View key={index} style={styles.availabilityRow}>
                   <Text style={styles.dayText}>{avail.day_of_week}</Text>
-                  <Picker
-                    style={styles.availabilityInput}
-                    selectedValue={avail.start_time}
-                    onValueChange={(value) => handleAvailabilityChange(index, 'start_time', value)}
-                  >
-                    {timeOptions.map((time) => (
-                      <Picker.Item key={time} label={time} value={time} />
-                    ))}
+                    <Picker
+                      style={styles.availabilityInput}
+                      selectedValue={avail.start_time}
+                      onValueChange={(value) => handleAvailabilityChange(index, 'start_time', value)}
+                     >
+                      {timeOptions.map((time) => (
+                          <Picker.Item key={time.value} label={time.displayTime} value={time.value} />
+                      ))}
                   </Picker>
                   <Picker
-                    style={styles.availabilityInput}
-                    selectedValue={avail.end_time}
-                    onValueChange={(value) => handleAvailabilityChange(index, 'end_time', value)}
+                      style={styles.availabilityInput}
+                      selectedValue={avail.end_time}
+                      onValueChange={(value) => handleAvailabilityChange(index, 'end_time', value)}
                   >
-                    {timeOptions.map((time) => (
-                      <Picker.Item key={time} label={time} value={time} />
-                    ))}
+                      {timeOptions.map((time) => (
+                          <Picker.Item key={time.value} label={time.displayTime} value={time.value} />
+                      ))}
                   </Picker>
                   <TextInput
                     style={styles.dateInput}
@@ -300,6 +377,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
     minHeight: '100%',
+    alignItems: 'center',
     height: 200,
     minWidth: 950,
   },
@@ -307,9 +385,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     paddingBottom: 20,
+    height: 200,
+    minWidth: 950,
   },
   gradient: {
-    width: '95%',
+    width: '90%',            // Reduce width to ensure centering works better
+    alignSelf: 'center',     // Center the gradient within the container
     borderRadius: 10,
     padding: 20,
     shadowColor: '#000',
@@ -328,7 +409,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 4,
-    width: '90%',
+    width: '100%',
     marginTop: 20,
   },
   topBar: {
@@ -424,6 +505,21 @@ const styles = StyleSheet.create({
     width: 300,
     height: 50,
   },
+  picker: {
+    height: 50,
+    width: '100%',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    backgroundColor: '#fff',
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  }
+
 });
 
 export default ManageEmployeePage;

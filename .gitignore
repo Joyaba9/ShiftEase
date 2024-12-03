@@ -17,6 +17,7 @@ npm-debug.log
 yarn-debug.log
 
 SQL-gcloud.json
+windy-site-436113-j3-ae58fd58b6d4.json
 
 # Ignore downloaded archives
 backend/google-cloud-cli-*.tar.gz

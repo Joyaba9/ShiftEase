@@ -4,8 +4,8 @@ import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
 import NavBar from '../../components/NavBar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchScheduleAPI } from '../../../backend/api/scheduleApi';
-import { createWeeklyScheduleAPI, createShiftAPI } from '../../../backend/api/scheduleApi';
-import { getTotalHoursColor, formatTime, calculateHoursDifference } from '../../components/schedule_components/scheduleUtils';
+import { createWeeklyScheduleAPI, createShiftAPI, updateShiftAPI, removeShiftAPI } from '../../../backend/api/scheduleApi';
+import { getTotalHoursColor, formatTime, calculateHoursDifference, convertRangeTo24HourFormat, convertTo24HourFormat } from '../../components/schedule_components/scheduleUtils';
 import { getWeekDates, getDayView, getStartOfWeek } from '../../components/schedule_components/useCalendar';
 import HeaderControls from '../../components/schedule_components/HeaderControls';
 import EmployeeList from '../../components/schedule_components/EmployeeList';
@@ -14,12 +14,15 @@ import ScheduleGrid from '../../components/ScheduleGrid';
 import ShiftControls from '../../components/schedule_components/ShiftControls';
 
 const SchedulePage = () => {
-    // Get businessId from Redux store
-    const loggedInUser = useSelector((state) => state.business.businessInfo);
-    const businessId = loggedInUser?.business?.business_id;
-    //console.log(loggedInUser);
-    //console.log(businessId);
 
+    // Get loggedInUser from Redux store for both business and employee
+    const businessInfo = useSelector((state) => state.business.businessInfo);
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+
+    // Determine businessId based on user type
+    const businessId = businessInfo?.business?.business_id || loggedInUser?.employee?.business_id;
+    const homeRoute = businessInfo?.business ? 'Business' : loggedInUser?.employee ? 'Employee' : 'Login';
+    
     const [maxHours, setMaxHours] = useState(500);  // Set initial max hours
     const [totalHours, setTotalHours] = useState(0);
 
@@ -33,9 +36,9 @@ const SchedulePage = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
 
-    console.log("Today's date:", new Date().toISOString().slice(0, 10));
-    console.log("Current date state:", currentDate);
-    console.log("Start of the week:", getStartOfWeek(currentDate));
+    // console.log("Today's date:", new Date().toISOString().slice(0, 10));
+    // console.log("Current date state:", currentDate);
+    // console.log("Start of the week:", getStartOfWeek(currentDate));
 
     // Reference for the schedule grid (used for handling drag-and-drop)
     const scheduleGridRef = useRef(null);
@@ -57,13 +60,15 @@ const SchedulePage = () => {
     const [shiftsData, setShiftsData] = useState([]);
     const [buttonText, setButtonText] = useState("Create Schedule");
     const [isLoading, setIsLoading] = useState(true);
+    const [tempMessage, setTempMessage] = useState(null);
     
-    const [rowMappingBySchedule, setRowMappingBySchedule] = useState(() => {
-        // Load from local storage on initial load
-        const storedMapping = localStorage.getItem("rowMappingBySchedule");
-        return storedMapping ? JSON.parse(storedMapping) : {};
-    });
+    //console.log("Computed dates:", dates);
 
+    const showTemporaryMessage = (message) => {
+        setTempMessage(message);
+        setTimeout(() => setTempMessage(null), 5000);
+    };
+    
     // Custom hook to handle employee and schedule-related data
     const { 
         employees, 
@@ -77,34 +82,7 @@ const SchedulePage = () => {
         setShiftTimes,
         setEmployeeAssignments,
         setShiftAssignments
-    } = useEmployeeData(businessId);
-
-    useEffect(() => {
-        localStorage.setItem("rowMappingBySchedule", JSON.stringify(rowMappingBySchedule));
-    }, [rowMappingBySchedule]);
-
-    // Load row mapping on schedule ID change
-    useEffect(() => {
-        const storedMapping = localStorage.getItem("rowMappingBySchedule");
-        const parsedMapping = storedMapping ? JSON.parse(storedMapping) : {};
-        if (scheduleId && parsedMapping[scheduleId]) {
-            setRowMappingBySchedule(parsedMapping);
-            console.log("Loaded rowMapping for schedule ID from storage:", parsedMapping[scheduleId]);
-        }
-    }, [scheduleId]);
-
-    // Load total hours from local storage on schedule ID change
-    useEffect(() => {
-        if (scheduleId) {
-            const savedTotalHours = localStorage.getItem(`totalHours_${scheduleId}`);
-            if (savedTotalHours) {
-                setTotalHours(parseInt(savedTotalHours, 10));
-                console.log(`Loaded total hours from storage for schedule ID ${scheduleId}:`, savedTotalHours);
-            } else {
-                console.warn(`No total hours found in storage for schedule ID ${scheduleId}`);
-            }
-        }
-    }, [scheduleId]);
+    } = useEmployeeData(businessId, scheduleId, dates, showTemporaryMessage);//view, currentDate
 
     // Load the existing schedule and shifts when the component mounts
     useEffect(() => {
@@ -133,21 +111,7 @@ const SchedulePage = () => {
                     setShiftsData(existingSchedule.shifts);
                     console.log("Loaded Shifts Data: ", existingSchedule.shifts);
 
-                    // Check the row mapping for the loaded schedule
-                    const loadedRowMapping = rowMappingBySchedule[scheduleId] || {};
-                    if (Object.keys(loadedRowMapping).length === 0) {
-                        console.warn(`Row mapping not found for schedule ID: ${scheduleId}`);
-                    }
-
-                    mapShiftsToAssignments(existingSchedule.shifts, scheduleId, loadedRowMapping);
-                    
-                    // Load saved shift hours for employees
-                    const savedEmployeeHours = JSON.parse(localStorage.getItem(`employeeHours_${scheduleId}`) || "{}");
-                    employees.forEach((emp) => {
-                        emp.shiftHours = savedEmployeeHours[emp.emp_id] || 0;
-                    });
-                    console.log("Updated employees with shiftHours from local storage:", employees);
-                    setEmployeeAssignments(employees);
+                    mapShiftsToAssignments(existingSchedule.shifts);
                     
                 } else {
                     setScheduleId(null);
@@ -172,27 +136,25 @@ const SchedulePage = () => {
             }
         };
         loadSchedule();
-    }, [businessId, currentDate, rowMappingBySchedule]);
+    }, [businessId, currentDate]);
 
     // Verify that dates are consistent and not changing unexpectedly
-    useEffect(() => {
-        console.log("Dates in useMemo:", dates);
-    }, [dates]);
+    // useEffect(() => {
+    //     console.log("Dates in useMemo:", dates);
+    // }, [dates]);
 
     // Map shifts to assignments whenever shiftsData changes
     useEffect(() => {
         if (shiftsData.length > 0 && dates.length > 0 && scheduleId) {
-            const loadedRowMapping = rowMappingBySchedule[scheduleId] || {};
-            mapShiftsToAssignments(shiftsData, scheduleId, loadedRowMapping);
+            mapShiftsToAssignments(shiftsData, scheduleId);
         }
-    }, [shiftsData, dates, scheduleId, rowMappingBySchedule]);
+    }, [shiftsData, dates, scheduleId]);
 
-    const mapShiftsToAssignments = (shifts, scheduleId, rowMapping) => {
-        console.log("Mapping shifts with rowMapping:", rowMapping);
+    const mapShiftsToAssignments = (shifts) => {
         const loadedEmployeeAssignments = {};
         const loadedShiftAssignments = {};
-
-        console.log("Row Mapping for schedule:", scheduleId, rowMapping);
+        let totalHours = 0;
+        const employeeHoursMap = {};
 
         // Iterate over each shift object in `existingSchedule.shifts`
         shifts.forEach((shift) => {
@@ -207,17 +169,13 @@ const SchedulePage = () => {
             
             // Find the column index for the shift date
             const colIndex = formattedDates.findIndex(date => date === shiftDateFormatted);
-            
-            console.log('Column Index: ', colIndex)
-            console.log(`Shift Date: ${shiftDateFormatted}, Column Index: ${colIndex}`);
-            console.log("Comparing Shift Date:", shiftDateFormatted, "with Dates:", formattedDates);
 
             if (colIndex !== -1) {
-                // Get the saved employee ID and find the row index from rowMapping
-                const rowIndex = rowMapping[shift.employeeId]; //?? 0;
+                // Get the saved employee ID and find the row index from shifts data 
+                const rowIndex = shift.rowIndex ?? 0;
                 console.log("RowIndex: ", rowIndex);
                 if (rowIndex === undefined) {
-                    console.warn(`No row mapping found for employee ID ${shift.employeeId}; defaulting to row 0.`);
+                    console.warn(`No row index found for employee ID ${shift.employeeId}; defaulting to row 0.`);
                 }
                 const safeRowIndex = rowIndex ?? 0;
                 // Generate the cell ID based on employeeId and column index
@@ -231,18 +189,35 @@ const SchedulePage = () => {
     
                 // Assign shift timing to the corresponding cell
                 loadedShiftAssignments[cellId] = `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`;
-    
                 console.log(`Mapped cell ${cellId}:`, loadedEmployeeAssignments[cellId], loadedShiftAssignments[cellId]);
+            
+                // Calculate shift hours for the employee
+                const shiftHours = calculateHoursDifference(shift.startTime, shift.endTime);
+                console.log(`Shift hours calculated for ${f_name} ${l_name}: ${shiftHours}`);
+
+                totalHours += shiftHours;
+            
+                // Add hours to the employee's total
+                if (!employeeHoursMap[shift.employeeId]) {
+                    employeeHoursMap[shift.employeeId] = 0;
+                }
+                employeeHoursMap[shift.employeeId] += shiftHours;
+        
             }
         });
 
+        // Update state with recalculated hours
+        employees.forEach(emp => {
+            emp.shiftHours = employeeHoursMap[emp.emp_id] || 0;
+            console.log(`Updated shift hours for ${emp.f_name} ${emp.l_name}: ${emp.shiftHours}`);
+        });
+        setTotalHours(totalHours);
         setEmployeeAssignments(loadedEmployeeAssignments);
         setShiftAssignments(loadedShiftAssignments);
-    };
 
-    useEffect(() => {
-        console.log("Current rowMappingBySchedule state:", rowMappingBySchedule);
-    }, [rowMappingBySchedule]);
+        console.log("Calculated total hours:", totalHours);
+        console.log("Updated employee shift hours:", employees);
+    };
 
     // Function to handle the selection of a role filter option
     const handleSelectTitle = (selectedTitle) => {
@@ -310,6 +285,7 @@ const SchedulePage = () => {
     // Color calculation for total hours display based on current values
     const totalHoursColor = getTotalHoursColor(totalHours, maxHours);
 
+    
     const handleCreateSchedule = async () => {
         console.log("Starting schedule creation...");
         if (!businessId) {
@@ -318,87 +294,160 @@ const SchedulePage = () => {
         }
     
         try {
-            //const weekStartDate = currentDate.toISOString().slice(0, 10);
             const weekStartDate = getStartOfWeek(currentDate);
+            console.log('Week start date: ', weekStartDate);
+    
+            const formattedWeekStartDate = `${weekStartDate.getFullYear()}-${(weekStartDate.getMonth() + 1)
+                .toString()
+                .padStart(2, '0')}-${weekStartDate.getDate().toString().padStart(2, '0')}`;
+            console.log('Formatted week start date: ', formattedWeekStartDate);
     
             // Create the weekly schedule
-            const createdSchedule = await createWeeklyScheduleAPI(businessId, weekStartDate);
-            
+            const createdSchedule = await createWeeklyScheduleAPI(businessId, formattedWeekStartDate);
+    
             const newMapping = {};
             const employeeHours = {};
-
+            const updatedEmployeeAssignments = { ...employeeAssignments };
+    
             // Recalculate each employee's shift hours
-            const updatedEmployeeAssignments = {...employeeAssignments};
             for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
                 const employee = updatedEmployeeAssignments[cellId];
-                if (employee) {
-                    const [startTime, endTime] = shiftTime.split(' - ');
-                    const shiftHours = calculateHoursDifference(startTime.trim(), endTime.trim());
-
-                    // Update shiftHours for this employee
-                    employee.shiftHours = (employee.shiftHours || 0) + shiftHours;
-                    
-                    // Log the calculated shift hours for verification
-                    console.log(`Calculated shift hours for employee ${employee.emp_id}:`, employee.shiftHours);
+                if (employee && shiftTime) {
+                    console.log(`Processing shift time: ${shiftTime}`);
+                    const [startTimeStr, endTimeStr] = shiftTime.split(' - ');
+    
+                    // Validate before converting to 24-hour format
+                    if (startTimeStr && endTimeStr) {
+                        const startTime = convertTo24HourFormat(startTimeStr.trim());
+                        const endTime = convertTo24HourFormat(endTimeStr.trim());
+                        const shiftHours = calculateHoursDifference(startTime, endTime);
+    
+                        employee.shiftHours = (employee.shiftHours || 0) + shiftHours;
+                        console.log(`Calculated shift hours for employee ${employee.emp_id}:`, employee.shiftHours);
+                    } else {
+                        console.error(`Invalid shift time format for ${shiftTime}. Expected "start - end" format.`);
+                    }
                 }
             }
-
+    
             // Loop through grid cells and save each shift
             for (const [cellId, shiftTime] of Object.entries(shiftAssignments)) {
                 const employee = employeeAssignments[cellId];
-                if (employee) {
-                    
-                    // Extract rowIndex and colIndex from cellId to get the date for this shift
+                if (employee && shiftTime) {
                     const [rowIndex, colIndex] = cellId.split('-');
-
-                    // Record rowIndex in the mapping, associating it with the employee's ID
                     newMapping[employee.emp_id] = parseInt(rowIndex, 10);
-                    
-                    const [startTime, endTime] = shiftTime.split(' - ');
-
-                    // Calculate the date for the shift based on the week start date and column index (day of the week)
-                    const shiftDate = new Date(weekStartDate);
-                    shiftDate.setDate(shiftDate.getDate() + parseInt(colIndex));
-                    const formattedDate = shiftDate.toISOString().slice(0, 10); // Format to 'YYYY-MM-DD'
     
-                    console.log("Creating shift for:", employee.emp_id, formattedDate, startTime.trim(), endTime.trim());  // Log before calling API
-
-                    // Save shift for this employee on the specific date and time
-                    await createShiftAPI(
-                        employee.emp_id,
-                        createdSchedule.scheduleId,
-                        formattedDate,
-                        startTime.trim(),
-                        endTime.trim(),
-                    );
-
-                    // Store employee shift hours
-                    employeeHours[employee.emp_id] = employee.shiftHours;
+                    const [startTimeStr, endTimeStr] = shiftTime.split(' - ');
+                    if (startTimeStr && endTimeStr) {
+                        const startTime = convertTo24HourFormat(startTimeStr.trim());
+                        const endTime = convertTo24HourFormat(endTimeStr.trim());
+    
+                        // Calculate the date for the shift
+                        const shiftDate = new Date(weekStartDate);
+                        shiftDate.setDate(shiftDate.getDate() + parseInt(colIndex));
+                        const formattedDate = shiftDate.toISOString().slice(0, 10);
+    
+                        console.log("Creating shift for:", employee.emp_id, formattedDate, startTime, endTime, parseInt(rowIndex, 10));
+    
+                        // Save shift with 24-hour format times
+                        await createShiftAPI(
+                            employee.emp_id,
+                            createdSchedule.scheduleId,
+                            formattedDate,
+                            startTime,
+                            endTime,
+                            parseInt(rowIndex, 10)
+                        );
+    
+                        // Store employee shift hours
+                        employeeHours[employee.emp_id] = employee.shiftHours;
+                    } else {
+                        console.error(`Invalid shift time format for ${shiftTime}. Expected "start - end" format.`);
+                    }
                 }
             }
-            // Save the employee hours mapping to localStorage
-            localStorage.setItem(`employeeHours_${createdSchedule.scheduleId}`, JSON.stringify(employeeHours));
-            console.log("Employee hours saved to localStorage:", JSON.parse(localStorage.getItem(`employeeHours_${createdSchedule.scheduleId}`)));
-
-            // Save total hours to localStorage with the schedule ID as a key
-            localStorage.setItem(`totalHours_${createdSchedule.scheduleId}`, totalHours);
-            console.log("Total hours saved to localStorage:", localStorage.getItem(`totalHours_${createdSchedule.scheduleId}`));
-
-            // Store the new mapping for this specific schedule ID
-            setRowMappingBySchedule((prev) => {
-                const updatedMapping = { ...prev, [createdSchedule.scheduleId]: newMapping };
-                // Save updated mapping to local storage
-                localStorage.setItem("rowMappingBySchedule", JSON.stringify(updatedMapping));
-                return updatedMapping;
-            });
-
-            console.log("Row Mapping for schedule:", createdSchedule.scheduleId, newMapping);
-
+            
             alert("Schedule and shifts created successfully!");
     
         } catch (error) {
             console.error("Error creating schedule:", error);
             alert("Failed to create schedule. Please try again.");
+        }
+    };
+
+    const handleUpdateSchedule = async () => {
+        console.log('Dates:', dates);
+        console.log('Shifts Data:', shiftsData);
+
+        try {
+            // Iterate over each shift in the previously loaded schedule
+            for (const previousShift of shiftsData) {
+                // Construct cellId for the previous shift
+                const colIndex = dates.findIndex(
+                    date => new Date(date).toISOString().split('T')[0] === previousShift.date.split('T')[0]
+                );
+                const cellId = `${previousShift.rowIndex}-${colIndex}`;
+
+                // Log previous shift and cellId
+                console.log('Checking previous shift:', previousShift);
+                console.log('Calculated cellId:', cellId);
+
+                const currentShiftTime = shiftAssignments[cellId];
+
+                if (!currentShiftTime) {
+                    // The cell is empty, but there was a shift before - remove it
+                    if (previousShift.shiftId) {
+                        await removeShiftAPI(previousShift.shiftId);
+                        console.log(`Removed shift for cell ${cellId}`);
+                    } else {
+                        console.warn(`Shift ID missing for previous shift in cell ${cellId}`);
+                    }
+                } else if (currentShiftTime) {
+                    const [newStartTime, newEndTime] = currentShiftTime.split(' - ').map(convertTo24HourFormat);
+
+                    if (
+                        newStartTime !== previousShift.startTime ||
+                        newEndTime !== previousShift.endTime
+                    ) {
+                        // Update the shift if the times have changed
+                        await updateShiftAPI(
+                            previousShift.shiftId,
+                            newStartTime,
+                            newEndTime,
+                            `Shift on ${previousShift.date}`
+                        );
+                        console.log(`Updated shift for cell ${cellId}`);
+                    }
+                }
+            }
+
+            // Handle new shifts added in the grid but not present in shiftsData
+            for (const cellId in employeeAssignments) {
+                const employee = employeeAssignments[cellId];
+                const currentShiftTime = shiftAssignments[cellId];
+                const [rowIndex, colIndex] = cellId.split('-').map(Number);
+                const shiftDate = new Date(dates[colIndex]).toISOString().split('T')[0];
+
+                if (
+                    currentShiftTime &&
+                    !shiftsData.some(
+                        shift =>
+                            `${shift.rowIndex}-${dates.findIndex(date => new Date(date).toISOString().split('T')[0] === shift.date.split('T')[0])}` === cellId
+                    )
+                ) {
+                    // A new shift is present in the grid but not in the loaded data - create it
+                    if (employee && employee.emp_id) {
+                        const [startTime, endTime] = currentShiftTime.split(' - ').map(convertTo24HourFormat);
+                        await createShiftAPI(employee.emp_id, scheduleId, shiftDate, startTime, endTime, rowIndex);
+                        console.log(`Created new shift for cell ${cellId}`);
+                    }
+                }
+            }
+
+            alert('Schedule updated successfully!');
+        } catch (error) {
+            console.error('Error updating schedule:', error);
+            alert('Failed to update schedule. Please try again.');
         }
     };
 
@@ -409,7 +458,7 @@ const SchedulePage = () => {
                 showsHorizontalScrollIndicator={false}
         >
             <View style={styles.container}>
-                <NavBar homeRoute={'Business'}/>
+                <NavBar homeRoute={homeRoute}/>
 
                 {/* Dropdown menu for role filter */}
                 {isDropdownVisible && (
@@ -433,6 +482,11 @@ const SchedulePage = () => {
                 
                 {/* Section to display and set max hours and total hours */}
                 <View style={styles.mainHoursContainer}>
+                    {tempMessage && (
+                        <Text style={{color: 'red', fontSize: 15, marginRight: 10}}>{tempMessage}</Text>
+                        
+                    )}
+
                     <Text style={styles.hrTitle}>Max Desired Hours:</Text>
                     <TextInput
                         style={styles.maxHoursInput}
@@ -514,7 +568,10 @@ const SchedulePage = () => {
                                         onBlur={handleRowCountBlur}
                                     />
                                 </View>
-                                <TouchableOpacity style={styles.createBtn} onPress={handleCreateSchedule}>
+                                <TouchableOpacity 
+                                    style={styles.createBtn} 
+                                    onPress={buttonText === "Create Schedule" ? handleCreateSchedule : handleUpdateSchedule}
+                                >
                                     <Text style = {{ color: '#fff' }}>{buttonText}</Text>
                                 </TouchableOpacity>
                             </View>  

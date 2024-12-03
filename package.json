@@ -3,6 +3,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
     "@google-cloud/cloud-sql-connector": "^1.4.0",
+    "@google-cloud/storage": "^7.14.0",
     "@react-native-picker/picker": "^2.9.0",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
@@ -16,6 +17,8 @@
     "expo-status-bar": "~1.12.1",
     "express": "^4.21.0",
     "firebase": "^10.14.1",
+    "mime": "^4.0.4",
+    "multer": "^1.4.5-lts.1",
     "pg": "^8.13.1",
     "react-dom": "18.2.0",
     "react-native-calendars": "^1.1307.0",

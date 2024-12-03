@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, FlatList, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Picker } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -15,60 +15,99 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
     const [ssn, setSSN] = useState('');
     const [role, setRole] = useState('Select Role');
     const [roles, setRoles] = useState([]); // Store roles fetched from the backend
-    const [selectedRoleId, setSelectedRoleId] = useState(null); // Store selected role ID
+    const [selectedRoleId, setSelectedRoleId] = useState('Select Role'); // Store selected role ID
+    const [employmentType, setEmploymentType] = useState('Select Employment Type'); 
+    const [isEmploymentDropdownVisible, setIsEmploymentDropdownVisible] = useState(false);
+ 
+    const formatDOB = (date) => {
+        const [month, day, year] = date.split('/');
+        if (!month || !day || !year || month.length !== 2 || day.length !== 2 || year.length !== 4) {
+            return null; // Return null for invalid input
+        }
+        return `${year}-${month}-${day}`;
+    };
 
+    const handleDOBInput = (input) => {
+        // Remove all non-numeric characters
+        const cleaned = input.replace(/\D+/g, '');
+        
+        // Format as MM/DD/YYYY
+        const formatted =
+            cleaned.length > 6
+                ? `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4, 8)}`
+                : cleaned.length > 4
+                ? `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4)}`
+                : cleaned.length > 2
+                ? `${cleaned.substring(0, 2)}/${cleaned.substring(2)}`
+                : cleaned;
+    
+        setDOB(formatted);
+    };
 
     const handleAddEmp = async () => {
-        if (!fName || !lName || !dob || !email || !ssn || !selectedRoleId) {
-            alert('Please make sure all fields are filled in.');
+        if (!fName || !lName || !dob || !email || !ssn) {
+            alert('Please fill out all fields.');
             return;
         }
-
+    
+        if (selectedRoleId === null || selectedRoleId === 'Select Role') {
+            alert('Please select a valid role.');
+            return;
+        }
+    
+        if (employmentType === 'Select Employment Type') {
+            alert('Please select an Employment Type.');
+            return;
+        }
+    
+        // Derive full_time from employmentType
+        const fullTime = employmentType === 'Full-Time';
+    
+        // Convert MM/DD/YYYY to YYYY-MM-DD
+        const formattedDOB = formatDOB(dob);
+    
+        if (!formattedDOB) {
+            alert('Invalid date format. Please use MM/DD/YYYY.');
+            return;
+        }
+    
         try {
-            console.log('Payload being sent:', {
+            const payload = {
                 role: selectedRoleId,
                 fName,
                 lName,
                 email,
                 ssn,
-                dob,
+                dob: formattedDOB, // Use the transformed date
                 businessId,
-            });
-        
+                full_time: fullTime,
+            };
+            console.log('Payload being sent:', payload);
+    
             const response = await fetch('http://localhost:5050/api/employee/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    role: selectedRoleId, // This should be the role ID
-                    fName,
-                    lName,
-                    email,
-                    ssn,
-                    dob,
-                    businessId,
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
             });
-        
+    
             const data = await response.json();
-        
+    
             if (response.ok) {
-                alert('Added employee successfully');
-                // Clear input fields
+                alert(`Added employee successfully!\n\nEmployee ID: ${data.employee.empId}. Use ${data.employee.businessId}U${data.employee.empId} when logging in as an employee.\n\nPlease note this ID for future reference.`);
+                // Clear all fields
                 setFName('');
                 setLName('');
                 setDOB('');
                 setEmail('');
                 setSSN('');
-                setRole('Select Role');
-                setSelectedRoleId(null); 
+                setSelectedRoleId('Select Role');
+                setEmploymentType('Select Employment Type');
             } else {
                 console.error('Failed to add employee:', data);
                 alert(data.message || 'Failed to add employee');
             }
-        } catch (err) {
-            console.error('Error during adding emp:', err);
+        } catch (error) {
+            console.error('Error during adding emp:', error);
             alert('Error adding employee');
         }
     };
@@ -95,6 +134,7 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
         if (addEmpVisible) {
         fetchRoles();
         }
+        console.log('Roles: ', roles);
     }, [addEmpVisible]);
     
     const handleSelectRole = (selectedRole) => {
@@ -240,6 +280,42 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                             </View>
                         )}
                         </View>
+
+                          {/* Employment Type Dropdown */}
+                          <View style={styles.mobileInputGroup}>
+                                            <Text style={styles.label}>Employment Type</Text>
+                                            <TouchableOpacity
+                                                style={styles.mobileDropdownButton}
+                                                onPress={() => setIsEmploymentDropdownVisible((prev) => !prev)}
+                                            >
+                                                <Text style={styles.dropdownText}>
+                                                    {employmentType !== 'Select Employment Type' ? employmentType : 'Select Employment Type'}
+                                                </Text>
+                                            </TouchableOpacity>
+
+                                            {isEmploymentDropdownVisible && (
+                                                <View style={styles.dropdownContainer}>
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownItem}
+                                                        onPress={() => {
+                                                            setEmploymentType('Full-Time');
+                                                            setIsEmploymentDropdownVisible(false);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.dropdownItemText}>Full-Time</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownItem}
+                                                        onPress={() => {
+                                                            setEmploymentType('Part-Time');
+                                                            setIsEmploymentDropdownVisible(false);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.dropdownItemText}>Part-Time</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
+                                        </View>
             
                         {/* SSN Input */}
                         <View style={styles.mobileInputGroup}>
@@ -308,9 +384,10 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                                     <Text style={styles.label}>Date of Birth</Text>
                                     <TextInput 
                                         style={styles.input} 
-                                        placeholder="yyyy-mm-dd" 
+                                        placeholder="MM/DD/YYYY" 
                                         value={dob} 
-                                        onChangeText={setDOB} 
+                                        onChangeText={handleDOBInput} 
+                                        keyboardType="number-pad" 
                                     />
                                 </View>
 
@@ -329,51 +406,59 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
                             <View style={styles.inputRow}>
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Role</Text>
-                                    <TouchableOpacity style={styles.dropdownButton} onPress={() => setIsDropdownVisible((prev) => !prev)}>
-                                        <Text style={styles.dropdownText}>{role}</Text>
-                                    </TouchableOpacity>
-
-                                    {isDropdownVisible && (
-                                        <View style={styles.dropdownContainer}>
-                                            <FlatList
-                                                data={roles}
-                                                keyExtractor={(item) => item.role_id.toString()}
-                                                renderItem={({ item }) => (
-                                                    <TouchableOpacity
-                                                        style={styles.dropdownItem}
-                                                        onPress={() => {
-                                                            console.log('Selected role ID:', item.role_id); // Log the role ID for debugging
-                                                            setRole(item.role_name); 
-                                                            setSelectedRoleId(item.role_id); 
-                                                            setIsDropdownVisible(false); 
-                                                        }}
-                                                    >
-                                                        <Text style={styles.dropdownItemText}>{item.role_name}</Text>
-                                                    </TouchableOpacity>
-                                                )}
-                                            />
-                                        </View>
-                                    )}
+                                    <Picker
+                                        selectedValue={selectedRoleId}
+                                        style={styles.input}
+                                        onValueChange={(itemValue, itemIndex) => {
+                                            setSelectedRoleId(itemValue);
+                                        }}
+                                    >
+                                        <Picker.Item label="Select Role" value={null} />
+                                        {roles.slice(1).map((role) => (
+                                            <Picker.Item key={role.role_id} label={role.role_name} value={role.role_id} />
+                                        ))}
+                                    </Picker>
                                 </View>
-
+                                
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Last Four of SSN</Text>
-                                    <TextInput 
-                                        style={styles.input} 
-                                        placeholder="Enter SSN" 
-                                        value={ssn} 
-                                        onChangeText={setSSN} 
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Enter SSN"
+                                        value={ssn}
+                                        onChangeText={(text) => {
+                                            const sanitized = text.replace(/\D/g, ''); // Allow only digits
+                                            setSSN(sanitized.slice(0, 4)); // Restrict to 4 characters
+                                        }}
+                                        keyboardType="numeric"
                                     />
                                 </View>
+
+                        {/* Employment Type Dropdown */}
+                        <View style={styles.employmentTypeContainer}>
+                            <Text style={styles.label}>Employment Type</Text>
+                            <View style={styles.pickerContainer}>
+                                <Picker
+                                    selectedValue={employmentType}
+                                    onValueChange={(itemValue) => setEmploymentType(itemValue)}
+                                    style={styles.input}
+                                >
+                                    <Picker.Item label="Select Employment Type" value="Select Employment Type" />
+                                    <Picker.Item label="Full-Time" value="Full-Time" />
+                                    <Picker.Item label="Part-Time" value="Part-Time" />
+                                </Picker>
+                            </View>
+                        </View>
+                                
                             </View>
 
                             <View style={styles.buttonRowContainer}>
-                                <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
-                                    <Text style={styles.buttonText}>Cancel</Text>
-                                </TouchableOpacity>
-
                                 <TouchableOpacity style={styles.bubbleButton} onPress={handleAddEmp}>
                                     <Text style={styles.buttonText}>Add User</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
+                                    <Text style={styles.buttonText}>Cancel</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -391,13 +476,15 @@ const AddEmpModal = ({ addEmpVisible, setAddEmpVisible, businessId }) => {
         >
             <View style={!isMobile ? styles.modalOverlay : styles.mobileModalOverlay}>
                 <View style={styles.modalContainer}>
-                    <Text style={styles.modalText}>Are you sure you want to cancel?</Text>
+                    <Text style={styles.addEmpHeader}>Are you sure you want to cancel?</Text>
+                    <View style={styles.addEmpHDivider}/>
                     <Text style={styles.modalText}>All information inputted will be lost.</Text>
+                    <View style={styles.addEmpHDivider}/>
                     <View style={styles.modalButtonContainer}>
-                        <TouchableOpacity style={styles.modalButton} onPress={confirmCancel}>
+                        <TouchableOpacity style={styles.bubbleButton} onPress={confirmCancel}>
                             <Text style={styles.optionText}>Yes</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButton} onPress={cancelCancel}>
+                        <TouchableOpacity style={styles.bubbleButton} onPress={cancelCancel}>
                             <Text style={styles.optionText}>No</Text>
                         </TouchableOpacity>
                     </View>
@@ -622,6 +709,11 @@ const styles = StyleSheet.create ({
   dropdownItemText: {
     fontSize: 16,
   },
+  employmentTypeContainer: {
+    alignSelf: 'flex-start', // Align the dropdown to the left
+    marginLeft: 10,         // Add slight left margin for padding
+    width: '30%',           // Adjust width if necessary
+},
   bubbleButton: {
     borderRadius: 50,
     backgroundColor: "#9FCCF5",
@@ -657,7 +749,7 @@ const styles = StyleSheet.create ({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', 
   },
   modalContainer: {
-    width: '80%',
+    width: '50%',
     padding: 20,
     backgroundColor: 'white',
     borderRadius: 10,
@@ -670,7 +762,7 @@ const styles = StyleSheet.create ({
   modalButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '100%',
+    width: '50%',
   },
   modalButton: {
     padding: 10,

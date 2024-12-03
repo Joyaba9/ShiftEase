@@ -2,159 +2,143 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import BusinessHours from './BusinessHours';
 import { useSelector } from 'react-redux';
-import { saveBusinessLocation, fetchBusinessDetailsAndLocation } from '../../../backend/api/api';
 
 const { width } = Dimensions.get('window');
 
-const BusinessAccountDetails = () => {
+const getEmployeeData = async (emp_id) => {
+    try {
+        const response = await fetch(`http://localhost:5050/api/employee/getEmployeeData?emp_id=${emp_id}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch Employee Data');
+        }
+        const data = await response.json();
+        console.log('Data received from API:', data);
+
+        // Check if the response contains the employee data
+        if (data && data.EmployeeData) {
+            console.log('Employee Data returned from API:', data.EmployeeData);
+            return data.EmployeeData;
+        } else {
+            throw new Error('Employee Data not found in response');
+        }
+    } catch (error) {
+        console.error('Error fetching Employee Data:', error.message);
+        return null;
+    }
+};
+
+const EmployeeAccountDetails = () => {
     const navigation = useNavigation();
     const isMobile = width < 768; 
 
-    // Access the logged-in business from the Redux store
-    const loggedInBusiness = useSelector((state) => state.business.businessInfo);
-    console.log("Logged in Business: ", loggedInBusiness);
+    // Access the logged-in employee from the Redux store
+    const loggedInEmployee = useSelector((state) => state.user.loggedInUser);
 
-    // State variables to store business details
-    const [businessId, setBusinessId] = useState('');
-    const [businessName, setBusinessName] = useState('');
-    const [businessEmail, setBusinessEmail] = useState('');
-    const [businessAddress, setBusinessAddress] = useState('');
-    const [businessCity, setBusinessCity] = useState('');
-    const [businessState, setBusinessState] = useState('');
-    const [businessZipcode, setBusinessZipcode] = useState('');
-    const [businessPhoneNum, setBusinessPhoneNum] = useState('');
+    console.log("Logged in Employee for testing: ", loggedInEmployee);
 
-    // State variable to store business hours for each day of the week
-    const [businessHours, setBusinessHours] = useState({
-        Monday: { open: '', close: '' },
-        Tuesday: { open: '', close: '' },
-        Wednesday: { open: '', close: '' },
-        Thursday: { open: '', close: '' },
-        Friday: { open: '', close: '' },
-        Saturday: { open: '', close: '' },
-        Sunday: { open: '', close: '' },
-    });
+    // State variables to store employee details
+    const [employeeId, setEmployeeId] = useState('');
+    const [employeeName, setEmployeeName] = useState('');
+    const [employeeBusName, setEmployeeBusName] = useState('');
+    const [employeeEmail, setEmployeeEmail] = useState('');
+    const [employeeAddress, setEmployeeAddress] = useState('');
+    const [employeeCity, setEmployeeCity] = useState('');
+    const [employeeState, setEmployeeState] = useState('');
+    const [employeeZipcode, setEmployeeZipcode] = useState('');
+    const [employeePhoneNum, setEmployeePhoneNum] = useState('');
 
     const [isEditing, setIsEditing] = useState(false);
 
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-    console.log("BusinessDetails");
-
     useEffect(() => {
-        async function fetchData() {
-            if (loggedInBusiness && loggedInBusiness.business && loggedInBusiness.business.business_email) {
-                try {
-                    // Call fetchBusinessDetailsAndLocation and destructure the returned data
-                    const { businessDetails, businessLocation } = await fetchBusinessDetailsAndLocation(loggedInBusiness.business.business_email);
+        if (loggedInEmployee.employee.emp_id) {
+            getEmployeeData(loggedInEmployee.employee.emp_id).then((employeeData) => {
+                if (employeeData) {
+                    // Set the state variables for editable items only if data exists
+                    setEmployeeAddress(employeeData.street_address || '');
+                    setEmployeeZipcode(employeeData.zipcode || '');
+                    setEmployeeCity(employeeData.city || '');
+                    setEmployeeState(employeeData.state || '');
+                    setEmployeePhoneNum(employeeData.phone_number || '');
+                    setEmployeeBusName(employeeData.business_name || '');
     
-                    // Update state with fetched business details
-                    setBusinessId(businessDetails.business_id);
-                    setBusinessName(businessDetails.business_name);
-                    setBusinessEmail(businessDetails.business_email);
-    
-                    // Update state with fetched business location details (if any) 
-                    if (businessLocation) {
-                        
-                        //setBusinessAddress(fullAddress);
-                        setBusinessAddress(businessLocation.street_address);
-                        setBusinessCity(businessLocation.city);
-                        setBusinessState(businessLocation.state);
-                        setBusinessZipcode(businessLocation.zipcode);
-                        setBusinessPhoneNum(businessLocation.phone_number);
-    
-                        const hours = businessLocation.business_hours || {}; // Default to empty object if null
-                        setBusinessHours({
-                            Monday: hours.Monday || { open: '', close: '' },
-                            Tuesday: hours.Tuesday || { open: '', close: '' },
-                            Wednesday: hours.Wednesday || { open: '', close: '' },
-                            Thursday: hours.Thursday || { open: '', close: '' },
-                            Friday: hours.Friday || { open: '', close: '' },
-                            Saturday: hours.Saturday || { open: '', close: '' },
-                            Sunday: hours.Sunday || { open: '', close: '' },
-                        });
-                    } else {
-                        console.log("No business location data found, using default empty values.");
-                    }
-                } catch (error) {
-                    console.error('Error fetching business details and location:', error);
+                    console.log('Pulled Employee Data:', employeeData);
+                } else {
+                    console.error('Employee data not found.');
                 }
-            } else {
-                console.error('No business email found for logged-in business');
-            }
-        }
     
-        fetchData();
-    }, [loggedInBusiness]);
+                // Always set non-editable items based on loggedInEmployee
+                setEmployeeId(loggedInEmployee.employee.emp_id);
+                setEmployeeName(`${loggedInEmployee.employee.f_name} ${loggedInEmployee.employee.l_name}`);
+                setEmployeeEmail(loggedInEmployee.employee.email);
+            }).catch((error) => {
+                console.error('Error in fetching employee data:', error);
+    
+                // Even if there's an error, still set non-editable items
+                setEmployeeId(loggedInEmployee.employee.emp_id);
+                setEmployeeName(`${loggedInEmployee.employee.f_name} ${loggedInEmployee.employee.l_name}`);
+                setEmployeeEmail(loggedInEmployee.employee.email);
+            });
+        }
+    }, [loggedInEmployee.employee.emp_id]);
+    
+
 
     // Function to toggle between "edit mode" and "view mode"
     const handleEditToggle = () => {
         setIsEditing(!isEditing); // Toggle the value of isEditing
     };
 
-    // Function to save the business location
+    // Function to save the employee location
     async function handleSaveProfile() {
-        // Basic validation: Check if required fields are provided
-        if (!businessId || !businessName || !businessPhoneNum || !businessAddress) { 
-            alert("Please fill in all required fields.");
-            return; 
-        }
-
-        // Validate phone number: Ensure it's a valid 10-digit number
-        if (!/^\d{10}$/.test(businessPhoneNum.replace(/\D/g, ''))) {
-            alert("Invalid phone number. Please enter a valid 10-digit phone number.");
-            return; 
-        }
-
-        // Validate business hours: Ensure open/close times are not empty for each day
-        const invalidHours = Object.keys(businessHours).some(day => 
-            businessHours[day].open === '' || businessHours[day].close === ''
-        );
-        if (invalidHours) {
-            alert("Please specify business hours for each day.");
+        console.log("Submit pressed");
+    
+        // Create the employeeData object using the state variables
+        const employeeData = {
+            emp_id: loggedInEmployee.employee.emp_id,
+            street_address: employeeAddress,
+            city: employeeCity,
+            state: employeeState,
+            zipcode: employeeZipcode,
+            phone_number: employeePhoneNum,
+        };
+    
+        if (!employeeData.emp_id || !employeeData.street_address || !employeeData.city || !employeeData.state || !employeeData.zipcode || !employeeData.phone_number) {
+            alert("Employee data is incomplete.");
             return;
         }
-
+    
+        console.log("Payload:", employeeData); // Log the payload being submitted
+    
         try {
-
-            // Create an object to send to the backend with all the required business data
-            const businessLocationData = {
-                business_id: businessId,
-                street_address: businessAddress,
-                city: businessCity,
-                state: businessState,
-                zipcode: businessZipcode,
-                phone_number: businessPhoneNum,
-                Monday: businessHours.Monday,
-                Tuesday: businessHours.Tuesday,
-                Wednesday: businessHours.Wednesday,
-                Thursday: businessHours.Thursday,
-                Friday: businessHours.Friday,
-                Saturday: businessHours.Saturday,
-                Sunday: businessHours.Sunday,
-            };
-
-            // Call the save function and pass the businessLocationData to save it in the backend
-            const businessLocationId = await saveBusinessLocation(businessLocationData); // Send the updated details to the backend
-            
-            setIsEditing(false); // Exit edit mode after saving
-
-            // Show the success message indicating the profile was saved
-            setShowSuccessMessage(true);
-            console.log("Business location saved successfully with ID:", businessLocationId);
-
-            // Hide the message after 3 seconds
-            setTimeout(() => {
-                setShowSuccessMessage(false);
-            }, 3000); // 3000 ms = 3 seconds
-            //alert("Business profile updated successfully");
+            // Make a POST request to the /saveEmployeeData route to save or update the employee location data
+            const response = await fetch('http://localhost:5050/api/employee/saveEmployeeData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(employeeData), // Sending the full employee data as the request body
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                alert("Employee data saved or updated successfully.");
+                console.log("Saved/Updated Employee:", data.emp_id);
+    
+                // Optionally, you can reset the form or hide the modal
+                // setEmployeeData({}); // Reset the form data if needed (unnecessary since it's based on state)
+            } else {
+                console.error("Failed to save employee data:", data.error);
+                alert(`Error: ${data.error}`);
+            }
         } catch (error) {
-            console.error("Error saving business profile:", error);
-            alert("Failed to save business profile");
+            console.error("Error while saving employee data:", error);
+            alert("An error occurred while saving the employee data.");
         }
-    };
+    }    
 
     // Function to format the phone number with dashes
     const formatPhoneNumber = (phoneNumber) => {
@@ -175,7 +159,7 @@ const BusinessAccountDetails = () => {
 
     const handlePhoneChange = (text) => {
         const formattedPhone = formatPhoneNumber(text);
-        setBusinessPhoneNum(formattedPhone);
+        setEmployeePhoneNum(formattedPhone);
     };
 
     return (
@@ -196,9 +180,9 @@ const BusinessAccountDetails = () => {
                         />
                     </TouchableOpacity>
 
-                    {/* Display the business name */}
+                    {/* Display the employee name */}
                     <Text style={styles.userNameText}>
-                        {businessName ? businessName : "Business name loading..."}
+                        {employeeName ? employeeName : "Employee name loading..."}
                     </Text>
                 </View>
 
@@ -210,29 +194,28 @@ const BusinessAccountDetails = () => {
                     </TouchableOpacity>
                 </View> : ""
                 }
-
             </View>
 
-            {/* Right column with editable business details */}
+            {/* Right column with editable Employee details */}
             <View style={!isMobile ? styles.rightColumn : styles.mobileBottomPortion}>
-                <Text style={styles.title}>Business Information</Text>
+                <Text style={styles.title}>Employee Information</Text>
                 
                 <View>
-                    {/* Display business ID (read-only) */}
+                    {/* Display employee ID (read-only) */}
                     <View style={styles.informationContainer}>
-                        <Text>Business ID:</Text>
+                        <Text>Employee ID:</Text>
                         <TextInput
                             style={styles.input}
-                            value= {businessId}
+                            value= {employeeId}
                             readOnly={!isEditing} // Cannot edit ID
                         />
                     </View>
-                    {/* Display business name (read-only) */}
+                    {/* Display employee name (read-only) */}
                     <View style={styles.informationContainer}>
                         <Text>Business Name:</Text>
                         <TextInput
                             style={styles.input}
-                            value={businessName}
+                            value={employeeBusName}
                             readOnly={!isEditing} // Cannot edit name
                         />
                     </View>
@@ -241,9 +224,8 @@ const BusinessAccountDetails = () => {
                         <Text>Email Address:</Text>
                         <TextInput
                             style={styles.input}
-                            value={businessEmail}
-                            onChangeText={setBusinessEmail} // Update email state on change if editable is an option
-                            readOnly={isEditing} // Not sure if this should be editable
+                            value={employeeEmail}
+                            readOnly={!isEditing} // Not sure if this should be editable
                         />
                     </View>
                     {/* Editable street address */}
@@ -253,8 +235,8 @@ const BusinessAccountDetails = () => {
                             style={[styles.input, isEditing && styles.editableInput]}
                             placeholder='Enter street address'
                             placeholderTextColor= 'grey'
-                            value={businessAddress}
-                            onChangeText={setBusinessAddress} // Update street address state on change
+                            value={employeeAddress}
+                            onChangeText={setEmployeeAddress} // Update street address state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>
@@ -265,32 +247,32 @@ const BusinessAccountDetails = () => {
                             style={[styles.input, isEditing && styles.editableInput]}
                             placeholder='Enter city'
                             placeholderTextColor= 'grey'
-                            value={businessCity}
-                            onChangeText={setBusinessCity} // Update city state on change
+                            value={employeeCity}
+                            onChangeText={setEmployeeCity} // Update city state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>
-                    {/* Editable business state */}
+                    {/* Editable employee state */}
                     <View style={styles.informationContainer}>
                         <Text>State:</Text>
                         <TextInput
                             style={[styles.input, isEditing && styles.editableInput]}
                             placeholder='Enter state (e.g. NY)'
                             placeholderTextColor= 'grey'
-                            value={businessState}
-                            onChangeText={setBusinessState} // Update city state on change
+                            value={employeeState}
+                            onChangeText={setEmployeeState} // Update city state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>
-                    {/* Editable business zipcode */}
+                    {/* Editable employee zipcode */}
                     <View style={styles.informationContainer}>
                         <Text>Zipcode:</Text>
                         <TextInput
                             style={[styles.input, isEditing && styles.editableInput]}
                             placeholder='Enter zipcode'
                             placeholderTextColor= 'grey'
-                            value={businessZipcode}
-                            onChangeText={setBusinessZipcode} // Update zipcode state on change
+                            value={employeeZipcode}
+                            onChangeText={setEmployeeZipcode} // Update zipcode state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>
@@ -299,19 +281,13 @@ const BusinessAccountDetails = () => {
                         <Text>Phone Number:</Text>
                         <TextInput
                             style={[styles.input, isEditing && styles.editableInput]}
-                            placeholder='Enter business phone number'
+                            placeholder='Enter employee phone number'
                             placeholderTextColor= 'grey'
-                            value={businessPhoneNum}
+                            value={employeePhoneNum}
                             onChangeText={handlePhoneChange} // Update phone number state on change
                             readOnly={!isEditing} // Only editable if in edit mode
                         />
                     </View>
-                    {/* Business hours, passed as a prop to a BusinessHours component */}
-                    <BusinessHours 
-                        businessHours={businessHours} // Pass the business hours to the component
-                        isEditing={isEditing} // Pass the edit mode to control if fields are editable
-                        setBusinessHours={setBusinessHours} // Pass the setter to allow updates from child component
-                    />
 
                     {/* Edit and Save buttons */}
                     <View style={styles.buttonContainer}>
@@ -485,4 +461,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
-export default BusinessAccountDetails;
+export default EmployeeAccountDetails;

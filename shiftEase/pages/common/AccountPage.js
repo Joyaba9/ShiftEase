@@ -4,15 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import NavBar from '../../components/NavBar';
 import BusinessAccountDetails from '../business/BusinessAccountDetails';
+import EmployeeAccountDetails from '../employee/EmployeeAccountDetails';
 import MobileSideMenu from '../../components/MobileSideMenu';
 import BottomMenu from '../../components/BottomMenu';
-
-
-//pre-set 'login' information till actual login is implemented
-const loggedInUser = {
-    userType: 'owner', // Can be 'owner', 'manager', or 'employee'
-    userId: 1
-};
+import { useSelector } from 'react-redux';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,6 +15,12 @@ const AccountPage = () => {
     const isMobile = width < 768; 
     const navigation = useNavigation();
     const [isManagerDashboard, setIsManagerDashboard] = useState(false);
+
+    const businessInfo = useSelector((state) => state.business.businessInfo);
+    const loggedInUser = useSelector((state) => state.user.loggedInUser);
+
+    const businessId = businessInfo?.business?.business_id || loggedInUser?.employee?.business_id;
+    const conditional = businessInfo?.business ? 'Business' : loggedInUser?.employee ? 'Employee' : 'Account';
 
     //For mobile version nav bar
     const menuItems = [
@@ -114,18 +115,15 @@ const AccountPage = () => {
                         showsHorizontalScrollIndicator={false} 
                     >
                         <View style = {styles.topContainer}>
-                                <NavBar homeRoute="Business"/> : 
+                                <NavBar homeRoute={conditional}/>
                         </View>
                     
-                        <BusinessAccountDetails />
-                        {/*<View style={styles.container}>
+                        {conditional === 'Business' ? (
                             <BusinessAccountDetails />
-                            {loggedInUser.userType === 'owner' ? (
-                                <AccountDetailsBusiness />
-                            ) : (
-                                <AccountDetails />
-                            )} 
-                        </View>*/}
+                        ) : (
+                            <EmployeeAccountDetails />
+                        )}
+
                     </ScrollView>
                 </LinearGradient>
             )}

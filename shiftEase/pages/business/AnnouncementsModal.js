@@ -3,7 +3,7 @@ import { Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, 
 
 const { width } = Dimensions.get('window');
 
-const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, businessId }) => {
+const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, businessId, isManager, openAddForm }) => {
     const isMobile = width < 768;
     
     const [activeTab, setActiveTab] = useState('General');
@@ -11,19 +11,24 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
     const [addAnnouncementTitle, setAddAnnouncementTitle] = useState(''); // State for the title
     const [addAnnouncementText, setAddAnnouncementText] = useState(''); // State for the textbox content
 
-
     const [pulledGeneralAnnouncement, setPulledGeneralAnnouncement] = useState([]);
     const [pulledBusinessAnnouncement, setPulledBusinessAnnouncement] = useState([]);
 
-    // send an announcement to a specific business or general broadcast
+    useEffect(() => {
+        if (announcementsVisible && openAddForm) {
+            setShowAddForm(true); // Open the add form when the modal is opened with `openAddForm` true
+        }
+    }, [announcementsVisible, openAddForm]);
 
-    const sendAnnouncementToBusiness = async (businessId, messageContent, isBroadcast = false) => {
+    // send an announcement to a specific business or general broadcast
+    const sendAnnouncementToBusiness = async (businessId, messageTitle ,messageContent, isBroadcast = false) => {
         try {
             const response = await fetch('http://localhost:5050/api/announcements/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     businessId,
+                    messageTitle,
                     messageContent,
                     isBroadcast
                 })
@@ -42,18 +47,18 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
 
     const fetchGeneralAnnouncements = async () => {
         try {
-            const response = await fetch('http://localhost:5050/api/announcements/general');
+            const response = await fetch(`http://localhost:5050/api/announcements/general/${businessId}`);
             if (response.ok) {
                 const data = await response.json();
-                console.log("General Announcements Data:", data);
-                
+                console.log("Filtered General Announcements Data:", data);
+    
                 // Transform data to expected format
                 const announcementsArray = Object.keys(data).map(key => ({
                     id: key,
-                    Title: data[key].content || 'No Title',
+                    Title: data[key].title || 'No Title',
                     Content: data[key].content || 'No Content'
                 }));
-                
+    
                 setPulledGeneralAnnouncement(announcementsArray);
             } else {
                 console.error('Failed to fetch general announcements');
@@ -75,7 +80,7 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
                 // Transform data to expected format
                 const announcementsArray = Object.keys(data).map(key => ({
                     id: key,
-                    Title: data[key].content || 'No Title',
+                    Title: data[key].title || 'No Title',
                     Content: data[key].content || 'No Content'
                 }));
                 
@@ -89,6 +94,11 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
             setPulledBusinessAnnouncement([]);
         }
     };
+
+    useEffect(() => {
+        fetchGeneralAnnouncements();
+        fetchBusinessAnnouncements();
+    }, []);
     
     const renderTabContent = () => {
         const announcements = activeTab === 'General' ? pulledGeneralAnnouncement : pulledBusinessAnnouncement;
@@ -112,7 +122,6 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
         );
     };
 
-
     const handleAddAnnouncementForm = () => {
         setShowAddForm(true);
     };
@@ -128,7 +137,7 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
         console.log('Announcement Text:', addAnnouncementText);
         const isBroadcast = activeTab === 'General';
 
-        sendAnnouncementToBusiness(businessId, addAnnouncementText, isBroadcast);
+        sendAnnouncementToBusiness(businessId, addAnnouncementTitle, addAnnouncementText, isBroadcast);
 
         setShowAddForm(false);
         setAddAnnouncementTitle('');
@@ -147,7 +156,7 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
                     <View style={styles.announcementsContainer}>
                         <View style={styles.headerRow}>
                             <Text style={styles.containerHeader}>Announcements</Text>
-                            {!showAddForm && (
+                            {isManager && !showAddForm && (
                                 <TouchableOpacity style={styles.headerBubbleButton} onPress={handleAddAnnouncementForm}>
                                     <Text style={styles.buttonText}>Add Announcements</Text>
                                 </TouchableOpacity>
@@ -169,11 +178,11 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
                                     multiline
                                 />
                                 <View style={styles.buttonRowContainer}>
-                                    <TouchableOpacity style={styles.bubbleButton} onPress={handleAdd}>
-                                        <Text style={styles.buttonText}>Add</Text>
+                                    <TouchableOpacity style={styles.bubbleButtonAddForm} onPress={handleAdd}>
+                                        <Text style={styles.buttonTextAddForm}>Add</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={styles.bubbleButton} onPress={handleCancel}>
-                                        <Text style={styles.buttonText}>Cancel</Text>
+                                    <TouchableOpacity style={styles.bubbleButtonAddForm} onPress={handleCancel}>
+                                        <Text style={styles.buttonTextAddForm}>Cancel</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -202,7 +211,7 @@ const AnnouncementsModal = ({ announcementsVisible, setAnnouncementsVisible, bus
 
                         <View style={styles.HDivider}/>
                         <View style={styles.buttonRowContainer}>
-                            <TouchableOpacity style={styles.bubbleButton} onPress={() => setAnnouncementsVisible(false)}>
+                            <TouchableOpacity style={styles.bubbleButton} onPress={() => {setAnnouncementsVisible(false); setShowAddForm(false);}}>
                                 <Text style={styles.buttonText}>Close</Text>
                             </TouchableOpacity>
                         </View>
@@ -269,6 +278,10 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#333',
     },
+    buttonTextAddForm: {
+        fontSize: 14    ,
+        color: '#333',
+    },
     bubbleButton: {
         borderRadius: 50,
         backgroundColor: '#9FCCF5',
@@ -282,6 +295,22 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 2, height: 4 },
         shadowOpacity: 0.5,
         shadowRadius: 3.5,
+    },
+    bubbleButtonAddForm: {
+        borderRadius: 50,
+        backgroundColor: '#9FCCF5',
+        width: 70,
+        height: 25,
+        maxWidth: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 5,
+        paddingHorizontal: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 3.5,
+        marginLeft: 10,
     },
     buttonRowContainer: {
         width: '100%',
