@@ -134,7 +134,7 @@ export async function addBusinessPhoto(businessId, localFilePath, originalName) 
         }
 
         // Detect MIME type using the mime library
-        const contentType = mime.getType(localFilePath) || 'application/octet-stream';
+        const contentType = mime.lookup(localFilePath) || 'application/octet-stream';
         console.log(`Detected MIME type: ${contentType}`);
 
         // Using MIME type to make sure the image is a proper image file.

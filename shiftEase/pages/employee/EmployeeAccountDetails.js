@@ -190,6 +190,10 @@ const EmployeeAccountDetails = () => {
     
                     console.log('Selected photo for upload:', fileName);
                     await uploadEmployeePhoto(empId, filePath, fileName); // Upload the photo
+                
+                    // Immediately fetch and update the photo URL
+                    const photoUrl = await getEmployeePhoto(empId);
+                    setProfilePhoto({ uri: photoUrl });
                 };
     
                 input.click(); // Open file picker
@@ -217,6 +221,10 @@ const EmployeeAccountDetails = () => {
     
                 console.log('Selected photo for upload:', fileName);
                 await uploadEmployeePhoto(empId, filePath, fileName); // Upload the photo
+
+                // Immediately fetch and update the photo URL
+                const photoUrl = await getEmployeePhoto(empId);
+                setProfilePhoto({ uri: photoUrl });
             }
         } catch (error) {
             console.error('Error during photo upload:', error);

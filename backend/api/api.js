@@ -69,6 +69,68 @@ export async function registerBusiness(businessName, businessEmail, password, co
     return null;
 }
 
+export const uploadBusinessPhoto = async (businessId, localFilePath, originalName) => {
+    console.log("Business id in upload business photo: ", businessId);
+    console.log("Local file path: ", localFilePath);
+    console.log("original name: ", originalName);
+    try {
+        const formData = new FormData();
+        formData.append('business_id', businessId); // Add employee ID as text field
+
+        // Convert `blob:` URL to `File`
+        const response = await fetch(localFilePath);
+        const blob = await response.blob();
+        const file = new File([blob], originalName, { type: blob.type });
+
+        formData.append('photo', file);
+
+        // Log form data for debugging
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}:`, value);
+        }
+
+        const res = await fetch(baseURL + 'image/uploadBusinessPhoto', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            console.log('Profile photo uploaded:', data);
+            return data; // Contains updated business object
+        } else {
+            const errorText = await res.text(); // Get backend error message
+            console.error('Error Response:', errorText);
+            throw new Error('Failed to upload profile photo');
+        }
+    } catch (error) {
+        console.error('Error in uploadBusinessPhoto:', error);
+        throw error;
+    }
+}
+
+export const getBusinessPhoto = async (businessId) => {
+    try {
+        const response = await fetch(baseURL + `image/getBusinessPhoto?business_id=${businessId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Profile photo fetched:', data);
+            return data.profilePhotoUrl; // Returns the profile photo URL
+        } else {
+            throw new Error('Failed to fetch profile photo');
+        }
+    } catch (error) {
+        console.error('Error in getBusinessPhoto:', error);
+        throw error;
+    }
+};
+
 // Function to fetch business details using the business email
 export async function getBusinessDetails(businessEmail) {
     console.log("Calling Backend " + baseURL + "getBusinessDetails " + businessEmail);
