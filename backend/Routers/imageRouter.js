@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import { addEmployeePhoto, getEmployeePhoto } from '../scripts/imageScript.js';
+import { addEmployeePhoto, getEmployeePhoto } from '../Scripts/imageScript.js';
 
 const router = express.Router();
 

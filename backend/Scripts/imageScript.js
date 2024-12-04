@@ -26,7 +26,10 @@ export async function addEmployeePhoto(empId, localFilePath, originalName) {
     console.log(`Local file path: ${localFilePath}`);
     console.log(`Original file name: ${originalName}`);
 
-    
+    if (!bucketName) {
+        throw new Error('Cloud Storage bucket name is missing or undefined.');
+    }
+
     const fileName = `profile_images/employee_${empId}-${Date.now()}-${originalName}`;
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(fileName);
@@ -42,7 +45,7 @@ export async function addEmployeePhoto(empId, localFilePath, originalName) {
         }
 
         // Detect MIME type using the mime library
-        const contentType = mime.getType(localFilePath) || 'application/octet-stream';
+        const contentType = mime.lookup(localFilePath) || 'application/octet-stream';
         console.log(`Detected MIME type: ${contentType}`);
 
         // Using MIME type to make sure the image is a proper image file.
