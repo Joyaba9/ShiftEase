@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
+import { uploadEmployeePhoto, getEmployeePhoto } from '../../../backend/api/employeeApi';
 
 const { width } = Dimensions.get('window');
 
@@ -34,8 +35,12 @@ const EmployeeAccountDetails = () => {
 
     // Access the logged-in employee from the Redux store
     const loggedInEmployee = useSelector((state) => state.user.loggedInUser);
+    const empId = loggedInEmployee.employee.emp_id;
 
     console.log("Logged in Employee for testing: ", loggedInEmployee);
+    console.log("Employee id: ", loggedInEmployee.employee.emp_id);
+
+    const [profilePhoto, setProfilePhoto] = useState(require('../../assets/images/default_profile.png'));
 
     // State variables to store employee details
     const [employeeId, setEmployeeId] = useState('');
@@ -162,23 +167,98 @@ const EmployeeAccountDetails = () => {
         setEmployeePhoneNum(formattedPhone);
     };
 
+    const handlePhotoUpload = async () => {
+        try {
+            if (!empId) {
+                throw new Error('Employee ID is missing.');
+            }
+    
+            let filePath, fileName;
+    
+            if (Platform.OS === 'web') {
+                // For Web: Use file input to select a photo
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+    
+                input.onchange = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+    
+                    filePath = URL.createObjectURL(file);
+                    fileName = file.name;
+    
+                    console.log('Selected photo for upload:', fileName);
+                    await uploadEmployeePhoto(empId, filePath, fileName); // Upload the photo
+                };
+    
+                input.click(); // Open file picker
+            } else {
+                // For Mobile: Use Expo ImagePicker
+                const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!permissionResult.granted) {
+                    alert('Permission is required to access the photo library.');
+                    return;
+                }
+    
+                const pickerResult = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    quality: 1,
+                });
+    
+                if (pickerResult.canceled) {
+                    console.log('Image selection canceled.');
+                    return;
+                }
+    
+                filePath = pickerResult.assets[0].uri;
+                fileName = filePath.split('/').pop();
+    
+                console.log('Selected photo for upload:', fileName);
+                await uploadEmployeePhoto(empId, filePath, fileName); // Upload the photo
+            }
+        } catch (error) {
+            console.error('Error during photo upload:', error);
+            if (Platform.OS === 'web') {
+                window.alert(error.message || 'Failed to upload photo.');
+            } else {
+                Alert.alert('Error', error.message || 'Failed to upload photo.');
+            }
+        }
+    };
+
+    useEffect(() => {
+        const fetchPhoto = async () => {
+            try {
+                const photoUrl = await getEmployeePhoto(empId);
+                setProfilePhoto({ uri: photoUrl });
+            } catch (error) {
+                console.error('Error fetching profile photo:', error);
+            }
+        };
+    
+        fetchPhoto();
+    }, [empId]);
+
     return (
         <View style={!isMobile ? styles.container : styles.mobileContainer}>
 
             {/* Left column with profile photo and account overview */}
             <View style={!isMobile ? styles.leftColumn : styles.mobileTopPortion}>
                 <View style={styles.topContainer}>
-                    {/* <TouchableOpacity style={styles.addIconContainer}>
-                        <Ionicons name="add-circle" size={35} color="#9FCCF5" />
-                    </TouchableOpacity> */}
 
-                    <TouchableOpacity>
-                        <Image
-                            resizeMode="contain"
-                            source={require('../../assets/images/default_profile.png')}
-                            style={styles.profilePhoto}
-                        />
-                    </TouchableOpacity>
+                <TouchableOpacity onPress={handlePhotoUpload}>
+                    <Image
+                        resizeMode="cover"
+                        source={
+                            profilePhoto && profilePhoto.uri
+                                ? { uri: profilePhoto.uri }
+                                : require('../../assets/images/default_profile.png')
+                        }
+                        style={styles.profilePhoto}
+                    />
+                </TouchableOpacity>
 
                     {/* Display the employee name */}
                     <Text style={styles.userNameText}>
@@ -369,7 +449,8 @@ const styles = StyleSheet.create({
     profilePhoto: {
         width: 150,        
         height: 150,       
-        borderRadius: 75,  
+        borderRadius: 75, 
+        overflow: 'hidden', 
     },
     userNameText: {
         fontSize: 20,
