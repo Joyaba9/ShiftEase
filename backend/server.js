@@ -30,7 +30,7 @@ app.use('/api/employee', employeeRouter);
 app.use('/api', authRouter);
 app.use('/api', businessRouter);
 app.use('/api/role', roleRouter);
-app.use('/api/message', messageRouter);
+app.use('/api/messages', messageRouter);
 app.use ('/api/announcements', announcementRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/preferences', preferencesRouter);
