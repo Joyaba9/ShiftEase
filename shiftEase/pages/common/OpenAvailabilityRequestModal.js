@@ -43,23 +43,16 @@ const OpenAvailabilityRequestModal = ({ requestVisible, setRequestVisible, reque
             });
         }
     }, [requestID]);
-
+    
     const handleCancel = () => {
         setRequestVisible(false);
     };
 
     const handleSubmit = async () => {
-        if (!pulledOpenRequest || !selectedStatus) {
-            alert('Request details or status are missing.');
-            return;
-        }
-
         try {
             const response = await fetch('http://localhost:5050/api/employee/updateAvailabilityRequestStatus', {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     request_id: pulledOpenRequest.request_id,
                     business_id: business_id,
@@ -67,11 +60,11 @@ const OpenAvailabilityRequestModal = ({ requestVisible, setRequestVisible, reque
                     manager_comments: managerComments,
                 }),
             });
-
+    
             const data = await response.json();
-
+    
             if (response.ok && data.success) {
-                alert('Request status updated successfully.');
+                alert('Availability request updated successfully.');
                 setRequestVisible(false);
             } else {
                 console.error('Failed to update request:', data.message);
@@ -79,10 +72,10 @@ const OpenAvailabilityRequestModal = ({ requestVisible, setRequestVisible, reque
             }
         } catch (error) {
             console.error('Error while updating request:', error);
-            alert('An error occurred while updating the request.');
+            alert('An unexpected error occurred.');
         }
     };
-
+    
     return (
         <Modal
             animationType="slide"
@@ -95,111 +88,110 @@ const OpenAvailabilityRequestModal = ({ requestVisible, setRequestVisible, reque
                     <Text style={styles.modalHeader}>Availability Request</Text>
                     <View style={styles.HDivider} />
                     <ScrollView contentContainerStyle={styles.scrollContainer}>
-                    {pulledOpenRequest && (
-                        <View style={styles.mainContainer}>
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionHeaderText}>Employee Information</Text>
-                            </View>
-                            <View style={styles.empInfoContainer}>
-                                <View style={styles.empInfoItem}>
-                                    <Text style={styles.sectionLabel}>First Name</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={pulledOpenRequest.first_name || ''}
-                                        editable={false}
-                                    />
+                        {pulledOpenRequest && (
+                            <View style={styles.mainContainer}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionHeaderText}>Employee Information</Text>
                                 </View>
-                                <View style={styles.empInfoItem}>
-                                    <Text style={styles.sectionLabel}>Last Name</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={pulledOpenRequest.last_name || ''}
-                                        editable={false}
-                                    />
-                                </View>
-                                <View style={styles.empInfoItem}>
-                                    <Text style={styles.sectionLabel}>Created At</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={new Date(pulledOpenRequest.created_at).toLocaleDateString()}
-                                        editable={false}
-                                    />
-                                </View>
-                            </View>
-
-                            <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionHeaderText}>Request Details</Text>
-                            </View>
-                            <View style={styles.empInfoContainer}>
-                                <View style={styles.empInfoItem}>
-                                <Text style={styles.sectionLabel}>Request Comments</Text>
-                                <TextInput
-                                    style={styles.inputComment}
-                                    value={pulledOpenRequest?.reason || ''} 
-                                    editable={false}
-                                    multiline
-                                />
-                                    <Text style={styles.sectionLabel}>Start Date</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={new Date(pulledOpenRequest.start_date).toLocaleDateString()}
-                                        editable={false}
-                                    />
-                                </View>
-                                <View style={styles.empInfoItem}>
-                                    <Text style={styles.sectionLabel}>End Date</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={new Date(pulledOpenRequest.end_date).toLocaleDateString()}
-                                        editable={false}
-                                    />
-                                </View>
-                                <View style={styles.empInfoItem}>
-                                    <Text style={styles.sectionLabel}>Availability</Text>
-                                    <TextInput
-                                        style={styles.inputComment}
-                                        value={JSON.stringify(pulledOpenRequest.availability, null, 2)} 
-                                        editable={false}
-                                        multiline
-                                    />
-                                </View>
-                            </View>
-
-                        
-                                <>
-                                    <View style={styles.sectionHeader}>
-                                        <Text style={styles.sectionHeaderText}>Manager Actions</Text>
+                                <View style={styles.empInfoContainer}>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>First Name</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={pulledOpenRequest.first_name || 'N/A'}
+                                            editable={false}
+                                        />
                                     </View>
-                                    <View style={styles.empInfoContainer}>
-                                        <View style={styles.empInfoItem}>
-                                            <Text style={styles.sectionLabel}>Manager Comments</Text>
-                                            <TextInput
-                                                style={styles.inputComment}
-                                                placeholder="Enter any additional comments"
-                                                value={managerComments}
-                                                onChangeText={setManagerComments}
-                                                editable={canEdit}
-                                                multiline
-                                            />
-                                        </View>
-                                        <View style={styles.empInfoItem}>
-                                            <Text style={styles.sectionLabel}>Request Status</Text>
-                                            <Picker
-                                                selectedValue={selectedStatus}
-                                                style={styles.inputPicker}
-                                                onValueChange={(itemValue) => setSelectedStatus(itemValue)}
-                                                enabled={canEdit}
-                                            >
-                                                <Picker.Item label="Pending" value="Pending" />
-                                                <Picker.Item label="Approved" value="Approved" />
-                                                <Picker.Item label="Rejected" value="Rejected" />
-                                            </Picker>
-                                        </View>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>Last Name</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={pulledOpenRequest.last_name || 'N/A'}
+                                            editable={false}
+                                        />
                                     </View>
-                                </>
-                        </View>
-                    )}
-                </ScrollView>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>Created At</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={
+                                                pulledOpenRequest?.created_at
+                                                    ? new Date(pulledOpenRequest.created_at).toLocaleDateString()
+                                                    : 'N/A'
+                                            }
+                                            editable={false}
+                                        />
+                                    </View>
+                                </View>
+    
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionHeaderText}>Request Details</Text>
+                                </View>
+                                <View style={styles.empInfoContainer}>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>Requested Dates</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            value={
+                                                pulledOpenRequest?.start_date && pulledOpenRequest?.end_date
+                                                    ? `${new Date(pulledOpenRequest.start_date).toLocaleDateString()} - ${new Date(pulledOpenRequest.end_date).toLocaleDateString()}`
+                                                    : 'N/A'
+                                            }
+                                            editable={false}
+                                        />
+                                    </View>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>Request Comments</Text>
+                                        <TextInput
+                                            style={styles.inputComment}
+                                            value={pulledOpenRequest?.reason || 'N/A'}
+                                            editable={false}
+                                            multiline
+                                        />
+                                    </View>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>Availability</Text>
+                                        <TextInput
+                                            style={styles.inputComment}
+                                            value={JSON.stringify(pulledOpenRequest.availability, null, 2) || 'N/A'}
+                                            editable={false}
+                                            multiline
+                                        />
+                                    </View>
+                                </View>
+    
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionHeaderText}>Manager Actions</Text>
+                                </View>
+                                <View style={styles.empInfoContainer}>
+                                <View style={styles.empInfoItem}>
+                                    <Text style={styles.sectionLabel}>Manager Comments</Text>
+                                        <TextInput
+                                            style={styles.inputComment}
+                                            placeholder="Enter any additional comments"
+                                            value={managerComments}
+                                            onChangeText={setManagerComments}
+                                            editable={canEdit}
+                                            multiline
+                                        />
+                                    </View>
+                                    <View style={styles.empInfoItem}>
+                                        <Text style={styles.sectionLabel}>Request Status</Text>
+                                        <Picker
+                                            selectedValue={selectedStatus}
+                                            style={styles.inputPicker}
+                                            onValueChange={(itemValue) => setSelectedStatus(itemValue)}
+                                            enabled={canEdit}
+                                        >
+                                            <Picker.Item label="Pending" value="Pending" />
+                                            <Picker.Item label="Approved" value="Approved" />
+                                            <Picker.Item label="Rejected" value="Rejected" />
+                                        </Picker>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+                    </ScrollView>
                     <View style={styles.buttonRowContainer}>
                         {isManager && (
                             <TouchableOpacity style={styles.bubbleButton} onPress={handleSubmit}>
@@ -214,8 +206,8 @@ const OpenAvailabilityRequestModal = ({ requestVisible, setRequestVisible, reque
             </View>
         </Modal>
     );
-};
-
+    
+}; 
 const styles = StyleSheet.create({
     screenGray: {
         flex: 1,

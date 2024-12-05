@@ -1,5 +1,5 @@
 import express from 'express';
-import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager, getEmployeeData, saveEmployeeData, addAvailabilityRequestForEmployee, getAvailabilityRequestById, getFutureAvailabilityRequests } from '../Scripts/employeeScript.js';
+import { AddEmployee, fetchEmployees, SoftDeleteEmployee, UpdateEmployee, AddEmployeeAvailability, fetchEmployeeAvailability, getFutureRequestsByEmployee, getPastRequestsByEmployee, getAllRequestsByEmployee, addRequestForEmployee, updateRequestStatus, fetchEmployeesWithRoles, getAllRequestStatusByEmployee, getRequestById, checkIfEmployeeIsManager, getEmployeeData, saveEmployeeData, addAvailabilityRequestForEmployee, getAvailabilityRequestById, getFutureAvailabilityRequests, updateAvailabilityRequestStatus, getApprovedAvailabilityRequests, getRejectedAvailabilityRequests, getPastAvailabilityRequests } from '../Scripts/employeeScript.js';
 
 const router = express.Router();
 
@@ -453,6 +453,84 @@ router.get('/getFutureAvailabilityRequests', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// Update availability request status
+router.put('/updateAvailabilityRequestStatus', async (req, res) => {
+    const { request_id, business_id, status, manager_comments } = req.body;
+
+    if (!request_id || !business_id || !status) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    try {
+        const result = await updateAvailabilityRequestStatus(request_id, business_id, status, manager_comments);
+        if (result.success) {
+            return res.status(200).json({ success: true, message: 'Request updated successfully' });
+        } else {
+            return res.status(400).json({ success: false, message: result.message || 'Failed to update request' });
+        }
+    } catch (error) {
+        console.error('Error updating availability request:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// Fetch Approved Availability Requests
+router.get('/getApprovedAvailabilityRequests', async (req, res) => {
+    const { emp_id, business_id, isManager } = req.query;
+
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ success: false, message: 'Employee ID and Business ID are required.' });
+    }
+
+    try {
+        const approvedRequests = await getApprovedAvailabilityRequests(emp_id, business_id, isManager);
+        res.status(200).json({ success: true, approvedAvailabilityRequests: approvedRequests });
+    } catch (error) {
+        console.error('Error fetching approved availability requests:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+
+
+//Fetch Rejected Availability Requests
+router.get('/getRejectedAvailabilityRequests', async (req, res) => {
+    const { emp_id, business_id } = req.query;
+
+    if (!emp_id || !business_id) {
+        return res.status(400).json({ success: false, message: 'Missing required parameters: emp_id or business_id' });
+    }
+
+    try {
+        const rejectedRequests = await getRejectedAvailabilityRequests(emp_id, business_id);
+        res.json({ success: true, rejectedAvailabilityRequests: rejectedRequests });
+    } catch (error) {
+        console.error('Error fetching rejected availability requests:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch rejected availability requests' });
+    }
+});
+
+
+router.get('/getPastAvailabilityRequests', async (req, res) => {
+    const { emp_id, business_id, isManager } = req.query;
+
+    if (!business_id) {
+        return res.status(400).json({ success: false, message: 'Business ID is required.' });
+    }
+
+    try {
+        const pastAvailabilityRequests = await getPastAvailabilityRequests(emp_id, business_id, isManager === 'true');
+        res.status(200).json({ success: true, pastAvailabilityRequests });
+    } catch (error) {
+        console.error('Error fetching past availability requests:', error);
+        res.status(500).json({ success: false, message: 'Error fetching past availability requests.' });
+    }
+});
+
+
+
+
 
 
 export default router; // Export the router to be used in server.js
