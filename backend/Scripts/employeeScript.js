@@ -751,7 +751,7 @@ export async function getAvailabilityRequestById(request_id) {
     const client = await getClient();
     await client.connect();
 
-    // Query to fetch availability request details along with employee first name and last name
+    // Query to fetch availability request details along with employee first name, last name, and manager comments
     const getAvailabilityRequestByIdQuery = `
         SELECT 
             ar.request_id,
@@ -762,7 +762,8 @@ export async function getAvailabilityRequestById(request_id) {
             ar.end_date,
             ar.availability,
             ar.reason, 
-            ar.status AS request_status
+            ar.status AS request_status,
+            ar.manager_comments
         FROM availability_requests ar
         JOIN employees e ON ar.emp_id = e.emp_id
         WHERE ar.request_id = $1;
@@ -781,6 +782,7 @@ export async function getAvailabilityRequestById(request_id) {
         await client.end();
     }
 }
+
 
 //#endregion
 
@@ -1245,6 +1247,245 @@ export async function getFutureAvailabilityRequests(emp_id, business_id, isManag
     } catch (err) {
         console.error('Error fetching future availability requests:', err);
         throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+
+
+/**
+ * Updates the status of an availability request for an employee and optionally adds manager comments.
+ * 
+ * @param {number} request_id - The ID of the availability request to update.
+ * @param {number} business_id - The ID of the business associated with the request.
+ * @param {string} status - The new status of the request ('Approved' or 'Rejected').
+ * @param {string} [manager_comments] - Optional manager comments to include with the update.
+ * @returns {Promise<Object>} - The updated availability request record.
+ */
+export async function updateAvailabilityRequestStatus(request_id, business_id, status, manager_comments = null) {
+    const client = await getClient();
+    await client.connect();
+
+    const validStatuses = ['Approved', 'Rejected'];
+    if (!validStatuses.includes(status)) {
+        throw new Error('Invalid status. Status must be either "Approved" or "Rejected".');
+    }
+
+    const checkRequestQuery = `
+        SELECT emp_id FROM availability_requests
+        WHERE request_id = $1 AND emp_id IN (SELECT emp_id FROM employees WHERE business_id = $2);
+    `;
+    const updateStatusQuery = `
+        UPDATE availability_requests
+        SET status = $1, updated_at = CURRENT_TIMESTAMP, 
+            manager_comments = COALESCE($3, manager_comments)
+        WHERE request_id = $2
+        RETURNING request_id, status, manager_comments;
+    `;
+
+    try {
+        console.log('Payload received:', { request_id, business_id, status, manager_comments });
+        console.log('Checking availability request...');
+        const checkRes = await client.query(checkRequestQuery, [request_id, business_id]);
+        console.log('Check result:', checkRes.rows);
+
+        if (checkRes.rows.length === 0) {
+            throw new Error('Availability request not found or does not belong to the specified business.');
+        }
+
+        console.log('Updating request status...');
+        const result = await client.query(updateStatusQuery, [status, request_id, manager_comments]);
+        console.log('Update result:', result.rows);
+
+        return {
+            success: true,
+            updatedRequest: result.rows[0],
+        };
+    } catch (err) {
+        console.error('Error updating availability request status:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+
+
+
+/**
+ * Fetches all approved availability requests for an employee or manager.
+ * 
+ * @param {number} emp_id - The ID of the employee.
+ * @param {number} business_id - The ID of the business.
+ * @param {string} isManager - Indicates if the user is a manager ('true' or 'false').
+ * @returns {Promise<Array>} - An array of approved availability request records.
+ */
+export async function getApprovedAvailabilityRequests(emp_id, business_id, isManager) {
+    const client = await getClient();
+    await client.connect();
+
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch approved availability requests for an employee
+    const approvedAvailabilityRequestsQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.availability,
+            ar.manager_comments
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.emp_id = $1
+          AND ar.status = 'Approved'
+        ORDER BY ar.created_at DESC;
+    `;
+
+    // Manager-level query to fetch approved availability requests
+    const approvedAvailabilityRequestsManagerQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.availability,
+            ar.manager_comments
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.business_id = $1
+          AND ar.status = 'Approved'
+        ORDER BY ar.created_at DESC;
+    `;
+
+    try {
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        let result;
+
+        if (isManager === 'true') {
+            // Fetch approved availability requests for the manager
+            result = await client.query(approvedAvailabilityRequestsManagerQuery, [business_id]);
+        } else {
+            // Fetch approved availability requests for the employee
+            result = await client.query(approvedAvailabilityRequestsQuery, [emp_id]);
+        }
+
+        return result.rows;
+    } catch (err) {
+        console.error('Error fetching approved availability requests:', err);
+        throw err;
+    } finally {
+        await client.end();
+    }
+}
+
+
+
+
+
+
+/**
+ * Fetches all rejected availability requests for an employee or manager.
+ * 
+ * @param {number} empId - The ID of the employee.
+ * @param {number} businessId - The ID of the business.
+ * @param {boolean} isManager - Whether the user is a manager.
+ * @returns {Promise<Array>} - An array of rejected availability request records.
+ */
+export async function getRejectedAvailabilityRequests(empId, businessId, isManager = false) {
+    const client = await getClient();
+    await client.connect();
+
+    const query = isManager
+        ? `
+            SELECT 
+                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
+                ar.created_at, e.f_name, e.l_name
+            FROM availability_requests ar
+            INNER JOIN employees e ON ar.emp_id = e.emp_id
+            WHERE ar.business_id = $1 AND ar.status = 'Rejected'
+            ORDER BY ar.created_at DESC;
+        `
+        : `
+            SELECT 
+                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
+                ar.created_at, e.f_name, e.l_name
+            FROM availability_requests ar
+            INNER JOIN employees e ON ar.emp_id = e.emp_id
+            WHERE ar.emp_id = $1 AND ar.business_id = $2 AND ar.status = 'Rejected'
+            ORDER BY ar.created_at DESC;
+        `;
+
+    try {
+        const values = isManager ? [businessId] : [empId, businessId];
+        const result = await client.query(query, values);
+
+        return result.rows;
+    } catch (error) {
+        console.error('Error fetching rejected availability requests:', error);
+        throw error;
+    } finally {
+        await client.end();
+    }
+}
+
+
+/**
+ * Fetches past availability requests for a specific employee or business.
+ *
+ * @param {number} empId - The employee ID (optional for managers).
+ * @param {number} businessId - The business ID.
+ * @param {boolean} isManager 
+ * @returns {Promise<Array>} - An array of past availability requests (approved or rejected).
+ */
+export async function getPastAvailabilityRequests(empId, businessId, isManager = false) {
+    const client = await getClient();
+    await client.connect();
+
+    const query = isManager
+        ? `
+            SELECT 
+                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
+                ar.created_at, e.f_name, e.l_name, NOW() AS current_time
+            FROM availability_requests ar
+            INNER JOIN employees e ON ar.emp_id = e.emp_id
+            WHERE ar.business_id = $1 AND ar.status IN ('Approved', 'Rejected')
+            ORDER BY ar.created_at DESC;
+        `
+        : `
+            SELECT 
+                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
+                ar.created_at, e.f_name, e.l_name, NOW() AS current_time
+            FROM availability_requests ar
+            INNER JOIN employees e ON ar.emp_id = e.emp_id
+            WHERE ar.emp_id = $1 AND ar.business_id = $2 AND ar.status IN ('Approved', 'Rejected')
+            ORDER BY ar.created_at DESC;
+        `;
+
+    try {
+        const values = isManager ? [businessId] : [empId, businessId];
+        const result = await client.query(query, values);
+
+        return result.rows;
+    } catch (error) {
+        console.error('Error fetching past availability requests:', error);
+        throw error;
     } finally {
         await client.end();
     }
