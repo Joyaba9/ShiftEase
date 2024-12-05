@@ -54,7 +54,7 @@ const checkPreference = async (businessId, preferenceId) => {
 
         if (!isPreferenceEnabled) {
             console.log('Preference not enabled, redirecting...');
-            navigation.replace('PTORequest');
+            navigation.replace('ChangeAvailabilityRequest');
         }
     } catch (error) {
         console.error('Error checking preference:', error);

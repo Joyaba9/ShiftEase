@@ -18,7 +18,6 @@ import currentuser from '../../../backend/CurrentUser';
 
 import NavBar from '../../components/NavBar';
 
-
 const { width, height } = Dimensions.get('window');
 const MessagesPage = () => {
   const loggedInUser = useSelector((state) => state.business.businessInfo);
@@ -29,6 +28,10 @@ const MessagesPage = () => {
   const userId = loggedInUser2?.firebaseUser?.uid;
 
   console.log('loggedInUser:', userId);
+
+  const businessInfoC = useSelector((state) => state.business.businessInfo);
+  const loggedInUserC = useSelector((state) => state.user.loggedInUser);
+  const conditional = businessInfoC?.business ? 'Business' : loggedInUserC?.employee ? 'Employee' : 'Account';
 
   const [businessId, setBusinessId] = useState(loggedInUser?.business?.business_id || null);
   const [chatState, setChatState] = useState({
@@ -297,7 +300,7 @@ const MessagesPage = () => {
 
   return (
     <View style={styles.container}>
-      <NavBar />
+      <NavBar homeRoute={conditional}/>
 
       <View style={styles.wholeContainer}>
         {/* Left Column */}

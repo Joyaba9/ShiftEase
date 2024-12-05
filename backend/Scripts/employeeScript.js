@@ -1465,7 +1465,9 @@ export async function getPastAvailabilityRequests(empId, businessId, isManager =
                 ar.created_at, e.f_name, e.l_name, NOW() AS current_time
             FROM availability_requests ar
             INNER JOIN employees e ON ar.emp_id = e.emp_id
-            WHERE ar.business_id = $1 AND ar.status IN ('Approved', 'Rejected')
+            WHERE ar.business_id = $1 
+              AND ar.status IN ('Approved', 'Rejected') 
+              AND ar.end_date < NOW()
             ORDER BY ar.created_at DESC;
         `
         : `
@@ -1474,7 +1476,10 @@ export async function getPastAvailabilityRequests(empId, businessId, isManager =
                 ar.created_at, e.f_name, e.l_name, NOW() AS current_time
             FROM availability_requests ar
             INNER JOIN employees e ON ar.emp_id = e.emp_id
-            WHERE ar.emp_id = $1 AND ar.business_id = $2 AND ar.status IN ('Approved', 'Rejected')
+            WHERE ar.emp_id = $1 
+              AND ar.business_id = $2 
+              AND ar.status IN ('Approved', 'Rejected') 
+              AND ar.end_date < NOW()
             ORDER BY ar.created_at DESC;
         `;
 
