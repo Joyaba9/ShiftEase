@@ -140,7 +140,7 @@ const NavBar = ({ homeRoute }) => {
                         />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => {/* Messages logic */}}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Messages')}>
                         <Image
                             resizeMode="contain"
                             source={require('../assets/images/messagesNav.png')}
