@@ -299,11 +299,11 @@ const EmployeePage = () => {
                         {employee ? `Welcome, ${employee.f_name}` : 'Welcome, User'}
                     </Text> 
 
-                    <Image
+                    {/*<Image
                         resizeMode="contain"
                         source={require('../../assets/images/profile_photo_default.png')}
                         style={styles.profilePhoto}
-                    />
+                    />*/}
                 </View>
 
                 <View style = {styles.dashboardContainer}>
