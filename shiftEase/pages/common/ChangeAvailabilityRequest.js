@@ -73,50 +73,10 @@ const ChangeAvailabilityRequestPage = () => {
         fetchManagerStatus();
     }, [loggedInEmployeeId]);
 
-    const getAllRequestStatusByEmployee = async (status, isManager) => {
-        if (!loggedInEmployeeId || !businessId) {
-            alert('Error with employee or business ID');
-            return;
-        }
-    
-        try {
-            let url;
-            let setFunction;
-    
-            if (status === 'Pending' || status === 'Approved' || status === 'Rejected') {
-                // For Pending, Approved, and Rejected, use the existing route
-                url = `http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=${status}&isManager=${isManager}`;
-                setFunction = status === 'Pending' ? setPendingRequests : status === 'Approved' ? setApprovedRequests : setRejectedRequests;
-            } else if (status === 'Upcoming') {
-                // For Upcoming, use the getFutureRequests route
-                url = `http://localhost:5050/api/employee/getFutureRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`;
-                setFunction = setUpcomingRequests;
-            } else if (status === 'Past') {
-                // For Past, use the getPastRequests route
-                url = `http://localhost:5050/api/employee/getPastRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`;
-                console.log('isManager that is passed through frontend: ', isManager);
-                setFunction = setPastRequests;
-            }
-    
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to fetch requests');
-    
-            const data = await response.json();
-            if (data.success) {
-                setFunction(data.allRequestsByStatus || data.pastRequests || data.futureRequests || []);
-            } else {
-                console.error('Unexpected response format:', data);
-            }
-        } catch (error) {
-            console.error('Error fetching requests:', error);
-            alert('Error fetching requests');
-        }
-    };
-
     const fetchFutureAvailabilityRequests = async () => {
         try {
             const response = await fetch(
-                `http://localhost:5050/api/employee/getFutureAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`
+                `http://localhost:5050/api/employee/getFutureAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`
             );
     
             if (!response.ok) {
@@ -138,7 +98,7 @@ const ChangeAvailabilityRequestPage = () => {
     
     const fetchPendingAvailabilityRequests = async () => {
         try {
-            const response = await fetch(`http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=Pending&requestType=availability`);
+            const response = await fetch(`http://localhost:5050/api/employee/getAllRequestsByStatus?emp_id=${loggedInEmployeeId}&business_id=${businessId}&status=Pending&isManager=${isManager}&requestType=availability`);
             const data = await response.json();
             if (response.ok && data.success) {
                 setPendingAvailabilityRequests(data.allRequestsByStatus);
@@ -151,7 +111,7 @@ const ChangeAvailabilityRequestPage = () => {
     const fetchApprovedAvailabilityRequests = async () => {
         try {
             const response = await fetch(
-                `http://localhost:5050/api/employee/getApprovedAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`
+                `http://localhost:5050/api/employee/getApprovedAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`
             );
             const data = await response.json();
             if (response.ok && data.success) {
@@ -164,13 +124,10 @@ const ChangeAvailabilityRequestPage = () => {
         }
     };
     
-    
-    
-    
     const fetchRejectedAvailabilityRequests = async () => {
         try {
             const response = await fetch(
-                `http://localhost:5050/api/employee/getRejectedAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`
+                `http://localhost:5050/api/employee/getRejectedAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`
             );
             const data = await response.json();
             if (response.ok && data.success) {
@@ -183,12 +140,11 @@ const ChangeAvailabilityRequestPage = () => {
         }
     };
 
-
     const fetchPastAvailabilityRequests = async () => {
         try {
-            console.log(`Fetching past availability requests for emp_id=${loggedInEmployeeId} and business_id=${businessId}`);
+            console.log(`Fetching past availability requests for emp_id=${loggedInEmployeeId} and business_id=${businessId}&isManager=${isManager}`);
             const response = await fetch(
-                `http://localhost:5050/api/employee/getPastAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}`
+                `http://localhost:5050/api/employee/getPastAvailabilityRequests?emp_id=${loggedInEmployeeId}&business_id=${businessId}&isManager=${isManager}`
             );
     
             console.log('Response status:', response.status);

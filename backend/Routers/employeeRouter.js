@@ -496,14 +496,14 @@ router.get('/getApprovedAvailabilityRequests', async (req, res) => {
 
 //Fetch Rejected Availability Requests
 router.get('/getRejectedAvailabilityRequests', async (req, res) => {
-    const { emp_id, business_id } = req.query;
+    const { emp_id, business_id , isManager} = req.query;
 
     if (!emp_id || !business_id) {
         return res.status(400).json({ success: false, message: 'Missing required parameters: emp_id or business_id' });
     }
 
     try {
-        const rejectedRequests = await getRejectedAvailabilityRequests(emp_id, business_id);
+        const rejectedRequests = await getRejectedAvailabilityRequests(emp_id, business_id, isManager);
         res.json({ success: true, rejectedAvailabilityRequests: rejectedRequests });
     } catch (error) {
         console.error('Error fetching rejected availability requests:', error);
@@ -520,7 +520,7 @@ router.get('/getPastAvailabilityRequests', async (req, res) => {
     }
 
     try {
-        const pastAvailabilityRequests = await getPastAvailabilityRequests(emp_id, business_id, isManager === 'true');
+        const pastAvailabilityRequests = await getPastAvailabilityRequests(emp_id, business_id, isManager);
         res.status(200).json({ success: true, pastAvailabilityRequests });
     } catch (error) {
         console.error('Error fetching past availability requests:', error);

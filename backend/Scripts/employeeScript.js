@@ -608,8 +608,8 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             r.status   
         FROM requests r
         JOIN employees e ON r.emp_id = e.emp_id
-        WHERE r.emp_id = $1 AND status = $2
-        ORDER BY created_at DESC;
+        WHERE r.emp_id = $1 AND r.status = $2
+        ORDER BY r.created_at DESC;
     `;
 
     const allPTORequestsManagerQuery = `
@@ -623,8 +623,8 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             r.end_date
         FROM requests r
         JOIN employees e ON r.emp_id = e.emp_id
-        WHERE business_id = $1 AND status = $2
-        ORDER BY created_at DESC;
+        WHERE r.business_id = $1 AND r.status = $2
+        ORDER BY r.created_at DESC;
     `;
 
     // Query to fetch availability requests
@@ -639,8 +639,8 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             ar.status
         FROM availability_requests ar
         JOIN employees e ON ar.emp_id = e.emp_id
-        WHERE ar.emp_id = $1 AND status = $2
-        ORDER BY created_at DESC;
+        WHERE ar.emp_id = $1 AND ar.status = $2
+        ORDER BY ar.created_at DESC;
     `;
 
     const allAvailabilityRequestsManagerQuery = `
@@ -654,8 +654,8 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             ar.end_date
         FROM availability_requests ar
         JOIN employees e ON ar.emp_id = e.emp_id
-        WHERE business_id = $1 AND status = $2
-        ORDER BY created_at DESC;
+        WHERE ar.business_id = $1 AND ar.status = $2
+        ORDER BY ar.created_at DESC;
     `;
 
     try {
@@ -665,6 +665,7 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             throw new Error('Employee is not associated with the specified business or is inactive');
         }
 
+        console.log('business_id in status script: ', business_id);
         console.log('Type of isManager: ', typeof isManager);
         console.log('isManager in status script: ', isManager);
 
@@ -1395,11 +1396,6 @@ export async function getApprovedAvailabilityRequests(emp_id, business_id, isMan
     }
 }
 
-
-
-
-
-
 /**
  * Fetches all rejected availability requests for an employee or manager.
  * 
@@ -1408,43 +1404,78 @@ export async function getApprovedAvailabilityRequests(emp_id, business_id, isMan
  * @param {boolean} isManager - Whether the user is a manager.
  * @returns {Promise<Array>} - An array of rejected availability request records.
  */
-export async function getRejectedAvailabilityRequests(empId, businessId, isManager = false) {
+export async function getRejectedAvailabilityRequests(empId, businessId, isManager) {
     const client = await getClient();
     await client.connect();
 
-    const query = isManager
-        ? `
-            SELECT 
-                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
-                ar.created_at, e.f_name, e.l_name
-            FROM availability_requests ar
-            INNER JOIN employees e ON ar.emp_id = e.emp_id
-            WHERE ar.business_id = $1 AND ar.status = 'Rejected'
-            ORDER BY ar.created_at DESC;
-        `
-        : `
-            SELECT 
-                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
-                ar.created_at, e.f_name, e.l_name
-            FROM availability_requests ar
-            INNER JOIN employees e ON ar.emp_id = e.emp_id
-            WHERE ar.emp_id = $1 AND ar.business_id = $2 AND ar.status = 'Rejected'
-            ORDER BY ar.created_at DESC;
-        `;
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch rejected availability requests for an employee
+    const rejectedAvailabilityRequestsQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.manager_comments
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.emp_id = $1
+          AND ar.business_id = $2
+          AND ar.status = 'Rejected'
+        ORDER BY ar.created_at DESC;
+    `;
+
+    // Manager-level query to fetch rejected availability requests
+    const rejectedAvailabilityRequestsManagerQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.manager_comments
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.business_id = $1
+          AND ar.status = 'Rejected'
+        ORDER BY ar.created_at DESC;
+    `;
 
     try {
-        const values = isManager ? [businessId] : [empId, businessId];
-        const result = await client.query(query, values);
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [empId, businessId]);
+        if (checkRes.rows.length === 0 && !isManager) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        let result;
+
+        if (isManager === 'true') {
+            // Fetch rejected availability requests for the manager
+            result = await client.query(rejectedAvailabilityRequestsManagerQuery, [businessId]);
+        } else {
+            // Fetch rejected availability requests for the employee
+            result = await client.query(rejectedAvailabilityRequestsQuery, [empId, businessId]);
+        }
 
         return result.rows;
-    } catch (error) {
-        console.error('Error fetching rejected availability requests:', error);
-        throw error;
+    } catch (err) {
+        console.error('Error fetching rejected availability requests:', err);
+        throw err;
     } finally {
         await client.end();
     }
 }
-
 
 /**
  * Fetches past availability requests for a specific employee or business.
@@ -1454,43 +1485,78 @@ export async function getRejectedAvailabilityRequests(empId, businessId, isManag
  * @param {boolean} isManager 
  * @returns {Promise<Array>} - An array of past availability requests (approved or rejected).
  */
-export async function getPastAvailabilityRequests(empId, businessId, isManager = false) {
+export async function getPastAvailabilityRequests(emp_id, business_id, isManager) {
     const client = await getClient();
     await client.connect();
 
-    const query = isManager
-        ? `
-            SELECT 
-                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
-                ar.created_at, e.f_name, e.l_name, NOW() AS current_time
-            FROM availability_requests ar
-            INNER JOIN employees e ON ar.emp_id = e.emp_id
-            WHERE ar.business_id = $1 
-              AND ar.status IN ('Approved', 'Rejected') 
-              AND ar.end_date < NOW()
-            ORDER BY ar.created_at DESC;
-        `
-        : `
-            SELECT 
-                ar.request_id, ar.start_date, ar.end_date, ar.status, ar.manager_comments, 
-                ar.created_at, e.f_name, e.l_name, NOW() AS current_time
-            FROM availability_requests ar
-            INNER JOIN employees e ON ar.emp_id = e.emp_id
-            WHERE ar.emp_id = $1 
-              AND ar.business_id = $2 
-              AND ar.status IN ('Approved', 'Rejected') 
-              AND ar.end_date < NOW()
-            ORDER BY ar.created_at DESC;
-        `;
+    // Query to confirm employee's association with the business
+    const checkEmployeeQuery = `
+        SELECT emp_id FROM employees 
+        WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
+    `;
+
+    // Query to fetch past availability requests for an employee
+    const pastAvailabilityRequestsQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.manager_comments,
+            NOW() AS current_time
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.emp_id = $1
+          AND ar.business_id = $2
+          AND ar.status IN ('Approved', 'Rejected')
+          AND ar.end_date < NOW()
+        ORDER BY ar.created_at DESC;
+    `;
+
+    // Manager-level query to fetch past availability requests
+    const pastAvailabilityRequestsManagerQuery = `
+        SELECT 
+            ar.request_id,
+            e.f_name,
+            e.l_name,
+            ar.created_at,
+            ar.start_date, 
+            ar.end_date, 
+            ar.status,
+            ar.manager_comments,
+            NOW() AS current_time
+        FROM availability_requests ar
+        JOIN employees e ON ar.emp_id = e.emp_id
+        WHERE ar.business_id = $1
+          AND ar.status IN ('Approved', 'Rejected')
+          AND ar.end_date < NOW()
+        ORDER BY ar.created_at DESC;
+    `;
 
     try {
-        const values = isManager ? [businessId] : [empId, businessId];
-        const result = await client.query(query, values);
+        // Check if the employee is associated with the business
+        const checkRes = await client.query(checkEmployeeQuery, [emp_id, business_id]);
+        if (checkRes.rows.length === 0) {
+            throw new Error('Employee is not associated with the specified business or is inactive');
+        }
+
+        let result;
+
+        if (isManager === 'true') {
+            // Fetch past availability requests for the manager
+            result = await client.query(pastAvailabilityRequestsManagerQuery, [business_id]);
+        } else {
+            // Fetch past availability requests for the employee
+            result = await client.query(pastAvailabilityRequestsQuery, [emp_id, business_id]);
+        }
 
         return result.rows;
-    } catch (error) {
-        console.error('Error fetching past availability requests:', error);
-        throw error;
+    } catch (err) {
+        console.error('Error fetching past availability requests:', err);
+        throw err;
     } finally {
         await client.end();
     }
