@@ -314,6 +314,8 @@ export async function AddEmployeeAvailability(emp_id, availability) {
         const insertQuery = `
             INSERT INTO availability (emp_id, day_of_week, start_time, end_time, start_date, end_date)
             VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (emp_id, day_of_week) DO UPDATE
+            SET start_time = $3, end_time = $4, start_date = $5, end_date = $6
         `;
 
         // Execute the insertion for each day in the availability array
