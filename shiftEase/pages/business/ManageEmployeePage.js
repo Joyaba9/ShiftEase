@@ -63,19 +63,23 @@ const ManageEmployeePage = () => {
           if (!Array.isArray(empAvailability) || empAvailability.length === 0) {
               console.log("No specific availability data found, initializing empty form.");
               setAvailability([
+                  { day_of_week: 'Sunday', start_time: '', end_time: '', start_date: '', end_date: '' },
                   { day_of_week: 'Monday', start_time: '', end_time: '', start_date: '', end_date: '' },
                   { day_of_week: 'Tuesday', start_time: '', end_time: '', start_date: '', end_date: '' },
                   { day_of_week: 'Wednesday', start_time: '', end_time: '', start_date: '', end_date: '' },
                   { day_of_week: 'Thursday', start_time: '', end_time: '', start_date: '', end_date: '' },
-                  { day_of_week: 'Friday', start_time: '', end_time: '', start_date: '', end_date: '' }
+                  { day_of_week: 'Friday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                  { day_of_week: 'Saturday', start_time: '', end_time: '', start_date: '', end_date: '' }
               ]);
           } else {
               const fullWeek = [
-                  { day_of_week: 'Monday', start_time: '', end_time: '', start_date: '', end_date: '' },
-                  { day_of_week: 'Tuesday', start_time: '', end_time: '', start_date: '', end_date: '' },
-                  { day_of_week: 'Wednesday', start_time: '', end_time: '', start_date: '', end_date: '' },
-                  { day_of_week: 'Thursday', start_time: '', end_time: '', start_date: '', end_date: '' },
-                  { day_of_week: 'Friday', start_time: '', end_time: '', start_date: '', end_date: '' }
+                { day_of_week: 'Sunday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                { day_of_week: 'Monday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                { day_of_week: 'Tuesday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                { day_of_week: 'Wednesday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                { day_of_week: 'Thursday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                { day_of_week: 'Friday', start_time: '', end_time: '', start_date: '', end_date: '' },
+                { day_of_week: 'Saturday', start_time: '', end_time: '', start_date: '', end_date: '' }
               ];
   
               empAvailability.forEach((dayData) => {
