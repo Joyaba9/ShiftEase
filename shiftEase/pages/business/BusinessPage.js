@@ -109,7 +109,7 @@ useEffect(() => {
       showsHorizontalScrollIndicator={false}
     >
       <View style={styles.container}>
-        <NavBar homeRoute={'Business'}/>
+        <NavBar homeRoute={'Business'} showLogout={true}/>
 
         <View style={styles.topContainer}>
 

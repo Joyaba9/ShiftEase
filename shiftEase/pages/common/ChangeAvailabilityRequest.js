@@ -322,7 +322,7 @@ const ChangeAvailabilityRequestPage = () => {
     
     return (
         <>
-            <NavBar homeRoute={'Employee'}/>
+            <NavBar homeRoute={'Employee'} showLogout={false}/>
             <View style={styles.screenCenter}>
                 <View style={styles.container}>
                     <View style={styles.headerRow}>
