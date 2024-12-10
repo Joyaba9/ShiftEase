@@ -119,21 +119,27 @@ useEffect(() => {
           </Text>
 
           {/* Button to switch between dashboards */}
-          <TouchableOpacity onPress={switchDashboard}>
+          {/* <TouchableOpacity onPress={switchDashboard}>
             <Text style = {styles.managerText}>
               {isManagerDashboard ? 'Switch to Business Dashboard!' : 'Switch to Manager Dashboard!'}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
         </View>
   
         <View style={styles.dashboardContainer}>
           {/* Left Column */}
           <View style={styles.leftPane}>
-            <SidebarButton
+            {/* <SidebarButton
               icon={isManagerDashboard ? require('../../assets/images/calendar_with_gear.png') : require('../../assets/images/manage_business.png')}
               label={isManagerDashboard ? 'Manage Schedule' : 'Manage Business'}
               onPress={() => isManagerDashboard ? navigation.navigate('ManageSchedule') : navigation.navigate('ManageBusiness')}
+              customContainerStyle={{ right: -10 }}
+            /> */}
+            <SidebarButton
+              icon={require('../../assets/images/calendar_with_gear.png')}
+              label= 'Manage Schedule'
+              onPress={() =>  navigation.navigate('ManageSchedule')}
               customContainerStyle={{ right: -10 }}
             />
             <SidebarButton
