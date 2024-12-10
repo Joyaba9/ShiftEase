@@ -113,9 +113,14 @@ const ManageEmployeePage = () => {
         }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        alert('Success: Employee deleted successfully.');
+        //Alert.alert('Action Completed', 'Employee deleted successfully.');
+        fetchEmployees();
+      } else {
         throw new Error('Failed to delete employee');
       }
+
     } catch (error) {
       console.error('Error deleting employee:', error);
       Alert.alert('Error', 'Failed to delete employee.');
