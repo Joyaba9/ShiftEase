@@ -576,17 +576,16 @@ export async function getAllRequestsByEmployee(emp_id, business_id) {
 }
 
 /**
- * Fetches all requests (PTO or availability) for an employee or manager, sorted by the latest start date first,
+ * Fetches all requests for an employee, sorted by the latest start date first,
  * ensuring the employee belongs to the specified business.
  * 
  * @param {number} emp_id - The ID of the employee.
  * @param {number} business_id - The ID of the business.
- * @param {string} status - The status that is being searched for.
- * @param {boolean} isManager - Manager status.
- * @param {string} requestType - Type of request: 'pto' or 'availability'.
+ * @param {string} status - The status that is being searched for
+ * @param {boolean} isManager - Manager status
  * @returns {Promise<Array>} - An array of all request records, including day type and times.
  */
-export async function getAllRequestStatusByEmployee(emp_id, business_id, status, isManager, requestType = 'pto') {
+export async function getAllRequestStatusByEmployee(emp_id, business_id, status, isManager) {
     const client = await getClient();
     await client.connect();
 
@@ -596,23 +595,23 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
         WHERE emp_id = $1 AND business_id = $2 AND is_active = TRUE;
     `;
 
-    // Query to fetch PTO requests
-    const allPTORequestsQuery = `
+    // Query to fetch all requests sorted by the latest start date first
+    const allRequestsByStatusQuery = `
         SELECT 
             r.request_id,
             e.f_name,
-            e.l_name,
+            e.l_name,  
             r.created_at,
             r.start_date, 
             r.end_date, 
             r.status   
         FROM requests r
         JOIN employees e ON r.emp_id = e.emp_id
-        WHERE r.emp_id = $1 AND r.status = $2
-        ORDER BY r.created_at DESC;
+        WHERE r.emp_id = $1 AND status = $2
+        ORDER BY created_at DESC;
     `;
 
-    const allPTORequestsManagerQuery = `
+    const allRequestsByStatusManagerQuery = `
         SELECT 
             r.request_id,
             e.f_name,
@@ -623,39 +622,8 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             r.end_date
         FROM requests r
         JOIN employees e ON r.emp_id = e.emp_id
-        WHERE r.business_id = $1 AND r.status = $2
-        ORDER BY r.created_at DESC;
-    `;
-
-    // Query to fetch availability requests
-    const allAvailabilityRequestsQuery = `
-        SELECT 
-            ar.request_id,
-            e.f_name,
-            e.l_name,
-            ar.created_at,
-            ar.start_date,
-            ar.end_date,
-            ar.status
-        FROM availability_requests ar
-        JOIN employees e ON ar.emp_id = e.emp_id
-        WHERE ar.emp_id = $1 AND ar.status = $2
-        ORDER BY ar.created_at DESC;
-    `;
-
-    const allAvailabilityRequestsManagerQuery = `
-        SELECT 
-            ar.request_id,
-            e.f_name,
-            e.l_name,
-            ar.created_at,
-            ar.status,
-            ar.start_date,
-            ar.end_date
-        FROM availability_requests ar
-        JOIN employees e ON ar.emp_id = e.emp_id
-        WHERE ar.business_id = $1 AND ar.status = $2
-        ORDER BY ar.created_at DESC;
+        WHERE business_id = $1 AND status = $2
+        ORDER BY created_at DESC;
     `;
 
     try {
@@ -665,28 +633,17 @@ export async function getAllRequestStatusByEmployee(emp_id, business_id, status,
             throw new Error('Employee is not associated with the specified business or is inactive');
         }
 
-        console.log('business_id in status script: ', business_id);
         console.log('Type of isManager: ', typeof isManager);
         console.log('isManager in status script: ', isManager);
 
-        // Determine which query to use based on request type and manager status
-        let result;
-        if (requestType === 'availability') {
-            if (isManager === 'true') {
-                result = await client.query(allAvailabilityRequestsManagerQuery, [business_id, status]);
-            } else {
-                result = await client.query(allAvailabilityRequestsQuery, [emp_id, status]);
-            }
+        if (isManager === 'true') {
+            const result = await client.query(allRequestsByStatusManagerQuery, [business_id, status]);
+            return result.rows;
         } else {
-            // Default to PTO requests
-            if (isManager === 'true') {
-                result = await client.query(allPTORequestsManagerQuery, [business_id, status]);
-            } else {
-                result = await client.query(allPTORequestsQuery, [emp_id, status]);
-            }
-        }
-
-        return result.rows;
+             // Fetch all requests if the association is confirmed
+            const result = await client.query(allRequestsByStatusQuery, [emp_id, status]);
+            return result.rows;
+        } 
     } catch (err) {
         console.error('Error fetching all requests:', err);
         throw err;

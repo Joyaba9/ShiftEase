@@ -187,10 +187,10 @@ router.get('/getAllRequests', async (req, res) => {
     }
 });
 
-// Route to fetch all requests for a specific employee, sorted by status
+// Route to fetch all requests for a specifric employee, sorted by status
 router.get('/getAllRequestsByStatus', async (req, res) => {
     console.log('Function being called');
-    const { emp_id, business_id, status, isManager, requestType } = req.query; // Extract parameters from query
+    const { emp_id, business_id, status, isManager } = req.query; // Extract emp_id and business_id from query parameters
 
     // Validate input
     if (!emp_id || !business_id || !status) {
@@ -198,11 +198,11 @@ router.get('/getAllRequestsByStatus', async (req, res) => {
     }
 
     console.log('isManager in status router: ', isManager);
-    console.log('requestType in status router: ', requestType);
+    console.log('Type of isManager: ', typeof isManager);
 
     try {
         // Fetch all requests for the given employee and business
-        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status, isManager, requestType || 'pto'); // Default to PTO if requestType is not provided
+        const allRequestsByStatus = await getAllRequestStatusByEmployee(emp_id, business_id, status, isManager);
 
         // Return the list of all requests in JSON format
         res.status(200).json({ success: true, allRequestsByStatus });
