@@ -458,7 +458,7 @@ const SchedulePage = () => {
                 showsHorizontalScrollIndicator={false}
         >
             <View style={styles.container}>
-                <NavBar homeRoute={homeRoute}/>
+                <NavBar homeRoute={homeRoute} showLogout={false}/>
 
                 {/* Dropdown menu for role filter */}
                 {isDropdownVisible && (

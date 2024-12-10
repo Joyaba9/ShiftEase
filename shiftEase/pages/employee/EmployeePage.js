@@ -286,7 +286,7 @@ const EmployeePage = () => {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style = {styles.container}>
         
-                <NavBar homeRoute={'Employee'}/>
+                <NavBar homeRoute={'Employee'} showLogout={true}/>
 
                 <View style = {styles.topContainer}>
                     <Text style={styles.dashboardText}> 

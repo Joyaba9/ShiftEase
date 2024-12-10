@@ -300,7 +300,7 @@ const MessagesPage = () => {
 
   return (
     <View style={styles.container}>
-      <NavBar homeRoute={conditional}/>
+      <NavBar homeRoute={conditional} showLogout={false}/>
 
       <View style={styles.wholeContainer}>
         {/* Left Column */}

@@ -115,7 +115,7 @@ const AccountPage = () => {
                         showsHorizontalScrollIndicator={false} 
                     >
                         <View style = {styles.topContainer}>
-                                <NavBar homeRoute={conditional}/>
+                                <NavBar homeRoute={conditional} showLogout={false}/>
                         </View>
                     
                         {conditional === 'Business' ? (

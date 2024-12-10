@@ -244,7 +244,7 @@ const ViewSchedulePage = () => {
             showsHorizontalScrollIndicator={false}
         >
             <View style={styles.container}>
-                <NavBar homeRoute={'Employee'}/>
+                <NavBar homeRoute={'Employee'} showLogout={false}/>
 
                 <Text style={styles.dashboardText}> View Schedule</Text>
                 <View style={styles.topContainer}>

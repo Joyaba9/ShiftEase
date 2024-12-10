@@ -186,7 +186,7 @@ const checkPreference = async (businessId, preferenceId) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <NavBar homeRoute={'Employee'} />
+      <NavBar homeRoute={'Employee'} showLogout={false}/>
       <LinearGradient colors={['#E7E7E7', '#A7CAD8']} style={styles.gradient}>
         <View style={styles.headerContainer}>
           <Text style={styles.headerText}>Change Availability</Text>

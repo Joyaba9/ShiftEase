@@ -12,7 +12,7 @@ import { setPersistence, browserSessionPersistence } from "firebase/auth";
 import SettingsPage from '../pages/business/SettingsPage';
 import CurrentUser from '../../backend/CurrentUser.js';
 
-const NavBar = ({ homeRoute }) => {
+const NavBar = ({ homeRoute, showLogout }) => {
 
     const screenWidth = Dimensions.get('window').width;
     const dispatch = useDispatch();
@@ -205,16 +205,19 @@ const NavBar = ({ homeRoute }) => {
                 </View>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Messages')}>
-                        <Image
-                            resizeMode="contain"
-                            source={require('../assets/images/messagesNav.png')}
-                            style={styles.notificationIcon}
-                        />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.logOutButton} onPress={handleLogout}>
-                    <Text style={styles.buttonText}>Log Out</Text>
+                    <Image
+                        resizeMode="contain"
+                        source={require('../assets/images/messagesNav.png')}
+                        style={styles.notificationIcon}
+                    />
                 </TouchableOpacity>
+
+                {showLogout && (
+                    <TouchableOpacity style={styles.logOutButton} onPress={handleLogout}>
+                        <Text style={styles.buttonText}>Log Out</Text>
+                    </TouchableOpacity>
+                )}
+
                 </View>
 
             </LinearGradient>
