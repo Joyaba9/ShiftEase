@@ -113,25 +113,31 @@ const ViewSchedulePage = () => {
 
                         let userTotalHours = 0;
 
-                        existingSchedule.shifts.forEach(shift => {
-                            // Format both dates to YYYY-MM-DD 
-                            const shiftDate = shift.date.slice(0, 10); // Extract YYYY-MM-DD
-                            const dateIndex = dates.findIndex(date => date.toISOString().slice(0, 10) === shiftDate);
-
+                        existingSchedule.shifts.forEach((shift) => {
+                            const shiftDate = shift.date.slice(0, 10); // Format to YYYY-MM-DD
+                            const dateIndex = dates.findIndex((date) => date.toISOString().slice(0, 10) === shiftDate);
+                        
                             if (dateIndex !== -1) {
                                 const cellId = `${shift.employeeId}-${dateIndex}`;
-                                loadedEmployeeAssignments[cellId] = {
-                                    f_name: shift.employeeName.split(' ')[0],
-                                    l_name: shift.employeeName.split(' ')[1]
-                                };
-
-                                // Add shift details, including shiftId
-                                loadedShiftAssignments[cellId] = {
-                                    shiftId: shift.shiftId, // Include the shiftId
+                        
+                                // Initialize an array if no shifts are stored for this cell yet
+                                if (!loadedShiftAssignments[cellId]) {
+                                    loadedShiftAssignments[cellId] = { shifts: [] };
+                                }
+                        
+                                // Append the current shift
+                                loadedShiftAssignments[cellId].shifts.push({
                                     time: `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`,
-                                };
-                                
-                                // Calculate shift duration and add to total if it's the logged-in employee's shift
+                                    shiftId: shift.shiftId,
+                                    startTime: shift.startTime,
+                                });
+
+                                // Sort the shifts by start time
+                                loadedShiftAssignments[cellId].shifts.sort((a, b) => {
+                                    return a.startTime.localeCompare(b.startTime);
+                                });
+                        
+                                // Calculate shift duration and add to total for the logged-in employee
                                 if (shift.employeeId === loggedInEmployeeId) {
                                     const shiftDuration = calculateShiftDuration(shift.startTime, shift.endTime);
                                     userTotalHours += shiftDuration;
@@ -169,8 +175,9 @@ const ViewSchedulePage = () => {
     };
 
     // Function to handle cell click for logged-in employee
-    const handleShiftClick = (shift, cellId) => {
-        setSelectedShift({ ...shift, cellId });
+    const handleShiftClick = (shiftData, cellId) => {
+        console.log("Shift Clicked:", shiftData);
+        setSelectedShift({ ...shiftData, cellId });
         setPopupVisible(true);
     };
 
@@ -292,10 +299,15 @@ const ViewSchedulePage = () => {
                                         {dates.map((date, colIndex) => {
                                             const cellId = `${employee.emp_id}-${colIndex}`;
                                             const shiftData = shiftAssignments[cellId]; 
-
                                             console.log(`Cell ID: ${cellId}`, "Shift Data:", shiftData);
+
+                                            // Join all shift times with line breaks
+                                            const shiftTimes = shiftData?.shifts?.map((shift) => shift.time).join('\n');
+                                            console.log("Shift times: ", shiftTimes);
+
                                             // Calculate if the shift date is in the past
                                             const isPast = new Date(date).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+                                            
                                             // Determine if this row belongs to the logged-in user
                                             const isLoggedInUser = employee.emp_id === loggedInEmployeeId;
 
@@ -305,24 +317,23 @@ const ViewSchedulePage = () => {
                                                     style={[
                                                         styles.scheduleCell,
                                                         isLoggedInUser && styles.clickableCell,
-                                                        //employee.emp_id === loggedInEmployeeId && styles.clickableCell,
                                                         isLoggedInUser && isPast && styles.disabledCell,
                                                     ]}
                                                     disabled={isLoggedInUser && isPast}
                                                     onPress={() => 
                                                         !isPast &&
                                                         isLoggedInUser && 
-                                                        //employee.emp_id === loggedInEmployeeId &&
                                                         shiftData &&
                                                         handleShiftClick({
-                                                            shiftId: shiftData.shiftId,
+                                                            //shiftId: shiftData.shiftId,
+                                                            shifts: shiftData.shifts,
                                                             date: date.toDateString(),
-                                                            time: shiftData.time,
+                                                            time: shiftData.shifts?.map((shift) => shift.time).join('\n'),
                                                             employee: `${employee.f_name} ${employee.l_name}`,
                                                         }, cellId)
                                                     }
                                                 >
-                                                    <Text>{shiftData ? shiftData.time : 'Off'}</Text>
+                                                    <Text> {shiftTimes || 'Off'}</Text>
 
                                                     {/* Display "Offered" below the time if the shift is offered */}
                                                     {shiftData?.isOffered && <Text style={styles.offeredText}>Offered</Text>}
@@ -518,51 +529,53 @@ const ViewSchedulePage = () => {
                                     />
                                 </TouchableOpacity>
                             </View>
-                            
-                            {selectedShift && (
-                                <>
-                                    <Text>Employee: {selectedShift.employee}</Text>
-                                    <Text>Date: {selectedShift.date}</Text>
-                                    <Text>Time: {selectedShift.time}</Text>
-                                </>
-                            )}
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity 
-                                    style={styles.button} 
-                                    onPress={async () => {
-                                        if (selectedShift && selectedShift.shiftId && selectedShift.cellId) {
-                                            console.log('Selected Shift:', selectedShift); // Debugging log
-                                            console.log('Logged In Employee ID:', loggedInEmployeeId); // Debugging log
 
-                                            try {
-                                                const { shiftId, cellId } = selectedShift;
-                                                const result = await offerShiftAPI(shiftId, loggedInEmployeeId);
-                                                console.log('Shift offer result:', result);
-                                                setShiftAssignments((prev) => ({
-                                                    ...prev,
-                                                    [cellId]: {
-                                                        ...prev[cellId],
-                                                        isOffered: true,
-                                                    },
-                                                }));
-                                                alert('Shift offered successfully!');
-                                                closePopup(); // Close the popup after successful action
-                                            } catch (error) {
-                                                console.error('Error offering shift:', error);
-                                                alert(`Failed to offer shift: ${error.message}`);
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.buttonText}>Offer Shift</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.button, { marginLeft: 10 }]} 
-                                    onPress={() => console.log('Swap Shift')}
-                                >
-                                    <Text style={styles.buttonText}>Swap Shift</Text>
-                                </TouchableOpacity>
-                            </View>
+                            {selectedShift?.shifts?.length > 0 ? (
+                                <View style={styles.shiftRowContainer}>
+                                    {selectedShift.shifts.map((shift, index) => (
+                                        <View key={index} style={styles.shiftColumn}>
+                                            <Text>Employee: {selectedShift.employee}</Text>
+                                            <Text>Date: {selectedShift.date}</Text>
+                                            <Text>Time: {shift.time}</Text>
+                                            <View style={styles.buttonContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.button}
+                                                    onPress={async () => {
+                                                        console.log("Selected Shift:", shift); // Debugging log
+                                                        console.log("Logged In Employee ID:", loggedInEmployeeId); // Debugging log
+                                                        try {
+                                                            const result = await offerShiftAPI(shift.shiftId, loggedInEmployeeId);
+                                                            console.log("Shift offer result:", result);
+                                                            setShiftAssignments((prev) => ({
+                                                                ...prev,
+                                                                [selectedShift.cellId]: {
+                                                                    ...prev[selectedShift.cellId],
+                                                                    isOffered: true,
+                                                                },
+                                                            }));
+                                                            alert("Shift offered successfully!");
+                                                            closePopup(); // Close the popup after successful action
+                                                        } catch (error) {
+                                                            console.error("Error offering shift:", error);
+                                                            alert(`Failed to offer shift: ${error.message}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Text style={styles.buttonText}>Offer Shift</Text>
+                                                </TouchableOpacity>
+                                                {/* <TouchableOpacity
+                                                    style={[styles.button, { marginLeft: 10 }]}
+                                                    onPress={() => console.log("Swap Shift")}
+                                                >
+                                                    <Text style={styles.buttonText}>Swap Shift</Text>
+                                                </TouchableOpacity> */}
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            ) : (
+                                <Text>No shift data available.</Text>
+                            )}
                         </View>
                     </View>
                 </Modal>
@@ -714,8 +727,6 @@ const styles = StyleSheet.create({
         width: '95%',
         height: '35%',
         marginBottom: 70,
-        // borderWidth: 2,
-        // borderColor: 'red'
     },
     offeredShiftsContainer: {
         flexDirection: 'row',
@@ -765,7 +776,8 @@ const styles = StyleSheet.create({
         height: 20,
     },
     modalContent: {
-        width: '30%',
+        minWidth: '25%',
+        maxWidth: '30%',
         height: '30%',
         backgroundColor: 'white',
         justifyContent: 'space-between',
@@ -776,6 +788,21 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
+    },
+    shiftRowContainer: {
+        flexDirection: 'row',
+        height: '100%',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    
+    shiftColumn: {
+        width: '50%', 
+        height: '90%',
+        padding: 10,
+        justifyContent: 'space-between',
+        marginTop: 20,
+        marginBottom: 50,
     },
     buttonContainer: {
         width: '100%',

@@ -9,7 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { fetchEmployeeAvailability } from '../../../backend/api/employeeApi';
 import { fetchScheduleAPI, fetchOpenShiftOffers, acceptShiftOfferAPI } from '../../../backend/api/scheduleApi';
 import { getStartOfWeek } from '../../components/schedule_components/useCalendar';
-import { calculateHoursDifference, formatTime } from '../../components/schedule_components/scheduleUtils';
+import { calculateHoursDifference, formatTime, formatDate } from '../../components/schedule_components/scheduleUtils';
 import SidebarButton from '../../components/SidebarButton';
 import ShiftCard from '../../components/ShiftCard';
 import EmployeePageMobile from './EmployeePageMobile';
@@ -26,6 +26,7 @@ const EmployeePage = () => {
     today.setHours(0, 0, 0, 0);
     const [pulledGeneralAnnouncement, setPulledGeneralAnnouncement] = useState([]);
     const [openAddForm, setOpenAddForm] = useState(false);
+    const [employeeShifts, setEmployeeShifts] = useState([]);
 
     // Retrieve the logged-in user from Redux store
     const loggedInUser = useSelector((state) => state.user.loggedInUser);
@@ -123,6 +124,9 @@ const EmployeePage = () => {
                 // Calculate total weekly hours for the logged-in employee
                 let totalHours = 0;
                 const loggedInEmployeeShifts = shifts.filter(shift => shift.employeeId === employee.emp_id);
+
+                setEmployeeShifts(loggedInEmployeeShifts);
+                console.log("Employee shifts before filtering: ", loggedInEmployeeShifts);
 
                 loggedInEmployeeShifts.forEach((shift) => {
                     totalHours += calculateHoursDifference(shift.startTime, shift.endTime);
@@ -251,21 +255,77 @@ const EmployeePage = () => {
         return openShiftOffers.filter((shift) => new Date(shift.date) >= today);
     }, [activeFilter, openShiftOffers, employeeAvailability]);
 
-    const handleAcceptShift = async (shiftId) => {
-        console.log('Trying to accept shift', shiftId)
+    // const handleAcceptShift = async (shiftId) => {
+    //     console.log('Trying to accept shift', shiftId)
+    //     try {
+    //         if (!employee || !employee.emp_id) {
+    //             console.error('Employee ID is missing');
+    //             return;
+    //         }
+    
+    //         // Call the API
+    //         const result = await acceptShiftOfferAPI(shiftId, employee.emp_id);
+    //         console.log('Shift accepted:', result);
+    
+    //         setOpenShiftOffers((prevOffers) => prevOffers.filter((offer) => offer.shift_id !== shiftId));
+    
+    //         // Show success message or take additional actions
+    //         alert('Shift accepted successfully!');
+    //     } catch (error) {
+    //         console.error('Error accepting shift:', error);
+    //         alert('Failed to accept the shift. Please try again.');
+    //     }
+    // };
+
+    console.log("Employee shifts before handle accept shift: ", employeeShifts);
+    const handleAcceptShift = async (shiftId, newShiftDate, newShiftStartTime, newShiftEndTime) => {
+        console.log('Trying to accept shift', shiftId, formatDate(newShiftDate), newShiftStartTime, newShiftEndTime);
+    
         try {
             if (!employee || !employee.emp_id) {
                 console.error('Employee ID is missing');
                 return;
             }
     
-            // Call the API
+            const newStart = new Date(newShiftDate);
+            const newEnd = new Date(newShiftDate);
+            newStart.setHours(...newShiftStartTime.split(':'));
+            newEnd.setHours(...newShiftEndTime.split(':'));
+    
+            const hasConflict = employeeShifts.some((shift) => {
+                // Ensure the dates match for conflict detection
+                if (formatDate(shift.date) !== formatDate(newShiftDate)) return false;
+    
+                const existingStart = new Date(shift.date);
+                const existingEnd = new Date(shift.date);
+                existingStart.setHours(...shift.startTime.split(':'));
+                existingEnd.setHours(...shift.endTime.split(':'));
+    
+                console.log("Comparing Shifts:", {
+                    existingStart,
+                    existingEnd,
+                    newStart,
+                    newEnd,
+                });
+    
+                return (
+                    (newStart >= existingStart && newStart < existingEnd) || // New shift starts during an existing shift
+                    (newEnd > existingStart && newEnd <= existingEnd) || // New shift ends during an existing shift
+                    (newStart <= existingStart && newEnd >= existingEnd) // New shift fully overlaps an existing shift
+                );
+            });
+    
+            if (hasConflict) {
+                alert('You are already scheduled during this time. Shift cannot be accepted.');
+                return;
+            }
+    
+            // Proceed with accepting the shift if no conflict
             const result = await acceptShiftOfferAPI(shiftId, employee.emp_id);
             console.log('Shift accepted:', result);
     
             setOpenShiftOffers((prevOffers) => prevOffers.filter((offer) => offer.shift_id !== shiftId));
     
-            // Show success message or take additional actions
             alert('Shift accepted successfully!');
         } catch (error) {
             console.error('Error accepting shift:', error);
@@ -488,7 +548,7 @@ const EmployeePage = () => {
                                                     time={`${formatTime(offer.start_time)} - ${formatTime(offer.end_time)}`}
                                                     addedHours={addedHours}
                                                     totalHours={totalHours}
-                                                    onAddShift={handleAcceptShift}
+                                                    onAddShift={(shiftId) => handleAcceptShift(shiftId, offer.date, offer.start_time, offer.end_time)}
                                                 />
                                             );
                                         })
