@@ -175,14 +175,9 @@ const ViewSchedulePage = () => {
     };
 
     // Function to handle cell click for logged-in employee
-    // const handleShiftClick = (shift, cellId) => {
-    //     setSelectedShift({ ...shift, cellId });
-    //     setPopupVisible(true);
-    // };
     const handleShiftClick = (shiftData, cellId) => {
         console.log("Shift Clicked:", shiftData);
         setSelectedShift({ ...shiftData, cellId });
-        //setSelectedShift({ shifts: shiftData.shifts, cellId });
         setPopupVisible(true);
     };
 
@@ -322,7 +317,6 @@ const ViewSchedulePage = () => {
                                                     style={[
                                                         styles.scheduleCell,
                                                         isLoggedInUser && styles.clickableCell,
-                                                        //employee.emp_id === loggedInEmployeeId && styles.clickableCell,
                                                         isLoggedInUser && isPast && styles.disabledCell,
                                                     ]}
                                                     disabled={isLoggedInUser && isPast}
@@ -339,7 +333,6 @@ const ViewSchedulePage = () => {
                                                         }, cellId)
                                                     }
                                                 >
-                                                    {/* <Text>{shiftData ? shiftData.time : 'Off'}</Text> */}
                                                     <Text> {shiftTimes || 'Off'}</Text>
 
                                                     {/* Display "Offered" below the time if the shift is offered */}
@@ -536,51 +529,53 @@ const ViewSchedulePage = () => {
                                     />
                                 </TouchableOpacity>
                             </View>
-                            
-                            {selectedShift && (
-                                <>
-                                    <Text>Employee: {selectedShift.employee}</Text>
-                                    <Text>Date: {selectedShift.date}</Text>
-                                    <Text>Time: {selectedShift.time}</Text>
-                                </>
-                            )}
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity 
-                                    style={styles.button} 
-                                    onPress={async () => {
-                                        if (selectedShift && selectedShift.shiftId && selectedShift.cellId) {
-                                            console.log('Selected Shift:', selectedShift); // Debugging log
-                                            console.log('Logged In Employee ID:', loggedInEmployeeId); // Debugging log
 
-                                            try {
-                                                const { shiftId, cellId } = selectedShift;
-                                                const result = await offerShiftAPI(shiftId, loggedInEmployeeId);
-                                                console.log('Shift offer result:', result);
-                                                setShiftAssignments((prev) => ({
-                                                    ...prev,
-                                                    [cellId]: {
-                                                        ...prev[cellId],
-                                                        isOffered: true,
-                                                    },
-                                                }));
-                                                alert('Shift offered successfully!');
-                                                closePopup(); // Close the popup after successful action
-                                            } catch (error) {
-                                                console.error('Error offering shift:', error);
-                                                alert(`Failed to offer shift: ${error.message}`);
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.buttonText}>Offer Shift</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.button, { marginLeft: 10 }]} 
-                                    onPress={() => console.log('Swap Shift')}
-                                >
-                                    <Text style={styles.buttonText}>Swap Shift</Text>
-                                </TouchableOpacity>
-                            </View>
+                            {selectedShift?.shifts?.length > 0 ? (
+                                <View style={styles.shiftRowContainer}>
+                                    {selectedShift.shifts.map((shift, index) => (
+                                        <View key={index} style={styles.shiftColumn}>
+                                            <Text>Employee: {selectedShift.employee}</Text>
+                                            <Text>Date: {selectedShift.date}</Text>
+                                            <Text>Time: {shift.time}</Text>
+                                            <View style={styles.buttonContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.button}
+                                                    onPress={async () => {
+                                                        console.log("Selected Shift:", shift); // Debugging log
+                                                        console.log("Logged In Employee ID:", loggedInEmployeeId); // Debugging log
+                                                        try {
+                                                            const result = await offerShiftAPI(shift.shiftId, loggedInEmployeeId);
+                                                            console.log("Shift offer result:", result);
+                                                            setShiftAssignments((prev) => ({
+                                                                ...prev,
+                                                                [selectedShift.cellId]: {
+                                                                    ...prev[selectedShift.cellId],
+                                                                    isOffered: true,
+                                                                },
+                                                            }));
+                                                            alert("Shift offered successfully!");
+                                                            closePopup(); // Close the popup after successful action
+                                                        } catch (error) {
+                                                            console.error("Error offering shift:", error);
+                                                            alert(`Failed to offer shift: ${error.message}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Text style={styles.buttonText}>Offer Shift</Text>
+                                                </TouchableOpacity>
+                                                {/* <TouchableOpacity
+                                                    style={[styles.button, { marginLeft: 10 }]}
+                                                    onPress={() => console.log("Swap Shift")}
+                                                >
+                                                    <Text style={styles.buttonText}>Swap Shift</Text>
+                                                </TouchableOpacity> */}
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            ) : (
+                                <Text>No shift data available.</Text>
+                            )}
                         </View>
                     </View>
                 </Modal>
@@ -732,8 +727,6 @@ const styles = StyleSheet.create({
         width: '95%',
         height: '35%',
         marginBottom: 70,
-        // borderWidth: 2,
-        // borderColor: 'red'
     },
     offeredShiftsContainer: {
         flexDirection: 'row',
@@ -783,7 +776,8 @@ const styles = StyleSheet.create({
         height: 20,
     },
     modalContent: {
-        width: '30%',
+        minWidth: '25%',
+        maxWidth: '30%',
         height: '30%',
         backgroundColor: 'white',
         justifyContent: 'space-between',
@@ -794,6 +788,21 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
+    },
+    shiftRowContainer: {
+        flexDirection: 'row',
+        height: '100%',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    
+    shiftColumn: {
+        width: '50%', 
+        height: '90%',
+        padding: 10,
+        justifyContent: 'space-between',
+        marginTop: 20,
+        marginBottom: 50,
     },
     buttonContainer: {
         width: '100%',
