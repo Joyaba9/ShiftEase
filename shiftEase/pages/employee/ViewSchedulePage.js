@@ -180,7 +180,9 @@ const ViewSchedulePage = () => {
     //     setPopupVisible(true);
     // };
     const handleShiftClick = (shiftData, cellId) => {
-        setSelectedShift({ shifts: shiftData.shifts, cellId });
+        console.log("Shift Clicked:", shiftData);
+        setSelectedShift({ ...shiftData, cellId });
+        //setSelectedShift({ shifts: shiftData.shifts, cellId });
         setPopupVisible(true);
     };
 
@@ -332,7 +334,7 @@ const ViewSchedulePage = () => {
                                                             //shiftId: shiftData.shiftId,
                                                             shifts: shiftData.shifts,
                                                             date: date.toDateString(),
-                                                            //time: shiftData.time,
+                                                            time: shiftData.shifts?.map((shift) => shift.time).join('\n'),
                                                             employee: `${employee.f_name} ${employee.l_name}`,
                                                         }, cellId)
                                                     }
