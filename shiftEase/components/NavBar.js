@@ -6,7 +6,7 @@ import { store, persistor } from '../redux/store';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/reducers/userReducer';
 import { logoutBusiness } from '../redux/reducers/businessReducer';
-import { auth } from '../../backend/firebase';
+import { auth } from '../firebase';
 import { signOut } from "firebase/auth";
 import { setPersistence, browserSessionPersistence } from "firebase/auth";
 import SettingsPage from '../pages/business/SettingsPage';

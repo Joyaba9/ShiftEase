@@ -11,7 +11,7 @@ backend/google-cloud-cli-*.tar.gz
 # Ignore node_modules directory
 node_modules/
 package-lock.json
-package.json
+#package.json
 
 # Ignore environment variable files
 .env
