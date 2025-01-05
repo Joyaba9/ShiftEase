@@ -31,3 +31,18 @@ small retail shop, restaurant or growing business looking for hassle-free schedu
 
 ## Documentation
 
+[ERD]: https://github.com/Joyaba9/ShiftEase/blob/main/Documentation/ERD_Group_2.drawio.png "ERD"
+[ContextDiagram]: https://github.com/Joyaba9/ShiftEase/blob/main/Documentation/Group2_Context_Diagram_1.png "Context"
+[Level0DFD]: https://github.com/Joyaba9/ShiftEase/blob/main/Documentation/Group2_Level0DFD_1.png "DFD"
+
+### ERD - Entity Relationship Diagram
+
+![alt text][ERD]
+
+### Context Diagram
+
+![alt text][ContextDiagram]
+
+### Level 0 DFD - Data Flow Diagram
+
+![alt text][Level0DFD]
